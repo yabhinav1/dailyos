@@ -1,0 +1,651 @@
+datasource db {
+  provider  = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. AUTHENTICATION MODELS (Auth.js v5)
+// ==========================================
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?         // For email/password login
+  username      String?         @unique
+  role          String          @default("USER") // USER | ADMIN — gates access to /admin/music (Lavalink node management)
+  pendingEmail  String?         // New email awaiting OTP confirmation (email-change flow)
+  otp           String?         // Numeric code for verification
+  otpExpires    DateTime?       // Expiry time for OTP
+  resetToken    String?         // Token for password reset
+  resetTokenExpires DateTime?   // Expiry time for reset token
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App Relationships
+  tasks         Task[]
+  projects      Project[]
+  categories    Category[]
+  tags          Tag[]
+  notes         Note[]
+  noteFolders   NoteFolder[]
+  habits        Habit[]
+  goals         Goal[]
+  events        CalendarEvent[]
+  studySubjects StudySubject[]
+  studySessions StudySession[]
+  lavalinkNodes LavalinkNode[]
+  tracks        Track[]
+  playerState   PlayerState?
+  codingProjects CodingProject[]
+  snippets      CodeSnippet[]
+  resources     Resource[]
+  notifications Notification[]
+  settings      UserSettings?
+  activities    ActivityHistory[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ==========================================
+// 2. CORE TASK MANAGEMENT
+// ==========================================
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+}
+
+model Task {
+  id            String       @id @default(cuid())
+  userId        String
+  projectId     String?
+  categoryId    String?
+  title         String
+  description   String?      @db.Text
+  priority      Priority     @default(MEDIUM)
+  status        TaskStatus   @default(TODO)
+  dueDate       DateTime?
+  dueTime       String?      // e.g. "14:30"
+  estimatedTime Int?         // in minutes
+  actualTime    Int          @default(0) // in minutes
+  isFavorite    Boolean      @default(false)
+  deletedAt     DateTime?    // For trash system
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  category      Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  subtasks      Subtask[]
+  checklists    ChecklistItem[]
+  notes         TaskNote[]
+  tags          TaskTag[]
+  resources     Resource[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, priority])
+  @@index([userId, dueDate])
+  @@index([userId, deletedAt])
+}
+
+model Subtask {
+  id          String    @id @default(cuid())
+  taskId      String
+  title       String
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  taskId      String
+  title       String
+  isCompleted Boolean   @default(false)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskNote {
+  id        String   @id @default(cuid())
+  taskId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ==========================================
+// 3. PROJECT WORKSPACES
+// ==========================================
+
+model Project {
+  id          String      @id @default(cuid())
+  userId      String
+  name        String
+  description String?     @db.Text
+  deadline    DateTime?
+  isCompleted Boolean     @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  milestones  Milestone[]
+  resources   Resource[]
+
+  @@index([userId])
+  @@index([userId, deletedAt])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  title       String
+  description String?   @db.Text
+  dueDate     DateTime?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ==========================================
+// 4. CATEGORIES & TAGS
+// ==========================================
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String?  // hex code or CSS variable
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([userId])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  color     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     TaskTag[]
+  notes     NoteTag[]
+
+  @@unique([userId, name])
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
+
+// ==========================================
+// 5. NOTES SYSTEM
+// ==========================================
+
+model Note {
+  id         String      @id @default(cuid())
+  userId     String
+  folderId   String?
+  title      String
+  content    String?     @db.Text
+  doodleData String?     @db.Text
+  isPinned   Boolean     @default(false)
+  isFavorite Boolean     @default(false)
+  color      String?
+  deletedAt  DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder     NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags       NoteTag[]
+
+  @@index([userId])
+  @@index([userId, deletedAt])
+  @@index([userId, isPinned])
+  @@index([userId, isFavorite])
+}
+
+model NoteFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     Note[]
+
+  @@index([userId])
+}
+
+model NoteTag {
+  noteId String
+  tagId  String
+
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+}
+
+// ==========================================
+// 6. HABITS & GOALS
+// ==========================================
+
+model Habit {
+  id          String     @id @default(cuid())
+  userId      String
+  name        String
+  description String?    @db.Text
+  frequency   String     @default("DAILY") // DAILY, WEEKLY, etc.
+  streak      Int        @default(0)
+  maxStreak   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs        HabitLog[]
+
+  @@index([userId])
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      DateTime // normalized date (YYYY-MM-DD)
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+}
+
+model Goal {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?   @db.Text
+  targetDate  DateTime?
+  progress    Int       @default(0) // percentage 0-100
+  timeframe   String     @default("YEARLY") // YEARLY, MONTHLY, WEEKLY
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==========================================
+// 7. CALENDAR & SCHEDULES
+// ==========================================
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?   @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  isAllDay    Boolean   @default(false)
+  color       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, startDate])
+}
+
+// ==========================================
+// 8. STUDY MODE
+// ==========================================
+
+model StudySubject {
+  id        String       @id @default(cuid())
+  userId    String
+  name      String
+  code      String?      // subject code
+  color     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics    StudyTopic[]
+  sessions  StudySession[]
+
+  @@index([userId])
+}
+
+model StudyTopic {
+  id          String       @id @default(cuid())
+  subjectId   String
+  title       String
+  description String?      @db.Text
+  isCompleted Boolean      @default(false)
+  revisionCount Int        @default(0)
+  lastRevised DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  subject     StudySubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+}
+
+model StudySession {
+  id             String       @id @default(cuid())
+  userId         String
+  subjectId      String?
+  duration       Int          // in minutes
+  completedAt    DateTime     @default(now())
+  notes          String?      @db.Text
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject        StudySubject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, completedAt])
+}
+
+// ==========================================
+// 9. DEVELOPER MODE
+// ==========================================
+
+model CodingProject {
+  id          String         @id @default(cuid())
+  userId      String
+  name        String
+  description String?        @db.Text
+  githubUrl   String?
+  techStack   String[]       // string array
+  status      String         @default("PLANNING") // PLANNING, ACTIVE, COMPLETED, ON_HOLD
+  roadmap     String?        @db.Text             // Markdown description
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issues      DeveloperIssue[]
+  changelogs  Changelog[]
+
+  @@index([userId])
+}
+
+model DeveloperIssue {
+  id              String        @id @default(cuid())
+  codingProjectId String
+  title           String
+  description     String?       @db.Text
+  type            String        @default("BUG") // BUG, FEATURE, CHORE
+  status          String        @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority        String        @default("MEDIUM")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  codingProject   CodingProject @relation(fields: [codingProjectId], references: [id], onDelete: Cascade)
+
+  @@index([codingProjectId])
+}
+
+model Changelog {
+  id              String        @id @default(cuid())
+  codingProjectId String
+  version         String
+  title           String
+  description     String?       @db.Text // Markdown content
+  releasedAt      DateTime      @default(now())
+
+  codingProject   CodingProject @relation(fields: [codingProjectId], references: [id], onDelete: Cascade)
+
+  @@index([codingProjectId])
+}
+
+model CodeSnippet {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  code        String   @db.Text
+  language    String
+  isFavorite  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==========================================
+// 10. SYSTEM & UTILITIES
+// ==========================================
+
+model Resource {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String?
+  projectId String?
+  title     String
+  url       String?
+  type      String   @default("LINK") // LINK, ATTACHMENT, BOOKMARK, FILE
+  content   String?  // for small custom content/notes, or legacy inline base64 attachments
+  // Populated when type = "FILE": the file's bytes live in MongoDB GridFS
+  // (see src/lib/mongo-storage.ts) rather than inline here, so large PDFs
+  // don't bloat this database.
+  mongoIndex Int?    // which configured MONGODB_URI (0-based) holds this file
+  fileId     String? // GridFS file _id (hex string)
+  mimeType   String?
+  fileSize   Int?    // bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, WARNING, SUCCESS, CALENDAR, TASK
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model UserSettings {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  theme          String   @default("dark") // dark, light, system
+  widgetConfig   Json?    // dashboard layout widgets config
+  pwaInstalled   Boolean  @default(false)
+  remindersEnabled Boolean @default(true)
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActivityHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // e.g. "task_completed", "note_created"
+  entityType String   // e.g. "TASK", "NOTE"
+  entityId   String   // actual ID of the target
+  details    String?  // human readable details
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------
+// Music player
+// ---------------------------------------------------------------------
+
+// A Lavalink node the player can connect to. Admin-managed via /admin/music.
+// `password` is the node's Lavalink authorization password — stored here
+// because Lavalink itself requires it per-node (this is normal for a node
+// registry), but it is NEVER returned to the client in API responses;
+// only the server uses it when talking to Lavalink directly.
+model LavalinkNode {
+  id          String   @id @default(cuid())
+  name        String   // display name, e.g. "Primary (US-East)"
+  host        String   // e.g. "lavalink.example.com"
+  port        Int      @default(2333)
+  password    String   // Lavalink node auth password
+  secure      Boolean  @default(false) // use https/wss instead of http/ws
+  enabled     Boolean  @default(true)  // admin can disable without deleting
+  priority    Int      @default(0)     // lower = tried first during failover
+  // Rolling health status, updated by the health-check/failover logic.
+  status      String   @default("UNKNOWN") // UNKNOWN | ONLINE | OFFLINE | ERROR
+  lastError   String?  // last error message (e.g. "403 Forbidden", "ECONNREFUSED")
+  lastCheckedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([enabled, priority])
+}
+
+// A user-uploaded audio file (mp3/mp4 audio track), stored via blob storage;
+// `url` points at the stored object, not at Lavalink.
+model Track {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  artist      String?
+  url         String?  // storage URL, only used for source = LAVALINK passthrough
+  mongoIndex  Int?     // GridFS cluster index for UPLOAD tracks (see mongo-storage.ts)
+  fileId      String?  // GridFS file id for UPLOAD tracks
+  mimeType    String   // audio/mpeg, video/mp4, etc.
+  fileSize    Int?     // bytes, for UPLOAD tracks
+  duration    Int?     // seconds, if known
+  source      String   @default("UPLOAD") // UPLOAD | LAVALINK
+  lavalinkIdentifier String? // encoded track string when source = LAVALINK
+  mode        String   @default("DEFAULT") // grouping used for the "based on mode" playlist selector, e.g. FOCUS, CHILL, HYPE
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, mode])
+}
+
+// Lightweight per-user "what was playing" state so the mini player can
+// restore itself across page navigations without a full page reload.
+model PlayerState {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  trackId      String?
+  positionMs   Int      @default(0)
+  volume       Int      @default(80)
+  mode         String   @default("DEFAULT")
+  isPlaying    Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
