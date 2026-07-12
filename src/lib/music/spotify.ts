@@ -44,18 +44,22 @@ export interface SpotifySearchResult {
   durationMs: number;
 }
 
-export async function searchSpotify(query: string, limit = 12): Promise<SpotifySearchResult[]> {
+export async function searchSpotify(query: string, limit = 10): Promise<SpotifySearchResult[]> {
   if (!query.trim()) return [];
 
   const token = await getAccessToken();
-  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`;
+  // Spotify's Feb 2026 Dev Mode changes capped this at 10 (was 50) — clamp
+  // defensively so a bad caller-supplied value doesn't 400 the request.
+  const clampedLimit = Math.min(Math.max(limit, 1), 10);
+  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${clampedLimit}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
-    throw new Error(`Spotify search failed: ${res.status}`);
+    const body = await res.text().catch(() => "");
+    throw new Error(`Spotify search failed: ${res.status}${body ? ` — ${body.slice(0, 200)}` : ""}`);
   }
 
   const data = await res.json();
