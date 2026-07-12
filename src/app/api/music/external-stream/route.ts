@@ -29,14 +29,31 @@ export async function GET(req: Request) {
   const range = req.headers.get("range");
 
   try {
-    const upstream = await fetch(upstreamUrl, {
-      headers: {
-        "x-api-key": apiKey,
-        ...(range ? { Range: range } : {}),
-      },
-      // Don't let Next.js cache/dedupe a live audio stream.
-      cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    let upstream: Response;
+    try {
+      upstream = await fetch(upstreamUrl, {
+        headers: {
+          "x-api-key": apiKey,
+          ...(range ? { Range: range } : {}),
+        },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      console.error("[external-stream] fetch to resolver failed:", fetchErr?.message || fetchErr);
+      const isAbort = fetchErr?.name === "AbortError";
+      return new Response(
+        isAbort
+          ? `Timed out connecting to the resolver at ${resolverUrl} after 8s — it's likely unreachable from Vercel (firewall/network issue on the resolver's host), even if it works fine from your own browser.`
+          : `Could not connect to the resolver: ${fetchErr?.message || fetchErr}`,
+        { status: 502 }
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!upstream.ok && upstream.status !== 206) {
       const text = await upstream.text().catch(() => "");
