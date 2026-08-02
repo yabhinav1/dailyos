@@ -10,7 +10,10 @@ import { readFileSync } from "node:fs";
 import nodemailer from "nodemailer";
 
 // Load .env.local without pulling in a dotenv dependency.
-for (const line of readFileSync(new URL("../.env.local", import.meta.url), "utf8").split("\n")) {
+// Split on /\r?\n/ — with a bare "\n" split, CRLF files leave a trailing "\r"
+// that `.` won't match (it is a line terminator in JS regex), so every line
+// silently failed to parse.
+for (const line of readFileSync(new URL("../.env.local", import.meta.url), "utf8").split(/\r?\n/)) {
   const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
   if (!match) continue;
   const value = match[2].trim().replace(/^"(.*)"$/s, "$1").replace(/^'(.*)'$/s, "$1");
