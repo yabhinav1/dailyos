@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -48,8 +49,8 @@ export async function getCodingProjects() {
       orderBy: { updatedAt: "desc" },
     });
     return { success: true, data: projects };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }
 
@@ -82,8 +83,8 @@ export async function getSnippets() {
       orderBy: { createdAt: "desc" },
     });
     return { success: true, data: snippets };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }
 

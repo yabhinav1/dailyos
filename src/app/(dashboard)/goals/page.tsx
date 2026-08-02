@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getGoalsAction, createGoal, updateGoalProgress, deleteGoal } from "@/features/goals/actions";
-import { Target, Plus, Trash2, TrendingUp } from "lucide-react";
+import { Target, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import type { Goal, GoalTimeframe } from "@/lib/types";
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<any[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", targetDate: "", timeframe: "MONTHLY" as const });
+  const [form, setForm] = useState<{ title: string; description: string; targetDate: string; timeframe: GoalTimeframe }>(
+    { title: "", description: "", targetDate: "", timeframe: "MONTHLY" }
+  );
   const [saving, setSaving] = useState(false);
 
   const fetchGoals = useCallback(async () => {
@@ -128,7 +131,7 @@ export default function GoalsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Timeframe</Label>
-                <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value as any })}
+                <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value as GoalTimeframe })}
                   className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white">
                   <option value="WEEKLY">Weekly</option>
                   <option value="MONTHLY">Monthly</option>
@@ -154,8 +157,7 @@ export default function GoalsPage() {
     </div>
   );
 }
-
-function GoalCard({ goal, onProgressChange, onDelete }: { goal: any; onProgressChange: (id: string, p: number) => void; onDelete: (id: string, t: string) => void }) {
+function GoalCard({ goal, onProgressChange, onDelete }: { goal: Goal; onProgressChange: (id: string, p: number) => void; onDelete: (id: string, t: string) => void }) {
   const [localProgress, setLocalProgress] = useState(goal.progress);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {

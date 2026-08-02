@@ -7,6 +7,7 @@ import { sendOtpEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -51,8 +52,8 @@ export async function getUserSettings() {
         accounts,
       },
     };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }
 
@@ -82,8 +83,8 @@ export async function uploadCustomAvatar(dataUrl: string) {
     await prisma.user.update({ where: { id: userId }, data: { image: dataUrl } });
     revalidatePath("/settings");
     return { success: true, image: dataUrl };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to upload avatar." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to upload avatar.") };
   }
 }
 
@@ -149,8 +150,8 @@ export async function requestEmailChange(newEmail: string) {
     await sendOtpEmail(normalized, otp);
 
     return { success: true, message: `Verification code sent to ${normalized}.` };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to start email change." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to start email change.") };
   }
 }
 
@@ -192,8 +193,8 @@ export async function verifyEmailChange(otpCode: string) {
 
     revalidatePath("/settings");
     return { success: true, message: "Email updated successfully!", email: newEmail };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to verify code." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to verify code.") };
   }
 }
 
@@ -206,8 +207,8 @@ export async function cancelEmailChange() {
       data: { pendingEmail: null, otp: null, otpExpires: null },
     });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }
 
@@ -223,8 +224,8 @@ export async function resendEmailChangeOtp() {
     await prisma.user.update({ where: { id: userId }, data: { otp, otpExpires } });
     await sendOtpEmail(user.pendingEmail, otp);
     return { success: true, message: "Code resent." };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to resend code." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to resend code.") };
   }
 }
 
@@ -270,8 +271,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
       success: true,
       message: user.password ? "Password updated successfully!" : "Password set successfully!",
     };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to change password." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to change password.") };
   }
 }
 
@@ -302,7 +303,7 @@ export async function unlinkAccount(provider: string) {
     await prisma.account.deleteMany({ where: { userId, provider } });
     revalidatePath("/settings");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to unlink account." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to unlink account.") };
   }
 }

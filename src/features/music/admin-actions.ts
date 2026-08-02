@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { checkLavalinkNode } from "@/lib/music/lavalink-manager";
+import { getErrorMessage } from "@/lib/utils";
 
 export async function listLavalinkNodes() {
   try {
@@ -26,8 +27,8 @@ export async function listLavalinkNodes() {
       },
     });
     return { success: true, data: nodes };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to load nodes", data: [] };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to load nodes"), data: [] };
   }
 }
 
@@ -79,8 +80,8 @@ export async function addLavalinkNode(input: {
 
     revalidatePath("/admin/music");
     return { success: true, data: { id: node.id }, checkResult: check };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to add node" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to add node") };
   }
 }
 
@@ -96,8 +97,8 @@ export async function updateLavalinkNode(
     });
     revalidatePath("/admin/music");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update node" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update node") };
   }
 }
 
@@ -107,8 +108,8 @@ export async function removeLavalinkNode(id: string) {
     await prisma.lavalinkNode.delete({ where: { id } });
     revalidatePath("/admin/music");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to remove node" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to remove node") };
   }
 }
 
@@ -135,7 +136,7 @@ export async function testLavalinkNode(id: string) {
 
     revalidatePath("/admin/music");
     return { success: true, data: result };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to test node" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to test node") };
   }
 }

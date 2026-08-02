@@ -19,7 +19,8 @@ export default function GuestNotesImporter() {
     const raw = window.localStorage.getItem(GUEST_NOTES_KEY);
     if (!raw) return;
 
-    let guestNotes: any[] = [];
+    type GuestNote = { title?: string; content?: string; doodleData?: string };
+    let guestNotes: GuestNote[] = [];
     try {
       guestNotes = JSON.parse(raw);
     } catch {
@@ -36,8 +37,10 @@ export default function GuestNotesImporter() {
     window.localStorage.removeItem(GUEST_NOTES_KEY);
 
     importGuestNotes(
+      // localStorage is untrusted input: a note with no title still imports,
+      // it just gets a placeholder rather than failing validation server-side.
       guestNotes.map((n) => ({
-        title: n.title,
+        title: n.title ?? "Untitled note",
         content: n.content,
         doodleData: n.doodleData,
       }))

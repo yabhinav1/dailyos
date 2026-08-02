@@ -12,7 +12,7 @@ const nextAuth = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async jwt(params) {
-      const { token, user } = params;
+      const { user } = params;
       const nextToken = await authConfig.callbacks.jwt(params);
       const userId = user?.id ?? nextToken.sub;
 

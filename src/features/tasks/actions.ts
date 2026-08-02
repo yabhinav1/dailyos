@@ -5,7 +5,8 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { Priority, TaskStatus } from "@prisma/client";
-import { getTasks as queryGetTasks } from "./queries";
+import { getTasks as queryGetTasks, type TaskFilters } from "./queries";
+import { getErrorMessage } from "@/lib/utils";
 
 // Zod schemas for input validation
 const createTaskSchema = z.object({
@@ -316,13 +317,13 @@ export async function deleteChecklistItem(itemId: string) {
   return { success: true };
 }
 
-export async function getTasksAction(filters: any) {
+export async function getTasksAction(filters: TaskFilters) {
   try {
     const data = await queryGetTasks(filters);
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("getTasksAction error:", error);
-    return { success: false, message: error?.message || "Failed to fetch tasks" };
+    return { success: false, message: getErrorMessage(error, "Failed to fetch tasks") };
   }
 }
 

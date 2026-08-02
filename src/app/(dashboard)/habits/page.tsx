@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import type { Habit, HabitLog } from "@/lib/types";
+import { toDateKey } from "@/lib/utils";
 
 function generateLast30Days(): string[] {
   const days: string[] = [];
@@ -23,7 +25,7 @@ function generateLast30Days(): string[] {
 const DAYS_30 = generateLast30Days();
 
 export default function HabitsPage() {
-  const [habits, setHabits] = useState<any[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -64,7 +66,7 @@ export default function HabitsPage() {
 
   const today = new Date().toISOString().split("T")[0];
   const todayCompletedCount = habits.filter((h) =>
-    h.logs.some((l: any) => l.date.split("T")[0] === today && l.completed)
+    h.logs.some((l: HabitLog) => toDateKey(l.date) === today && l.completed)
   ).length;
 
   return (
@@ -120,7 +122,7 @@ export default function HabitsPage() {
       ) : (
         <div className="space-y-4">
           {habits.map((habit) => {
-            const completedDates = new Set(habit.logs.map((l: any) => l.date.split("T")[0]));
+            const completedDates = new Set(habit.logs.map((l: HabitLog) => toDateKey(l.date)));
             const isCompletedToday = completedDates.has(today);
 
             return (
@@ -210,7 +212,7 @@ export default function HabitsPage() {
             </div>
             <div className="space-y-1">
               <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Frequency</Label>
-              <select value={newFreq} onChange={(e) => setNewFreq(e.target.value as any)}
+              <select value={newFreq} onChange={(e) => setNewFreq(e.target.value as "DAILY" | "WEEKLY" | "MONTHLY")}
                 className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white focus:border-zinc-700 focus:outline-none">
                 <option value="DAILY">Daily</option>
                 <option value="WEEKLY">Weekly</option>

@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { downloadFileFromMongo } from "@/lib/mongo-storage";
+import { getErrorMessage } from "@/lib/utils";
 
 // GridFS/the mongodb driver needs Node APIs (TCP sockets, node:stream) that
 // aren't available on the Edge runtime, so this route must run on Node.
@@ -42,7 +43,7 @@ export async function GET(
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch (err: any) {
-    return new Response(err?.message || "Failed to load file.", { status: 500 });
+  } catch (err: unknown) {
+    return new Response(getErrorMessage(err, "Failed to load file."), { status: 500 });
   }
 }

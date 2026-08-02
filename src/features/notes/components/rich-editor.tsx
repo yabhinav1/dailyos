@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -8,10 +7,36 @@ import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
 import Image from "@tiptap/extension-image";
 import {
-  Bold, Italic, Strikethrough, List, ListOrdered, Quote, Code, Undo, Redo, Highlighter, ImagePlus,
-  Crop, Trash2, Check, X, Maximize, AlignLeft, AlignCenter, AlignRight,
+  Bold,
+  Italic,
+  Strikethrough,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Undo,
+  Redo,
+  Highlighter,
+  ImagePlus,
+  Crop,
+  Trash2,
+  Check,
+  X,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Sparkles,
+  Mic,
+  MicOff,
+  CheckSquare,
+  Wand2,
+  FileText,
+  Languages,
+  Eye,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { aiSummarizeAction, aiExtractTasksAction, aiTranslateAction } from "@/features/notes/ai-actions";
 
 interface RichEditorProps {
   content: string;
@@ -135,6 +160,9 @@ function ImageCropModal({
           onPointerUp={handlePointerUp}
           className="relative overflow-hidden rounded-lg bg-zinc-950 flex items-center justify-center min-h-[260px] max-h-[380px] p-2 select-none touch-none"
         >
+          {/* Crop source is a data: URL read straight off the canvas, and the
+              ref is needed for drawImage — next/image fits neither. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             ref={imgRef}
             src={imageSrc}
@@ -250,14 +278,103 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [selectedImgSrc, setSelectedImgSrc] = useState<string | null>(null);
-  const [selectedImgElement, setSelectedImgElement] = useState<HTMLImageElement | null>(null);
+  // The live <img> node is held in a ref, not state: every image control below
+  // mutates it directly (style/src/remove), and React Compiler forbids mutating
+  // values that came out of useState. `selectedImgSrc` is the render-visible
+  // "is an image selected" signal.
+  const selectedImgRef = useRef<HTMLImageElement | null>(null);
   const [croppingImgSrc, setCroppingImgSrc] = useState<string | null>(null);
   const [imgRect, setImgRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
-
-  const updateImgRect = () => {
-    if (selectedImgElement && editorContainerRef.current) {
+  // Voice note & AI state
+  const [isRecording, setIsRecording] = useState(false);
+  const [showAiMenu, setShowAiMenu] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        if (editor) {
+          const audioHtml = `<p><strong>🎙️ Recorded Voice Note:</strong></p><p><audio controls src="${audioUrl}" style="width: 100%; max-width: 400px; margin: 8px 0; border-radius: 8px; background: #0d0d0d; padding: 4px; border: 1px solid #27272a;"></audio></p><p></p>`;
+          editor.chain().focus().insertContent(audioHtml).run();
+        }
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch {
+      alert("Microphone permission is required to record voice notes.");
+    }
+  };
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+  const [targetLang, setTargetLang] = useState("English");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const handleAiSummarize = async () => {
+    if (!editor) return;
+    const text = editor.getHTML();
+    if (!text.trim()) return;
+    setAiError(null);
+    setIsAiLoading(true);
+    const res = await aiSummarizeAction(text, targetLang);
+    setIsAiLoading(false);
+    if (!res.success) return setAiError(res.error);
+    editor.chain().focus("start").insertContent(res.summary).run();
+    setShowAiMenu(false);
+  };
+  const handleAiExtractTasks = async () => {
+    if (!editor) return;
+    const text = editor.getHTML();
+    if (!text.trim()) return;
+    setAiError(null);
+    setIsAiLoading(true);
+    const res = await aiExtractTasksAction(text);
+    setIsAiLoading(false);
+    if (!res.success) return setAiError(res.error);
+    editor.chain().focus("end").insertContent(res.tasks).run();
+    setShowAiMenu(false);
+  };
+  const handleAiTranslate = async () => {
+    if (!editor) return;
+    const text = editor.getHTML();
+    if (!text.trim()) return;
+    setAiError(null);
+    setIsAiLoading(true);
+    const res = await aiTranslateAction(text, targetLang);
+    setIsAiLoading(false);
+    if (!res.success) return setAiError(res.error);
+    editor.chain().focus("end").insertContent(res.translated).run();
+    setShowAiMenu(false);
+  };
+  const handleAiRefineText = () => {
+    if (!editor) return;
+    let text = editor.getText();
+    if (!text.trim()) return;
+    text = text.replace(/\s+/g, " ").trim();
+    editor.chain().focus().selectAll().insertContent(`<p>${text}</p>`).run();
+    setShowAiMenu(false);
+  };
+  const updateImgRect = useCallback(() => {
+    const el = selectedImgRef.current;
+    if (el && editorContainerRef.current) {
       const parent = editorContainerRef.current.getBoundingClientRect();
-      const child = selectedImgElement.getBoundingClientRect();
+      const child = el.getBoundingClientRect();
       setImgRect({
         left: child.left - parent.left,
         top: child.top - parent.top,
@@ -267,24 +384,24 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
     } else {
       setImgRect(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     updateImgRect();
     window.addEventListener("resize", updateImgRect);
     return () => window.removeEventListener("resize", updateImgRect);
-  }, [selectedImgElement]);
+  }, [selectedImgSrc, updateImgRect]);
 
   const handleHandlePointerDown = (e: React.PointerEvent, mode: string) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!selectedImgElement || !imgRect) return;
+    const el = selectedImgRef.current;
+    if (!el || !imgRect) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
     const startW = imgRect.width;
     const startH = imgRect.height;
-    const target = e.target as HTMLElement;
 
     const handlePointerMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
@@ -313,9 +430,8 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
       } else if (mode === "n") {
         newH = Math.max(40, startH - dy);
       }
-
-      selectedImgElement.style.width = `${newW}px`;
-      selectedImgElement.style.height = `${newH}px`;
+      el.style.width = `${newW}px`;
+      el.style.height = `${newH}px`;
       updateImgRect();
     };
 
@@ -330,23 +446,13 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
   };
 
   const handleAlignImage = (align: "left" | "center" | "right") => {
-    if (selectedImgElement) {
-      if (align === "left") {
-        selectedImgElement.style.marginLeft = "0";
-        selectedImgElement.style.marginRight = "auto";
-        selectedImgElement.style.display = "block";
-      } else if (align === "center") {
-        selectedImgElement.style.marginLeft = "auto";
-        selectedImgElement.style.marginRight = "auto";
-        selectedImgElement.style.display = "block";
-      } else if (align === "right") {
-        selectedImgElement.style.marginLeft = "auto";
-        selectedImgElement.style.marginRight = "0";
-        selectedImgElement.style.display = "block";
-      }
-      updateImgRect();
-      if (editor) onChange(editor.getHTML());
-    }
+    const el = selectedImgRef.current;
+    if (!el) return;
+    el.style.display = "block";
+    el.style.marginLeft = align === "left" ? "0" : "auto";
+    el.style.marginRight = align === "right" ? "0" : "auto";
+    updateImgRect();
+    if (editor) onChange(editor.getHTML());
   };
 
   const editor = useEditor({
@@ -422,12 +528,12 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
     const target = e.target as HTMLElement;
     if (target.tagName === "IMG") {
       const img = target as HTMLImageElement;
+      selectedImgRef.current = img;
       setSelectedImgSrc(img.src);
-      setSelectedImgElement(img);
       setTimeout(updateImgRect, 50);
     } else {
+      selectedImgRef.current = null;
       setSelectedImgSrc(null);
-      setSelectedImgElement(null);
       setImgRect(null);
     }
 
@@ -438,8 +544,8 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
 
   const handleCropComplete = (croppedDataUrl: string) => {
     if (!editor || !selectedImgSrc) return;
-    if (selectedImgElement) {
-      selectedImgElement.src = croppedDataUrl;
+    if (selectedImgRef.current) {
+      selectedImgRef.current.src = croppedDataUrl;
       onChange(editor.getHTML());
       setTimeout(updateImgRect, 50);
     } else {
@@ -449,22 +555,22 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
   };
 
   const handleResizeImage = (widthPercent: number) => {
-    if (selectedImgElement) {
-      selectedImgElement.style.width = `${widthPercent}%`;
-      selectedImgElement.style.height = "auto";
-      updateImgRect();
-      onChange(editor.getHTML());
-    }
+    const el = selectedImgRef.current;
+    if (!el || !editor) return;
+    el.style.width = `${widthPercent}%`;
+    el.style.height = "auto";
+    updateImgRect();
+    onChange(editor.getHTML());
   };
 
   const handleDeleteSelectedImage = () => {
-    if (selectedImgElement) {
-      selectedImgElement.remove();
-      setSelectedImgSrc(null);
-      setSelectedImgElement(null);
-      setImgRect(null);
-      if (editor) onChange(editor.getHTML());
-    }
+    const el = selectedImgRef.current;
+    if (!el) return;
+    el.remove();
+    selectedImgRef.current = null;
+    setSelectedImgSrc(null);
+    setImgRect(null);
+    if (editor) onChange(editor.getHTML());
   };
 
   // Keep editor content in sync when prop changes externally (e.g. note switched)
@@ -490,7 +596,7 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
       )}
 
       {/* Canva 8-Handle Bounding Box Overlay for Selected Editor Image */}
-      {imgRect && selectedImgElement && (
+      {imgRect && selectedImgSrc && (
         <div
           className="absolute border-2 border-white pointer-events-none z-30 ring-1 ring-black/50"
           style={{
@@ -639,11 +745,114 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
             <span className="text-[10px] font-bold">H{level}</span>
           </ToolbarButton>
         ))}
+        <div className="w-px h-4 bg-zinc-800 mx-1" />
+        {/* Voice Note Recorder Button */}
+        <button
+          type="button"
+          onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+          title={isRecording ? "Stop recording voice note" : "Record voice note"}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-all ${
+            isRecording
+              ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+          }`}
+        >
+          {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+          <span>{isRecording ? "Stop Rec" : "Voice"}</span>
+        </button>
+        {/* Reader Mode Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsPreviewMode(!isPreviewMode)}
+          title={isPreviewMode ? "Switch to Editor" : "Reader / Preview Mode"}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+            isPreviewMode ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+          }`}
+        >
+          {isPreviewMode ? <Edit3 className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          <span>{isPreviewMode ? "Edit Mode" : "Reader Mode"}</span>
+        </button>
+        {/* AI Smart Assistant & Translation Menu */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowAiMenu(!showAiMenu)}
+            title="AI Smart Assistant & Language Translator"
+            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700 transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-zinc-300" />
+            <span>{isAiLoading ? "Processing..." : "AI & Language"}</span>
+          </button>
+          {showAiMenu && (
+            <div className="absolute right-0 top-8 z-50 w-56 rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 shadow-2xl space-y-2 text-xs animate-in fade-in zoom-in-95 duration-150">
+              {/* Language Selector */}
+              <div className="space-y-1 pb-1.5 border-b border-zinc-800">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Languages className="h-3 w-3 text-zinc-400" /> Target Language
+                </label>
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="w-full rounded bg-zinc-900 border border-zinc-800 px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700"
+                >
+                  {["English", "Spanish", "French", "German", "Japanese", "Chinese", "Hindi", "Arabic", "Russian", "Portuguese", "Italian", "Korean"].map((lang) => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </select>
+              </div>
+              {aiError && (
+                <p className="rounded bg-red-950/50 border border-red-900/60 px-2 py-1.5 text-[10px] leading-snug text-red-300">
+                  {aiError}
+                </p>
+              )}
+              <div className="space-y-1 pt-0.5">
+                <button
+                  onClick={handleAiSummarize}
+                  disabled={isAiLoading}
+                  className="w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
+                >
+                  <Wand2 className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Executive Summary</span>
+                </button>
+                <button
+                  onClick={handleAiExtractTasks}
+                  disabled={isAiLoading}
+                  className="w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
+                >
+                  <CheckSquare className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Extract Action Items</span>
+                </button>
+                <button
+                  onClick={handleAiTranslate}
+                  disabled={isAiLoading}
+                  className="w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
+                >
+                  <Languages className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Translate Document</span>
+                </button>
+                <button
+                  onClick={handleAiRefineText}
+                  disabled={isAiLoading}
+                  className="w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors border-t border-zinc-900 pt-1.5"
+                >
+                  <FileText className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Refine & Clean Text</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Editor Content */}
+      {/* Editor / Reader Mode Content */}
       <div className="flex-1 min-h-[300px] cursor-text" onClick={handleEditorClick}>
-        <EditorContent editor={editor} className="h-full" />
+        {isPreviewMode ? (
+          <div
+            className="prose prose-invert max-w-none px-6 py-5 text-sm leading-relaxed text-zinc-200"
+            dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
+          />
+        ) : (
+          <EditorContent editor={editor} className="h-full" />
+        )}
       </div>
 
       <style jsx global>{`
@@ -672,4 +881,3 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
     </div>
   );
 }
-

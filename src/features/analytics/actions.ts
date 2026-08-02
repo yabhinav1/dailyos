@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -85,7 +86,7 @@ export async function getAnalyticsData() {
         habitsCount: habits.length,
       },
     };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }

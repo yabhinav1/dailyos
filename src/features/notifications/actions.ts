@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -20,8 +21,8 @@ export async function getNotifications() {
     });
     const unreadCount = notifications.filter((n: { read: boolean }) => !n.read).length;
     return { success: true, data: notifications, unreadCount };
-  } catch (error: any) {
-    return { success: false, message: error?.message, data: [], unreadCount: 0 };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error), data: [], unreadCount: 0 };
   }
 }
 
@@ -34,8 +35,8 @@ export async function markNotificationRead(id: string) {
     });
     revalidatePath("/");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update notification" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update notification") };
   }
 }
 
@@ -48,7 +49,7 @@ export async function markAllNotificationsRead() {
     });
     revalidatePath("/");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update notifications" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update notifications") };
   }
 }

@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getErrorMessage } from "@/lib/utils";
+import type { Task } from "@/lib/types";
 
 interface TaskFormProps {
-  initialData?: any;
+  initialData?: Partial<Task>;
   onSuccess: () => void;
   onCancel: () => void;
   projects?: { id: string; name: string }[];
@@ -29,7 +31,7 @@ export default function TaskForm({
   const [status, setStatus] = useState<TaskStatus>(initialData?.status || TaskStatus.TODO);
   
   // Format Date for Input (YYYY-MM-DD)
-  const formatInputDate = (dateString?: string | Date) => {
+  const formatInputDate = (dateString?: string | Date | null) => {
     if (!dateString) return "";
     const date = new Date(dateString);
     return date.toISOString().split("T")[0];
@@ -67,15 +69,15 @@ export default function TaskForm({
     };
 
     try {
-      if (isEdit) {
+      if (initialData?.id) {
         await updateTask(initialData.id, payload);
       } else {
         await createTask(payload);
       }
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Something went wrong. Please try again.");
+      setError(getErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }

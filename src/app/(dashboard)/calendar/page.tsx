@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getEventsAction, createEvent, deleteEvent } from "@/features/calendar/actions";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, Clock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { CalendarEvent } from "@/lib/types";
+import { toDateKey } from "@/lib/utils";
 
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAY_LABELS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -23,17 +25,14 @@ export default function CalendarPage() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", description: "", startTime: "09:00", endTime: "10:00", color: EVENT_COLORS[0] });
 
   const fetchEvents = useCallback(async () => {
-    setLoading(true);
     const res = await getEventsAction(year, month);
     if (res.success && res.data) setEvents(res.data);
-    setLoading(false);
   }, [year, month]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
@@ -54,8 +53,8 @@ export default function CalendarPage() {
   const getEventsForDay = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return events.filter((e) => {
-      const start = e.startDate.split("T")[0];
-      const end = e.endDate.split("T")[0];
+      const start = toDateKey(e.startDate);
+      const end = toDateKey(e.endDate);
       return dateStr >= start && dateStr <= end;
     });
   };

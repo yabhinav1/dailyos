@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 const goalSchema = z.object({
   title: z.string().min(1),
@@ -60,7 +61,7 @@ export async function getGoalsAction() {
       orderBy: [{ isCompleted: "asc" }, { createdAt: "desc" }],
     });
     return { success: true, data: goals };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }

@@ -31,6 +31,7 @@ import {
   XCircle,
   Eye,
   EyeOff,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader } from "@/components/ui/loader";
+import { getErrorMessage } from "@/lib/utils";
 
 type Banner = { type: "success" | "error"; text: string } | null;
 
@@ -147,7 +149,7 @@ export default function SettingsPage() {
     setLoading(true);
     const res = await getUserSettings();
     if (res.success && res.data) {
-      const { user, settings, accounts } = res.data as any;
+      const { user, settings, accounts } = res.data;
       setProfile({ name: user?.name || "", username: user?.username || "", email: user?.email || "" });
       setPendingEmail(user?.pendingEmail || null);
       setAvatarUrl(user?.image || "");
@@ -177,8 +179,8 @@ export default function SettingsPage() {
         await updateSession({ image: res.image });
         showBanner("success", "New avatar generated!");
       }
-    } catch (err: any) {
-      showBanner("error", err?.message || "Failed to generate a new avatar.");
+    } catch (err: unknown) {
+      showBanner("error", getErrorMessage(err, "Failed to generate a new avatar."));
     } finally {
       setRerolling(false);
     }
@@ -220,11 +222,12 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res: any = await updateProfile(profile.name, profile.username);
-      if (res?.success === false) throw new Error(res.message);
+      // updateProfile throws on failure (e.g. duplicate username) rather than
+      // returning an error shape, so reaching here means it succeeded.
+      await updateProfile(profile.name, profile.username);
       showBanner("success", "Profile updated successfully!");
-    } catch (err: any) {
-      showBanner("error", err?.message || "Failed to update profile.");
+    } catch (err: unknown) {
+      showBanner("error", getErrorMessage(err, "Failed to update profile."));
     } finally {
       setSaving(false);
     }
@@ -336,8 +339,8 @@ export default function SettingsPage() {
     try {
       await updateUserSettings(newTheme, reminders);
       showBanner("success", "Theme preference saved!");
-    } catch (err: any) {
-      showBanner("error", err?.message || "Failed to save theme preference.");
+    } catch (err: unknown) {
+      showBanner("error", getErrorMessage(err, "Failed to save theme preference."));
     }
   };
 
@@ -346,8 +349,8 @@ export default function SettingsPage() {
     try {
       await updateUserSettings(theme, newReminders);
       showBanner("success", "Reminder preference saved!");
-    } catch (err: any) {
-      showBanner("error", err?.message || "Failed to save reminder preference.");
+    } catch (err: unknown) {
+      showBanner("error", getErrorMessage(err, "Failed to save reminder preference."));
     }
   };
 
@@ -624,6 +627,44 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* System Data Backup Card */}
+          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Download className="h-3.5 w-3.5" /> Workspace Data Backup
+                </h2>
+                <span className="text-[10px] text-zinc-500 font-medium">1-Click JSON Backup</span>
+              </div>
+              <p className="text-xs text-zinc-400">
+                Download a complete offline JSON snapshot of your current DailyOS profile and preference configuration.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => {
+                  const backupData = {
+                    version: "1.0",
+                    timestamp: new Date().toISOString(),
+                    profile,
+                    theme,
+                    reminders,
+                  };
+                  const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `dailyos_backup_${Date.now()}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  showBanner("success", "Workspace backup JSON downloaded!");
+                }}
+                className="text-xs font-semibold gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" /> Export System Backup (JSON)
+              </Button>
             </CardContent>
           </Card>
         </div>

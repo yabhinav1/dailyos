@@ -18,7 +18,6 @@ import {
   FolderOpen,
   GitBranch,
   GraduationCap,
-  Home,
   LogOut,
   PenTool,
   Search,
@@ -26,7 +25,6 @@ import {
   Shield,
   Target,
   Terminal,
-  User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

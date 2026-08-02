@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 const createNoteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -43,8 +45,8 @@ export async function createNote(formData: z.infer<typeof createNoteSchema>) {
 
     revalidatePath("/notes");
     return { success: true, data: note };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to create note" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to create note") };
   }
 }
 
@@ -64,8 +66,8 @@ export async function updateNote(noteId: string, formData: z.infer<typeof update
 
     revalidatePath("/notes");
     return { success: true, data: updated };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update note" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update note") };
   }
 }
 
@@ -83,8 +85,8 @@ export async function deleteNote(noteId: string) {
 
     revalidatePath("/notes");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to delete note" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to delete note") };
   }
 }
 
@@ -97,8 +99,8 @@ export async function toggleNotePin(noteId: string, isPinned: boolean) {
     await prisma.note.update({ where: { id: noteId }, data: { isPinned } });
     revalidatePath("/notes");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update note" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update note") };
   }
 }
 
@@ -111,8 +113,8 @@ export async function toggleNoteFavorite(noteId: string, isFavorite: boolean) {
     await prisma.note.update({ where: { id: noteId }, data: { isFavorite } });
     revalidatePath("/notes");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to update note" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to update note") };
   }
 }
 
@@ -131,8 +133,8 @@ export async function createFolder(formData: z.infer<typeof createFolderSchema>)
 
     revalidatePath("/notes");
     return { success: true, data: folder };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to create folder" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to create folder") };
   }
 }
 
@@ -151,8 +153,8 @@ export async function deleteFolder(folderId: string) {
     await prisma.noteFolder.delete({ where: { id: folderId } });
     revalidatePath("/notes");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to delete folder" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to delete folder") };
   }
 }
 
@@ -164,7 +166,7 @@ export async function getNotesAction(search?: string, folderId?: string | null) 
   try {
     const userId = await getUserIdOrThrow();
 
-    const whereClause: any = {
+    const whereClause: Prisma.NoteWhereInput = {
       userId,
       deletedAt: null,
     };
@@ -186,8 +188,8 @@ export async function getNotesAction(search?: string, folderId?: string | null) 
     });
 
     return { success: true, data: notes };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to fetch notes" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to fetch notes") };
   }
 }
 
@@ -206,8 +208,8 @@ export async function getFoldersAction() {
     });
 
     return { success: true, data: folders };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to fetch folders" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to fetch folders") };
   }
 }
 
@@ -259,7 +261,7 @@ export async function importGuestNotes(
 
     revalidatePath("/notes");
     return { success: true, imported: validated.length };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to import guest notes", imported: 0 };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to import guest notes"), imported: 0 };
   }
 }

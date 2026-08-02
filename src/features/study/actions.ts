@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -93,7 +94,7 @@ export async function getStudyDataAction() {
     const totalMinutes = recentSessions.reduce((acc, s) => acc + s.duration, 0);
 
     return { success: true, data: { subjects, recentSessions, totalMinutesThisWeek: totalMinutes } };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }

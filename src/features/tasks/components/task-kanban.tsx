@@ -7,9 +7,10 @@ import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from "
 import { useDroppable } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 import TaskCard from "./task-card";
+import type { Task } from "@/lib/types";
 
 interface TaskKanbanProps {
-  tasks: any[];
+  tasks: Task[];
   onRefresh: () => void;
   projects?: { id: string; name: string }[];
 }
@@ -55,7 +56,7 @@ export default function TaskKanban({ tasks, onRefresh, projects = [] }: TaskKanb
   const tasksByColumn = COLUMNS.reduce((acc, col) => {
     acc[col.id] = tasks.filter((t) => t.status === col.id);
     return acc;
-  }, {} as Record<TaskStatus, any[]>);
+  }, {} as Record<TaskStatus, Task[]>);
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

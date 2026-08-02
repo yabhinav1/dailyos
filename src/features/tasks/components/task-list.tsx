@@ -6,7 +6,6 @@ import { updateTask, toggleTaskFavorite, deleteTask } from "@/features/tasks/act
 import {
   Calendar,
   CheckCircle2,
-  Clock,
   Circle,
   MoreHorizontal,
   Star,
@@ -23,37 +22,34 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import TaskForm from "./task-form";
 import { Badge } from "@/components/ui/badge";
+import type { Task } from "@/lib/types";
 
 interface TaskListProps {
-  tasks: any[];
+  tasks: Task[];
   onRefresh: () => void;
   projects?: { id: string; name: string }[];
 }
 
 export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-
-  const handleStatusToggle = async (task: any) => {
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const handleStatusToggle = async (task: Task) => {
     const nextStatus =
       task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
     await updateTask(task.id, { status: nextStatus });
     onRefresh();
   };
-
-  const handleFavoriteToggle = async (task: any) => {
+  const handleFavoriteToggle = async (task: Task) => {
     await toggleTaskFavorite(task.id, !task.isFavorite);
     onRefresh();
   };
-
-  const handleDelete = async (task: any) => {
+  const handleDelete = async (task: Task) => {
     if (confirm(`Are you sure you want to delete "${task.title}"?`)) {
       await deleteTask(task.id);
       onRefresh();
     }
   };
-
-  const openEditDialog = (task: any) => {
+  const openEditDialog = (task: Task) => {
     setSelectedTask(task);
     setShowEditDialog(true);
   };
@@ -226,7 +222,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
             <DialogTitle className="text-sm font-bold text-white">Edit Task Details</DialogTitle>
           </DialogHeader>
           <TaskForm
-            initialData={selectedTask}
+            initialData={selectedTask ?? undefined}
             projects={projects}
             onSuccess={() => {
               setShowEditDialog(false);

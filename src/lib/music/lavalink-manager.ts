@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getErrorCode, getErrorMessage, getErrorName } from "@/lib/utils";
 
 export interface LavalinkNodeConfig {
   id: string;
@@ -45,13 +46,13 @@ export async function checkLavalinkNode(node: LavalinkNodeConfig): Promise<Laval
       return { ok: false, status: "ERROR", error: `HTTP ${res.status}` };
     }
     return { ok: true, status: "ONLINE" };
-  } catch (err: any) {
+  } catch (err: unknown) {
     const message =
-      err?.name === "AbortError"
+      getErrorName(err) === "AbortError"
         ? "Timed out after 5s"
-        : err?.code === "ECONNREFUSED"
+        : getErrorCode(err) === "ECONNREFUSED"
         ? "ECONNREFUSED — node not reachable on that host/port"
-        : err?.message || "Unknown network error";
+        : getErrorMessage(err, "Unknown network error");
     return { ok: false, status: "OFFLINE", error: message };
   } finally {
     clearTimeout(timeout);

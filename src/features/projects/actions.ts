@@ -10,6 +10,7 @@ import {
   getActiveProjectsList as queryGetActiveProjectsList
 } from "./queries";
 import { uploadFileToMongo, deleteFileFromMongo } from "@/lib/mongo-storage";
+import { getErrorMessage } from "@/lib/utils";
 
 // Hard ceiling per file so a single upload can't exhaust a serverless
 // function's memory while it buffers the file. Total storage still grows
@@ -243,8 +244,8 @@ export async function createResource(formData: z.infer<typeof createResourceSche
       revalidatePath(`/projects`);
     }
     return { success: true, data: resource };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to upload file" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to upload file") };
   }
 }
 
@@ -295,8 +296,8 @@ export async function uploadProjectFile(formData: FormData) {
 
     if (projectId) revalidatePath(`/projects`);
     return { success: true, data: resource };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to upload file." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to upload file.") };
   }
 }
 
@@ -324,8 +325,8 @@ export async function deleteResource(resourceId: string) {
       revalidatePath(`/projects`);
     }
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to delete file" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to delete file") };
   }
 }
 
@@ -337,8 +338,8 @@ export async function getResourcesForProject(projectId: string) {
       orderBy: { createdAt: "desc" },
     });
     return { success: true, data: resources };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to load files", data: [] };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to load files"), data: [] };
   }
 }
 
@@ -346,9 +347,9 @@ export async function getProjectsAction() {
   try {
     const data = await queryGetProjects();
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("getProjectsAction error:", error);
-    return { success: false, message: error?.message || "Failed to fetch projects" };
+    return { success: false, message: getErrorMessage(error, "Failed to fetch projects") };
   }
 }
 
@@ -356,9 +357,9 @@ export async function getProjectByIdAction(projectId: string) {
   try {
     const data = await queryGetProjectById(projectId);
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("getProjectByIdAction error:", error);
-    return { success: false, message: error?.message || "Failed to fetch project detail" };
+    return { success: false, message: getErrorMessage(error, "Failed to fetch project detail") };
   }
 }
 
@@ -366,9 +367,9 @@ export async function getActiveProjectsListAction() {
   try {
     const data = await queryGetActiveProjectsList();
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("getActiveProjectsListAction error:", error);
-    return { success: false, message: error?.message || "Failed to fetch projects list" };
+    return { success: false, message: getErrorMessage(error, "Failed to fetch projects list") };
   }
 }
 

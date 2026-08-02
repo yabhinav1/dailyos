@@ -14,7 +14,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -24,9 +23,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import TaskForm from "./task-form";
+import type { Task } from "@/lib/types";
 
 interface TaskCardProps {
-  task: any;
+  task: Task;
   onRefresh: () => void;
   projects?: { id: string; name: string }[];
 }
@@ -74,7 +74,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.COMPLETED;
 
   const totalSubtasks = task.subtasks?.length || 0;
-  const completedSubtasks = task.subtasks?.filter((s: any) => s.isCompleted).length || 0;
+  const completedSubtasks = task.subtasks?.filter((s) => s.isCompleted).length || 0;
 
   return (
     <>

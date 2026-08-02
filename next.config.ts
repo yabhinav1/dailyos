@@ -1,13 +1,18 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    // A stray package-lock.json in the user's home directory made Next infer
+    // C:\Users\yadav as the workspace root. Pin it to this project instead.
+    root: path.resolve(__dirname),
+  },
   experimental: {
     serverActions: {
       // Default is 1MB; raised so file uploads (e.g. PDFs going to
       // MongoDB storage via uploadProjectFile) aren't rejected.
-      // NOTE: check this key against the docs for the Next.js version
-      // actually installed here — the option's location has moved between
-      // Next major versions and this project pins an unusually new one.
+      // Verified against node_modules/next/dist/docs for 16.2.10: this key
+      // still lives under `experimental.serverActions`.
       bodySizeLimit: "50mb",
     },
   },

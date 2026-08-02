@@ -139,7 +139,7 @@ export default function TaskFilters({
           <DropdownMenuContent className="bg-[#171717] border border-zinc-850 text-zinc-400 text-xs">
             <DropdownMenuLabel className="text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Sort By</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-zinc-850" />
-            <DropdownMenuRadioGroup value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+            <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val as "dueDate" | "priority" | "createdAt")}>
               <DropdownMenuRadioItem value="createdAt" className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer">
                 Creation date
               </DropdownMenuRadioItem>
@@ -154,7 +154,7 @@ export default function TaskFilters({
             <DropdownMenuSeparator className="bg-zinc-855" />
             
             <DropdownMenuLabel className="text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Sort Order</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+            <DropdownMenuRadioGroup value={sortOrder} onValueChange={(val) => setSortOrder(val as "asc" | "desc")}>
               <DropdownMenuRadioItem value="asc" className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer">
                 Ascending
               </DropdownMenuRadioItem>

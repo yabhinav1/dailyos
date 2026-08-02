@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getGridFSBucketForTrack } from "@/lib/mongo-storage";
 import { ObjectId } from "mongodb";
+import { getErrorMessage } from "@/lib/utils";
 
 // GridFS needs Node APIs, not available on Edge.
 export const runtime = "nodejs";
@@ -74,7 +75,7 @@ export async function GET(
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch (err: any) {
-    return new Response(err?.message || "Failed to stream track.", { status: 500 });
+  } catch (err: unknown) {
+    return new Response(getErrorMessage(err, "Failed to stream track."), { status: 500 });
   }
 }

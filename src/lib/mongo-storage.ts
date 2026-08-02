@@ -54,7 +54,7 @@ function collectMongoUris(): { uri: string; envLabel: string }[] {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var mongoPoolGlobal: MongoNode[] | undefined;
 }
 
@@ -90,7 +90,8 @@ async function getAvailableBytes(node: MongoNode): Promise<number> {
   try {
     const db = await node.dbPromise;
     const stats = await db.stats();
-    const used = Number((stats as any).storageSize ?? (stats as any).dataSize ?? 0);
+    const sizes = stats as { storageSize?: number; dataSize?: number };
+  const used = Number(sizes.storageSize ?? sizes.dataSize ?? 0);
     return quotaForNode(node) - used - SAFETY_MARGIN_BYTES;
   } catch {
     // Unreachable / errored cluster — treat as having no room so we skip it.

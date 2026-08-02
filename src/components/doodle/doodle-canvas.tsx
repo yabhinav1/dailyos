@@ -20,6 +20,9 @@ interface FloatingImage {
 
 type ToolbarPosition = "top" | "side";
 
+// Canva-style manipulation: drag the whole image, the 4 corners, or the 4 sides.
+type DragMode = "move" | "nw" | "ne" | "sw" | "se" | "n" | "s" | "e" | "w";
+
 interface DoodleCanvasProps {
   value?: string | null;
   onChange?: (dataUrl: string) => void;
@@ -65,7 +68,7 @@ export default function DoodleCanvas({
 
   const [images, setImages] = useState<FloatingImage[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const dragState = useRef<{ id: string; mode: "move" | "nw" | "ne" | "sw" | "se"; startX: number; startY: number; orig: FloatingImage } | null>(null);
+  const dragState = useRef<{ id: string; mode: DragMode; startX: number; startY: number; orig: FloatingImage } | null>(null);
 
   const pushRecentColor = useCallback((c: string) => {
     setRecentColors((prev) => [c, ...prev.filter((p) => p !== c)].slice(0, 6));
@@ -366,11 +369,7 @@ export default function DoodleCanvas({
   };
 
   // ---- Image drag / resize ----
-  const startDrag = (
-    e: React.PointerEvent,
-    id: string,
-    mode: "move" | "nw" | "ne" | "sw" | "se"
-  ) => {
+  const startDrag = (e: React.PointerEvent, id: string, mode: DragMode) => {
     e.stopPropagation();
     const img = images.find((i) => i.id === id);
     if (!img) return;
@@ -599,6 +598,9 @@ export default function DoodleCanvas({
               className={`absolute select-none ${isSelected ? "border-2 border-white ring-1 ring-black/40" : ""}`}
               style={{ left: img.x, top: img.y, width: img.w, height: img.h }}
             >
+              {/* Pasted/uploaded images are client-side data: URLs of unknown
+                  size — next/image cannot optimise those. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.src}
                 alt=""
@@ -625,8 +627,8 @@ export default function DoodleCanvas({
                       const fileInput = document.createElement("input");
                       fileInput.type = "file";
                       fileInput.accept = "image/*";
-                      fileInput.onchange = (e: any) => {
-                        const file = e.target?.files?.[0];
+                      fileInput.onchange = (e: Event) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = () => {

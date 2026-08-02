@@ -15,11 +15,13 @@ export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerUser, null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
+  // Derived, not stored: "signing in" is exactly "registration succeeded".
+  // Keeping it as state meant setting it synchronously inside the effect,
+  // which triggers an extra cascading render.
+  const signingIn = !!state?.success;
 
   useEffect(() => {
     if (state?.success) {
-      setSigningIn(true);
       signIn("credentials", {
         email,
         password,

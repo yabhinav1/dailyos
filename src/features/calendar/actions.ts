@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/utils";
 
 async function getUserId() {
   const session = await auth();
@@ -40,7 +42,7 @@ export async function updateEvent(eventId: string, data: Partial<z.infer<typeof 
   const existing = await prisma.calendarEvent.findFirst({ where: { id: eventId, userId } });
   if (!existing) throw new Error("Event not found.");
 
-  const updateData: any = { ...data };
+  const updateData: Prisma.CalendarEventUpdateInput = { ...data };
   if (data.startDate) updateData.startDate = new Date(data.startDate);
   if (data.endDate) updateData.endDate = new Date(data.endDate);
 
@@ -74,7 +76,7 @@ export async function getEventsAction(year: number, month: number) {
     });
 
     return { success: true, data: events };
-  } catch (error: any) {
-    return { success: false, message: error?.message };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }

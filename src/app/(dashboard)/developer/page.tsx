@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getCodingProjects, createCodingProject, getSnippets, createSnippet, deleteSnippet } from "@/features/developer/actions";
-import { Code, Terminal, Plus, Folder, Copy, Check, Trash2, Cpu, ExternalLink } from "lucide-react";
+import { Code, Terminal, Plus, Folder, Copy, Check, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import { getErrorMessage } from "@/lib/utils";
+import type { CodingProject, CodeSnippet } from "@/lib/types";
 
 export default function DeveloperPage() {
-  const [activeTab, setActiveTab] = useState<"projects" | "snippets">("projects");
-  const [projects, setProjects] = useState<any[]>([]);
-  const [snippets, setSnippets] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"projects" | "snippets" | "playground">("projects");
+  const [projects, setProjects] = useState<CodingProject[]>([]);
+  const [snippets, setSnippets] = useState<CodeSnippet[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // API Playground State
+  const [apiUrl, setApiUrl] = useState("https://jsonplaceholder.typicode.com/todos/1");
+  const [apiMethod, setApiMethod] = useState<"GET" | "POST">("GET");
+  const [apiResult, setApiResult] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<string | null>(null);
+  const [apiTesting, setApiTesting] = useState(false);
 
   // Dialog state
   const [showProjDialog, setShowProjDialog] = useState(false);
@@ -25,6 +33,31 @@ export default function DeveloperPage() {
   // Form State
   const [projForm, setProjForm] = useState({ name: "", description: "", githubUrl: "", techStack: "", status: "PLANNING" as const });
   const [snipForm, setSnipForm] = useState({ title: "", description: "", code: "", language: "javascript" });
+  const handleTestApi = async () => {
+    if (!apiUrl.trim()) return;
+    setApiTesting(true);
+    setApiResult(null);
+    setApiStatus(null);
+    const startTime = Date.now();
+    try {
+      const res = await fetch(apiUrl, { method: apiMethod });
+      const elapsed = Date.now() - startTime;
+      const text = await res.text();
+      let formatted = text;
+      try {
+        formatted = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        // response body was not JSON — show it raw
+      }
+      setApiStatus(`${res.status} ${res.statusText} • ${elapsed}ms`);
+      setApiResult(formatted);
+    } catch (err: unknown) {
+      setApiStatus("Error: Request Failed");
+      setApiResult(getErrorMessage(err, "Failed to execute request"));
+    } finally {
+      setApiTesting(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -110,7 +143,7 @@ export default function DeveloperPage() {
         <button
           onClick={() => setActiveTab("projects")}
           className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-            activeTab === "projects" ? "border-blue-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+            activeTab === "projects" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
           }`}
         >
           <Folder className="h-3.5 w-3.5" /> Projects
@@ -118,10 +151,18 @@ export default function DeveloperPage() {
         <button
           onClick={() => setActiveTab("snippets")}
           className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-            activeTab === "snippets" ? "border-blue-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+            activeTab === "snippets" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
           }`}
         >
           <Code className="h-3.5 w-3.5" /> Snippets
+        </button>
+        <button
+          onClick={() => setActiveTab("playground")}
+          className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+            activeTab === "playground" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          <Terminal className="h-3.5 w-3.5" /> API Tester
         </button>
       </div>
 
@@ -129,6 +170,42 @@ export default function DeveloperPage() {
       {loading ? (
         <div className="py-24 text-center">
           <Loader />
+        </div>
+      ) : activeTab === "playground" ? (
+        <div className="space-y-4 p-5 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-xl">
+          <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Terminal className="h-4 w-4 text-zinc-400" /> HTTP API Request Playground
+            </h2>
+            {apiStatus && <span className="text-xs font-mono text-emerald-400">{apiStatus}</span>}
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={apiMethod}
+              onChange={(e) => setApiMethod(e.target.value as "GET" | "POST")}
+              className="h-9 px-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-bold text-white"
+            >
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+            </select>
+            <Input
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              placeholder="https://api.example.com/data"
+              className="flex-1 h-9 bg-zinc-900 border-zinc-800 text-xs text-white"
+            />
+            <Button size="sm" onClick={handleTestApi} disabled={apiTesting} className="h-9 text-xs font-semibold px-4">
+              {apiTesting ? "Sending..." : "Send"}
+            </Button>
+          </div>
+          {apiResult && (
+            <div className="space-y-1 pt-2">
+              <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Response Data</label>
+              <pre className="p-4 rounded-lg bg-[#0a0a0c] border border-zinc-850 font-mono text-xs text-zinc-200 overflow-x-auto max-h-96 leading-relaxed select-all">
+                {apiResult}
+              </pre>
+            </div>
+          )}
         </div>
       ) : activeTab === "projects" ? (
         projects.length === 0 ? (

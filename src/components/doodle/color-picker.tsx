@@ -67,10 +67,14 @@ export default function ColorPicker({ value, onChange, recent = [], align = "lef
   const draggingSv = useRef(false);
   const draggingHue = useRef(false);
 
-  useEffect(() => {
+  // Re-sync from the `value` prop by adjusting state during render — React's
+  // documented alternative to a prop-watching effect, and one render cheaper.
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setHsv(hexToHsv(value));
     setHexInput(value);
-  }, [value]);
+  }
 
   useEffect(() => {
     if (!open) return;

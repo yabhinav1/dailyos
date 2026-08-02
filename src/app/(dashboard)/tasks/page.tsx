@@ -13,9 +13,11 @@ import TaskKanban from "@/features/tasks/components/task-kanban";
 import { motion, AnimatePresence } from "framer-motion";
 import TaskForm from "@/features/tasks/components/task-form";
 import { Loader } from "@/components/ui/loader";
+import type { Task } from "@/lib/types";
+import type { TaskFilters as TaskFilterValues } from "@/features/tasks/queries";
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "kanban">("list");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -30,7 +32,7 @@ export default function TasksPage() {
   // Fetch Tasks
   const fetchTasks = useCallback(async () => {
     setLoading(true);
-    const filters: any = {
+    const filters: TaskFilterValues = {
       search: search || undefined,
       status: status === "ALL" ? undefined : status,
       priority: priority === "ALL" ? undefined : priority,
@@ -49,13 +51,19 @@ export default function TasksPage() {
     fetchTasks();
   }, [fetchTasks]);
 
+  // The TaskStatus enum has no "DONE" member — this compared against a value
+  // that can never occur, so the progress bar was permanently stuck at 0%.
+  const completedCount = tasks.filter((t) => t.status === "COMPLETED").length;
+  const totalCount = tasks.length;
+  const percentComplete = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
   return (
     <div className="space-y-6">
       {/* Header Row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <CheckSquare className="h-5.5 w-5.5 text-blue-500" />
+            <CheckSquare className="h-5.5 w-5.5 text-zinc-300" />
             Tasks Board
           </h1>
           <p className="text-xs text-zinc-400 mt-1">Manage and track your private productivity items</p>
@@ -63,7 +71,7 @@ export default function TasksPage() {
 
         <div className="flex items-center gap-3 shrink-0">
           {/* List vs Kanban toggles */}
-          <Tabs value={view} onValueChange={(val: any) => setView(val)} className="h-8">
+          <Tabs value={view} onValueChange={(val) => setView(val as "list" | "kanban")} className="h-8">
             <TabsList className="bg-zinc-950 border border-zinc-850 p-0.5 h-8">
               <TabsTrigger
                 value="list"
@@ -93,6 +101,24 @@ export default function TasksPage() {
           </Button>
         </div>
       </div>
+
+      {/* Task Completion Progress Widget */}
+      {totalCount > 0 && (
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-md space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-zinc-300">Overall Task Completion</span>
+            <span className="font-mono text-zinc-400">{completedCount} of {totalCount} completed ({percentComplete}%)</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                percentComplete === 100 ? "bg-emerald-500" : percentComplete > 50 ? "bg-blue-500" : "bg-amber-500"
+              }`}
+              style={{ width: `${percentComplete}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Filters Toolbar */}
       <TaskFilters

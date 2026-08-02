@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { uploadFileToMongo, deleteFileFromMongo } from "@/lib/mongo-storage";
 import { searchSpotify } from "@/lib/music/spotify";
+import { getErrorMessage } from "@/lib/utils";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
 const ALLOWED_MIME = new Set(["audio/mpeg", "audio/mp3", "audio/mp4", "video/mp4", "audio/x-m4a", "audio/wav", "audio/ogg"]);
@@ -21,8 +22,8 @@ export async function searchSpotifyTracks(query: string) {
     await getUserId(); // require login, but Spotify search itself is app-only auth
     const results = await searchSpotify(query);
     return { success: true, data: results };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Search failed", data: [] };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Search failed"), data: [] };
   }
 }
 
@@ -46,8 +47,8 @@ export async function getTracks(mode?: string) {
       },
     });
     return { success: true, data: tracks };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to load tracks", data: [] };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to load tracks"), data: [] };
   }
 }
 
@@ -93,8 +94,8 @@ export async function uploadTrack(formData: FormData) {
 
     revalidatePath("/");
     return { success: true, data: { id: track.id } };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to upload track." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to upload track.") };
   }
 }
 
@@ -116,8 +117,8 @@ export async function deleteTrack(id: string) {
     await prisma.track.delete({ where: { id } });
     revalidatePath("/");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to delete track." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to delete track.") };
   }
 }
 
@@ -126,8 +127,8 @@ export async function getPlayerState() {
     const userId = await getUserId();
     const state = await prisma.playerState.findUnique({ where: { userId } });
     return { success: true, data: state };
-  } catch (error: any) {
-    return { success: false, message: error?.message, data: null };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error), data: null };
   }
 }
 
@@ -173,7 +174,7 @@ export async function savePlayerState(input: {
     });
 
     return { success: true };
-  } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to save player state." };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to save player state.") };
   }
 }

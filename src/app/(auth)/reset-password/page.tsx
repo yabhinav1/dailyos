@@ -1,6 +1,5 @@
 "use client";
-
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "@/features/auth/actions";
@@ -26,12 +25,12 @@ function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  useEffect(() => {
-    if (!token) {
-      setMessage({ type: "error", text: "No password reset token was provided. Please request a new link." });
-    }
-  }, [token]);
+  // Derived during render rather than pushed into state from an effect —
+  // a missing token is a property of the URL, not an event.
+  const missingToken = token
+    ? null
+    : { type: "error" as const, text: "No password reset token was provided. Please request a new link." };
+  const banner = message ?? missingToken;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,16 +78,15 @@ function ResetPasswordForm() {
           Enter your new password below to update your account access
         </p>
       </div>
-
-      {message && (
+      {banner && (
         <div
           className={`p-3 text-xs font-medium border rounded-lg ${
-            message.type === "success"
+            banner.type === "success"
               ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
               : "text-red-400 bg-red-500/10 border-red-500/20"
           }`}
         >
-          {message.text}
+          {banner.text}
         </div>
       )}
 

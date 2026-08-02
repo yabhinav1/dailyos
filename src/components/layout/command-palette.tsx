@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCommandPaletteStore } from "@/stores/command-palette-store";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -13,7 +12,6 @@ import {
   FileText,
   FolderOpen,
   GraduationCap,
-  Home,
   PenTool,
   Search,
   Settings,
@@ -31,13 +29,13 @@ export default function CommandPalette() {
   useKeyboardShortcut({ key: "k", ctrlKey: true }, () => {
     toggleOpen();
   });
-
-  // Reset query on close
-  useEffect(() => {
-    if (!isOpen) {
-      setQuery("");
-    }
-  }, [isOpen]);
+  // Reset the query when the palette closes, adjusting state during render
+  // instead of from an effect (avoids an extra cascading render).
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (!isOpen) setQuery("");
+  }
 
   const commands = [
     { name: "Go to Notes", href: "/notes", icon: FileText, category: "Navigation" },

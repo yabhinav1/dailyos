@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getErrorMessage, getErrorName } from "@/lib/utils";
 
 // Needs to fetch an external service and relay a live stream — Node runtime.
 export const runtime = "nodejs";
@@ -42,13 +43,13 @@ export async function GET(req: Request) {
         cache: "no-store",
         signal: controller.signal,
       });
-    } catch (fetchErr: any) {
-      console.error("[external-stream] fetch to resolver failed:", fetchErr?.message || fetchErr);
-      const isAbort = fetchErr?.name === "AbortError";
+    } catch (fetchErr: unknown) {
+      console.error("[external-stream] fetch to resolver failed:", getErrorMessage(fetchErr));
+      const isAbort = getErrorName(fetchErr) === "AbortError";
       return new Response(
         isAbort
           ? `Timed out connecting to the resolver at ${resolverUrl} after 8s — it's likely unreachable from Vercel (firewall/network issue on the resolver's host), even if it works fine from your own browser.`
-          : `Could not connect to the resolver: ${fetchErr?.message || fetchErr}`,
+          : `Could not connect to the resolver: ${getErrorMessage(fetchErr)}`,
         { status: 502 }
       );
     } finally {
@@ -74,7 +75,7 @@ export async function GET(req: Request) {
       status: upstream.status,
       headers,
     });
-  } catch (err: any) {
-    return new Response(err?.message || "Failed to reach resolver.", { status: 502 });
+  } catch (err: unknown) {
+    return new Response(getErrorMessage(err, "Failed to reach resolver."), { status: 502 });
   }
 }

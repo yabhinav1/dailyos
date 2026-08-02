@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getAnalyticsData } from "@/features/analytics/actions";
-import { BarChart3, TrendingUp, Calendar, BookOpen, Target, CheckCircle2 } from "lucide-react";
+import { BarChart3, Calendar, BookOpen, Target, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import type { AnalyticsData, HabitStat, StudyStat } from "@/lib/types";
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAnalytics = useCallback(async () => {
@@ -35,8 +36,8 @@ export default function AnalyticsPage() {
   const goalCompletionRate = data.goals.total > 0 ? Math.round((data.goals.completed / data.goals.total) * 100) : 0;
 
   // Max values for chart height calculations
-  const maxHabitCheckins = Math.max(...data.habitStats.map((d: any) => d.count), 1);
-  const maxStudyHours = Math.max(...data.studyStats.map((d: any) => d.hours), 1);
+  const maxHabitCheckins = Math.max(...data.habitStats.map((d: HabitStat) => d.count), 1);
+  const maxStudyHours = Math.max(...data.studyStats.map((d: StudyStat) => d.hours), 1);
 
   return (
     <div className="space-y-6">
@@ -54,7 +55,7 @@ export default function AnalyticsPage() {
           { label: "Tasks Done", value: `${data.tasks.completed}/${data.tasks.total}`, rate: `${taskCompletionRate}% rate`, color: "text-blue-400", icon: CheckCircle2 },
           { label: "Goals Reached", value: `${data.goals.completed}/${data.goals.total}`, rate: `${goalCompletionRate}% rate`, color: "text-emerald-400", icon: Target },
           { label: "Habits Tracked", value: data.habitsCount, rate: "active logs", color: "text-orange-400", icon: Calendar },
-          { label: "Study Focus Weeks", value: `${data.studyStats.reduce((acc: number, cur: any) => acc + cur.hours, 0)} hrs`, rate: "focus time", color: "text-indigo-400", icon: BookOpen },
+          { label: "Study Focus Weeks", value: `${data.studyStats.reduce((acc: number, cur: StudyStat) => acc + cur.hours, 0)} hrs`, rate: "focus time", color: "text-indigo-400", icon: BookOpen },
         ].map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -83,7 +84,7 @@ export default function AnalyticsPage() {
             <p className="text-[10px] text-zinc-500 mt-0.5">Total completed habits logged per day</p>
           </div>
           <div className="h-48 flex items-end gap-3 pt-6 border-b border-zinc-900/60 pb-1">
-            {data.habitStats.map((item: any, idx: number) => {
+            {data.habitStats.map((item: HabitStat, idx: number) => {
               const pct = (item.count / maxHabitCheckins) * 100;
               const dateObj = new Date(item.day);
               const label = dateObj.toLocaleDateString("en-US", { weekday: "short" });
@@ -108,7 +109,7 @@ export default function AnalyticsPage() {
             <p className="text-[10px] text-zinc-500 mt-0.5">Total focus hours logged per day</p>
           </div>
           <div className="h-48 flex items-end gap-3 pt-6 border-b border-zinc-900/60 pb-1">
-            {data.studyStats.map((item: any, idx: number) => {
+            {data.studyStats.map((item: StudyStat, idx: number) => {
               const pct = (item.hours / maxStudyHours) * 100;
               const dateObj = new Date(item.day);
               const label = dateObj.toLocaleDateString("en-US", { weekday: "short" });

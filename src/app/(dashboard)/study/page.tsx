@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import type { StudyData, StudySubject } from "@/lib/types";
+import { getWebkitAudioContext } from "@/lib/utils";
 
 // ── Pomodoro Timer ──
 const ALARM_STORAGE_KEY = "dailyos-pomodoro-alarm";
 
-function PomodoroTimer({ subjects, onSessionEnd }: { subjects: any[]; onSessionEnd: (subjectId: string | null, duration: number) => void }) {
+function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; onSessionEnd: (subjectId: string | null, duration: number) => void }) {
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
@@ -42,7 +44,7 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: any[]; onSessionE
 
   const playBeep = useCallback(() => {
     try {
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const Ctx = window.AudioContext || getWebkitAudioContext();
       const ctx = audioCtxRef.current || new Ctx();
       audioCtxRef.current = ctx;
       const now = ctx.currentTime;
@@ -192,7 +194,7 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: any[]; onSessionE
         <select value={selectedSubjectId || ""} onChange={(e) => setSelectedSubjectId(e.target.value || null)}
           className="w-full max-w-[200px] h-8 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white">
           <option value="">No subject</option>
-          {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
 
         <div className="flex items-center gap-2">
@@ -234,8 +236,66 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: any[]; onSessionE
   );
 }
 
+function FlashcardWidget() {
+  const [cards] = useState([
+    { question: "What is the time complexity of QuickSort in the average case?", answer: "O(n log n)" },
+    { question: "What is a Closure in JavaScript?", answer: "A function bundled together with references to its surrounding state (lexical environment)." },
+    { question: "What does ACID stand for in Database Transactions?", answer: "Atomicity, Consistency, Isolation, Durability." },
+    { question: "What is the HTTP status code 403?", answer: "403 Forbidden (Server understood request but refuses to authorize it)." },
+  ]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const card = cards[currentIndex];
+
+  return (
+    <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-xl space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+          <BookOpen className="h-3.5 w-3.5 text-zinc-400" /> Interactive Flashcards Deck
+        </h3>
+        <span className="text-[10px] font-mono text-zinc-500">Card {currentIndex + 1} of {cards.length}</span>
+      </div>
+
+      {/* 3D Flip Card Container */}
+      <div
+        onClick={() => setIsFlipped(!isFlipped)}
+        className="h-32 w-full rounded-xl border border-zinc-800 bg-zinc-900/90 p-5 flex flex-col items-center justify-center text-center cursor-pointer select-none transition-all duration-200 hover:border-zinc-700 shadow-lg"
+      >
+        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+          {isFlipped ? "Answer" : "Question (Click to flip)"}
+        </span>
+        <p className="text-sm font-semibold text-zinc-200 leading-snug">
+          {isFlipped ? card.answer : card.question}
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center pt-1">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentIndex === 0}
+          onClick={() => { setCurrentIndex((i) => Math.max(0, i - 1)); setIsFlipped(false); }}
+          className="text-xs border-zinc-800 text-zinc-400 h-7"
+        >
+          Previous
+        </Button>
+
+        <Button
+          size="sm"
+          disabled={currentIndex === cards.length - 1}
+          onClick={() => { setCurrentIndex((i) => Math.min(cards.length - 1, i + 1)); setIsFlipped(false); }}
+          className="text-xs font-semibold h-7"
+        >
+          Next Card
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function StudyPage() {
-  const [data, setData] = useState<any>({ subjects: [], recentSessions: [], totalMinutesThisWeek: 0 });
+  const [data, setData] = useState<StudyData>({ subjects: [], recentSessions: [], totalMinutesThisWeek: 0 });
   const [loading, setLoading] = useState(true);
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [showAddTopic, setShowAddTopic] = useState<string | null>(null);
@@ -298,6 +358,9 @@ export default function StudyPage() {
         </Button>
       </div>
 
+      {/* Interactive Flashcard Deck */}
+      <FlashcardWidget />
+
       {loading ? (
         <div className="py-24 text-center">
           <Loader />
@@ -313,7 +376,7 @@ export default function StudyPage() {
               <Card className="border-zinc-850 bg-[#0C0C0E]/40">
                 <CardContent className="p-4 space-y-2">
                   <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Recent Sessions</h3>
-                  {data.recentSessions.slice(0, 5).map((s: any) => (
+                  {data.recentSessions.slice(0, 5).map((s) => (
                     <div key={s.id} className="flex items-center justify-between py-1.5 border-b border-zinc-900 last:border-0">
                       <div className="flex items-center gap-2">
                         <Clock className="h-3 w-3 text-zinc-600" />
@@ -336,8 +399,8 @@ export default function StudyPage() {
                 <p className="text-xs text-zinc-500 mt-1">Add your first subject to start tracking topics</p>
               </div>
             ) : (
-              data.subjects.map((subject: any) => {
-                const completedTopics = subject.topics.filter((t: any) => t.isCompleted).length;
+              data.subjects.map((subject) => {
+                const completedTopics = subject.topics.filter((t) => t.isCompleted).length;
                 const totalTopics = subject.topics.length;
                 const progress = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
@@ -369,7 +432,7 @@ export default function StudyPage() {
 
                       {/* Topics */}
                       <div className="space-y-1">
-                        {subject.topics.map((topic: any) => (
+                        {subject.topics.map((topic) => (
                           <div key={topic.id} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-zinc-900/40 transition-colors group">
                             <button onClick={() => handleToggleTopic(topic.id, topic.isCompleted)}
                               className="shrink-0">

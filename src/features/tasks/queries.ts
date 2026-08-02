@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { Priority, TaskStatus } from "@prisma/client";
+import { Prisma, Priority, TaskStatus } from "@prisma/client";
 
-interface TaskFilters {
+export interface TaskFilters {
   status?: TaskStatus;
   priority?: Priority;
   projectId?: string;
@@ -24,7 +24,7 @@ async function getUserIdOrThrow() {
 export async function getTasks(filters: TaskFilters = {}) {
   const userId = await getUserIdOrThrow();
 
-  const whereClause: any = {
+  const whereClause: Prisma.TaskWhereInput = {
     userId,
     deletedAt: null, // Only fetch active tasks
   };
@@ -56,10 +56,9 @@ export async function getTasks(filters: TaskFilters = {}) {
     ];
   }
 
-  const orderByClause: any = {};
   const sortBy = filters.sortBy || "createdAt";
   const sortOrder = filters.sortOrder || "desc";
-  orderByClause[sortBy] = sortOrder;
+  const orderByClause: Prisma.TaskOrderByWithRelationInput = { [sortBy]: sortOrder };
 
   return prisma.task.findMany({
     where: whereClause,

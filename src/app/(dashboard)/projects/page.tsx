@@ -7,10 +7,21 @@ import {
   deleteProject,
   toggleProjectCompleted,
 } from "@/features/projects/actions";
-import { createResource, deleteResource, getResourcesForProject, uploadProjectFile } from "@/features/projects/actions";
+import { deleteResource, getResourcesForProject, uploadProjectFile } from "@/features/projects/actions";
 import {
-  FolderKanban, Plus, Trash2, CheckCircle2, Circle, Calendar, MoreVertical, Edit,
-  Paperclip, FileText, Image as ImageIcon, Download, X, Upload, AlertCircle,
+  FolderKanban,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  Calendar,
+  MoreVertical,
+  Paperclip,
+  FileText,
+  Download,
+  X,
+  Upload,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +33,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Loader } from "@/components/ui/loader";
+import { getErrorMessage } from "@/lib/utils";
+import type { Project, ProjectResource } from "@/lib/types";
 
 // Keep in sync with MAX_UPLOAD_BYTES in src/features/projects/actions.ts.
 const MAX_UPLOAD_MB = 50;
@@ -77,8 +90,8 @@ function CreateProjectDialog({
       setName(""); setDescription(""); setDeadline("");
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create project");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to create project"));
     } finally {
       setLoading(false);
     }
@@ -144,10 +157,10 @@ function ProjectFilesDialog({
   project,
   onClose,
 }: {
-  project: any | null;
+  project: Project | null;
   onClose: () => void;
 }) {
-  const [files, setFiles] = useState<any[]>([]);
+  const [files, setFiles] = useState<ProjectResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,7 +207,8 @@ function ProjectFilesDialog({
 
   const isImage = (mime?: string | null) => !!mime && mime.startsWith("image/");
   const isPdf = (mime?: string | null) => mime === "application/pdf";
-  const fileHref = (f: any) => (f.type === "FILE" ? `/api/files/${f.id}` : f.url);
+  // LINK resources store the target in `url`, which is nullable in the schema.
+  const fileHref = (f: ProjectResource) => (f.type === "FILE" ? `/api/files/${f.id}` : f.url ?? "#");
 
   return (
     <Dialog open={!!project} onOpenChange={onClose}>
@@ -228,6 +242,9 @@ function ProjectFilesDialog({
             files.map((f) => (
               <div key={f.id} className="flex items-center gap-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2">
                 {isImage(f.mimeType) ? (
+                  // Served as an authenticated blob from /api/files — not a
+                  // static asset, so next/image can't optimise or cache it.
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={fileHref(f)} alt={f.title} className="h-8 w-8 rounded object-cover shrink-0" />
                 ) : (
                   <FileText className="h-4 w-4 text-zinc-500 shrink-0" />
@@ -262,14 +279,13 @@ function ProjectFilesDialog({
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
-  const [filesProject, setFilesProject] = useState<any | null>(null);
+  const [filesProject, setFilesProject] = useState<Project | null>(null);
 
   const fetchProjects = useCallback(async () => {
-    setLoading(true);
     const res = await getProjectsAction();
     if (res.success && res.data) setProjects(res.data);
     setLoading(false);

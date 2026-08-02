@@ -12,10 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Loader } from "@/components/ui/loader";
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from "@/features/notifications/actions";
+import FocusTimerBar from "@/components/focus/focus-timer-bar";
+import { getErrorMessage } from "@/lib/utils";
+import type { Notification } from "@/lib/types";
 
 const typeDotColor: Record<string, string> = {
   INFO: "bg-blue-500",
@@ -29,8 +31,7 @@ export default function Header() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebarStore();
   const { setTheme } = useTheme();
-
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -52,18 +53,16 @@ export default function Header() {
         setUnreadCount(0);
         setNotifError(res.message || "Couldn't load notifications.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Belt-and-suspenders: even an unexpected/network-level failure
       // stays contained to the dropdown instead of bubbling up.
       setNotifications([]);
       setUnreadCount(0);
-      setNotifError(err?.message || "Couldn't load notifications.");
+      setNotifError(getErrorMessage(err, "Couldn't load notifications."));
     } finally {
       setLoadingNotifs(false);
     }
   };
-
-  // Poll for new notifications every 60s so the badge stays fresh.
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000);
@@ -80,7 +79,7 @@ export default function Header() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
     const res = await markNotificationRead(id);
-    if (!res.success) fetchNotifications(); // resync with server if the update failed
+    if (!res.success) fetchNotifications();
   };
 
   const handleMarkAllRead = async () => {
@@ -89,11 +88,8 @@ export default function Header() {
     const res = await markAllNotificationsRead();
     if (!res.success) fetchNotifications();
   };
-
-  // Create breadcrumb list from URL pathname
   const pathSegments = pathname.split("/").filter(Boolean);
   
-  // Format segment names nicely
   const formatSegment = (segment: string) => {
     return segment
       .replace(/-/g, " ")
@@ -102,7 +98,6 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-[#0d0d0d]/85 backdrop-blur-md px-6">
-      {/* Left section: sidebar toggle and breadcrumbs */}
       <div className="flex items-center gap-4">
         {isCollapsed && (
           <Button
@@ -114,13 +109,12 @@ export default function Header() {
             <Menu className="h-4.5 w-4.5" />
           </Button>
         )}
-
-        {/* Breadcrumb Navigator */}
         <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-xs font-medium">
           <span className="text-zinc-500">DailyOS</span>
           {pathSegments.map((segment, index) => {
             const isLast = index === pathSegments.length - 1;
             
+
             return (
               <React.Fragment key={segment}>
                 <span className="text-zinc-400 dark:text-zinc-700">/</span>
@@ -132,10 +126,8 @@ export default function Header() {
           })}
         </nav>
       </div>
-
-      {/* Right section: theme switcher and alerts */}
       <div className="flex items-center gap-3">
-        {/* Notifications */}
+        <FocusTimerBar />
         <DropdownMenu open={notifOpen} onOpenChange={handleOpenChange}>
           <DropdownMenuTrigger
             className="relative flex h-8 w-8 items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
@@ -177,11 +169,11 @@ export default function Header() {
                   </button>
                 </div>
               ) : notifications.length === 0 ? (
-                <p className="px-3 py-8 text-center text-zinc-500">You're all caught up.</p>
+                <p className="px-3 py-8 text-center text-zinc-500">You&apos;re all caught up.</p>
               ) : (
-                notifications.map((n) => (
+                notifications.map((n, i) => (
                   <button
-                    key={n?.id ?? Math.random()}
+                    key={n?.id ?? `notif-${i}`}
                     onClick={() => n?.id && handleNotifClick(n.id, !!n.read)}
                     className={`w-full text-left px-3 py-2.5 border-b border-zinc-100 dark:border-zinc-900 last:border-0 transition-colors ${
                       n?.read ? "opacity-60" : "hover:bg-zinc-100 dark:hover:bg-zinc-900/60"
