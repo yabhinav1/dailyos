@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { Eraser, Download, Trash2, ImagePlus, X, PaintBucket, PanelTop, PanelLeft } from "lucide-react";
+import { Eraser, Download, Trash2, ImagePlus, X, PaintBucket, PanelTop, PanelLeft, Crop } from "lucide-react";
 import ColorPicker from "./color-picker";
 
 const COLORS = ["#f4f4f5", "#3b82f6", "#22d3ee", "#a855f7", "#ec4899", "#ef4444", "#22c55e", "#eab308", "#000000"];
@@ -417,6 +417,16 @@ export default function DoodleCanvas({
             h = Math.max(minSize, o.h - dy);
             x = o.x + (o.w - w);
             y = o.y + (o.h - h);
+          } else if (drag.mode === "e") {
+            w = Math.max(minSize, o.w + dx);
+          } else if (drag.mode === "w") {
+            w = Math.max(minSize, o.w - dx);
+            x = o.x + (o.w - w);
+          } else if (drag.mode === "s") {
+            h = Math.max(minSize, o.h + dy);
+          } else if (drag.mode === "n") {
+            h = Math.max(minSize, o.h - dy);
+            y = o.y + (o.h - h);
           }
           return { ...img, x, y, w, h };
         })
@@ -561,7 +571,7 @@ export default function DoodleCanvas({
 
       {!isSide && (
         <p className="text-[10px] text-zinc-600 -mt-1">
-          Tip: paste an image (Ctrl+V), then drag it or pull its corners to resize — freely, no locked ratio.
+          Tip: paste an image (Ctrl+V), then drag it or pull its 8 Canva handles to resize and move freely.
         </p>
       )}
 
@@ -586,7 +596,7 @@ export default function DoodleCanvas({
           return (
             <div
               key={img.id}
-              className="absolute"
+              className={`absolute select-none ${isSelected ? "border-2 border-white ring-1 ring-black/40" : ""}`}
               style={{ left: img.x, top: img.y, width: img.w, height: img.h }}
             >
               <img
@@ -594,8 +604,8 @@ export default function DoodleCanvas({
                 alt=""
                 draggable={false}
                 onPointerDown={(e) => startDrag(e, img.id, "move")}
-                className={`h-full w-full select-none rounded-sm object-fill ${
-                  isSelected ? "ring-2 ring-blue-500 cursor-move" : "cursor-pointer"
+                className={`h-full w-full select-none object-fill ${
+                  isSelected ? "cursor-move" : "cursor-pointer"
                 }`}
               />
               {isSelected && (
@@ -603,22 +613,82 @@ export default function DoodleCanvas({
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => handleDeleteImage(img.id)}
-                    className="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white shadow shadow-black/50 hover:bg-red-500"
+                    className="absolute -top-3 -right-3 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-red-600 text-white shadow-lg shadow-black/80 hover:bg-red-500 transition-transform hover:scale-110 z-10"
                     aria-label="Delete image"
+                    title="Delete Image"
                   >
                     <X className="h-3 w-3" />
                   </button>
-                  {(["nw", "ne", "sw", "se"] as const).map((corner) => (
-                    <div
-                      key={corner}
-                      onPointerDown={(e) => startDrag(e, img.id, corner)}
-                      className={`absolute h-3 w-3 rounded-full border-2 border-blue-500 bg-white shadow shadow-black/40 ${
-                        corner === "nw" ? "-top-1.5 -left-1.5 cursor-nwse-resize" : ""
-                      } ${corner === "ne" ? "-top-1.5 -right-1.5 cursor-nesw-resize" : ""} ${
-                        corner === "sw" ? "-bottom-1.5 -left-1.5 cursor-nesw-resize" : ""
-                      } ${corner === "se" ? "-bottom-1.5 -right-1.5 cursor-nwse-resize" : ""}`}
-                    />
-                  ))}
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => {
+                      const fileInput = document.createElement("input");
+                      fileInput.type = "file";
+                      fileInput.accept = "image/*";
+                      fileInput.onchange = (e: any) => {
+                        const file = e.target?.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const newSrc = reader.result as string;
+                            setImages((prev) =>
+                              prev.map((item) => {
+                                if (item.id === img.id) {
+                                  const newImg = new Image();
+                                  newImg.src = newSrc;
+                                  return { ...item, src: newSrc, el: newImg };
+                                }
+                                return item;
+                              })
+                            );
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      fileInput.click();
+                    }}
+                    className="absolute -top-3 -left-3 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-zinc-800 text-white shadow-lg shadow-black/80 hover:bg-zinc-700 transition-transform hover:scale-110 border border-zinc-700 z-10"
+                    aria-label="Replace image"
+                    title="Replace / Edit Image"
+                  >
+                    <Crop className="h-3 w-3" />
+                  </button>
+
+                  {/* 4 Canva Corner Handles */}
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "nw")}
+                    className="absolute -top-2 -left-2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "ne")}
+                    className="absolute -top-2 -right-2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-nesw-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "sw")}
+                    className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-nesw-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "se")}
+                    className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
+                  />
+
+                  {/* 4 Canva Side Handles */}
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "n")}
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-ns-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "s")}
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-ns-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "w")}
+                    className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-ew-resize hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onPointerDown={(e) => startDrag(e, img.id, "e")}
+                    className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-zinc-900 bg-white shadow-md cursor-ew-resize hover:scale-125 transition-transform"
+                  />
                 </>
               )}
             </div>

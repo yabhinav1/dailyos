@@ -293,7 +293,7 @@ export default function StudyPage() {
           </p>
         </div>
         <Button size="sm" onClick={() => setShowAddSubject(true)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white gap-1 text-xs font-semibold h-8 shrink-0">
+          className="gap-1 text-xs font-semibold h-8 shrink-0">
           <Plus className="h-3.5 w-3.5" /> Add Subject
         </Button>
       </div>

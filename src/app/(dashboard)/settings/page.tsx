@@ -18,7 +18,6 @@ import { useSession, signIn } from "next-auth/react";
 import {
   Settings,
   Save,
-  ShieldAlert,
   Moon,
   User,
   Shuffle,
@@ -30,6 +29,8 @@ import {
   KeyRound,
   CheckCircle2,
   XCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,44 @@ function InlineBanner({ banner, onDismiss }: { banner: Banner; onDismiss: () => 
       <span className="flex-1">{banner.text}</span>
       <button onClick={onDismiss} className="text-[10px] opacity-70 hover:opacity-100">
         Dismiss
+      </button>
+    </div>
+  );
+}
+
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  minLength,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  minLength?: number;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        type={showPassword ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        minLength={minLength}
+        className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9 pr-9 focus-visible:ring-1 focus-visible:ring-blue-500/40"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors p-0.5 rounded focus:outline-none"
+        tabIndex={-1}
+        aria-label={showPassword ? "Hide password" : "Show password"}
+      >
+        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
       </button>
     </div>
   );
@@ -291,16 +330,24 @@ export default function SettingsPage() {
     }
   };
 
-  // ---- Preferences ----
-  const handleSavePreferences = async () => {
-    setSaving(true);
+  // ---- Preferences (Auto-save) ----
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme);
     try {
-      await updateUserSettings(theme, reminders);
-      showBanner("success", "Preferences updated successfully!");
+      await updateUserSettings(newTheme, reminders);
+      showBanner("success", "Theme preference saved!");
     } catch (err: any) {
-      showBanner("error", err?.message || "Failed to update settings.");
-    } finally {
-      setSaving(false);
+      showBanner("error", err?.message || "Failed to save theme preference.");
+    }
+  };
+
+  const handleRemindersChange = async (newReminders: boolean) => {
+    setReminders(newReminders);
+    try {
+      await updateUserSettings(theme, newReminders);
+      showBanner("success", "Reminder preference saved!");
+    } catch (err: any) {
+      showBanner("error", err?.message || "Failed to save reminder preference.");
     }
   };
 
@@ -374,7 +421,7 @@ export default function SettingsPage() {
                   <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })}
                     className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" required disabled={saving} />
                 </div>
-                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-8 font-semibold" disabled={saving}>
+                <Button type="submit" size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700/60 text-xs gap-1.5 h-8 font-medium shadow-sm transition-all" disabled={saving}>
                   <Save className="h-3.5 w-3.5" /> Save Profile
                 </Button>
               </form>
@@ -457,23 +504,39 @@ export default function SettingsPage() {
                 {hasPassword && (
                   <div className="space-y-1">
                     <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Current Password</Label>
-                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" disabled={passwordBusy} />
+                    <PasswordInput
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      disabled={passwordBusy}
+                    />
                   </div>
                 )}
                 <div className="space-y-1">
                   <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">New Password</Label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                    className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" minLength={6} disabled={passwordBusy} />
+                  <PasswordInput
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={6}
+                    disabled={passwordBusy}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Confirm New Password</Label>
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" minLength={6} disabled={passwordBusy} />
+                  <PasswordInput
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={6}
+                    disabled={passwordBusy}
+                  />
                 </div>
-                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-8 font-semibold" disabled={passwordBusy || !newPassword}>
-                  <KeyRound className="h-3.5 w-3.5" /> {hasPassword ? "Update Password" : "Set Password"}
-                </Button>
+                <button
+                  type="submit"
+                  disabled={passwordBusy || !newPassword}
+                  className="w-full sm:w-auto h-9 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-[length:200%_100%] hover:bg-right transition-all duration-300 text-white text-xs font-medium rounded-lg shadow-md shadow-indigo-500/20 active:scale-[0.98] border border-indigo-400/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  <span>{passwordBusy ? "Updating..." : hasPassword ? "Update Password" : "Set Password"}</span>
+                </button>
               </form>
             </CardContent>
           </Card>
@@ -522,20 +585,26 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Preferences Card */}
+          {/* Preferences Card (Auto-saves on change) */}
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Moon className="h-3.5 w-3.5" /> App Preferences
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Moon className="h-3.5 w-3.5" /> App Preferences
+                </h2>
+                <span className="text-[10px] text-zinc-500 font-medium">Auto-saves on change</span>
+              </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-xs text-zinc-200">Theme Mode</Label>
                     <p className="text-[10px] text-zinc-500">Select application visual theme</p>
                   </div>
-                  <select value={theme} onChange={(e) => setTheme(e.target.value)}
-                    className="h-8 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white">
+                  <select
+                    value={theme}
+                    onChange={(e) => handleThemeChange(e.target.value)}
+                    className="h-8 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white focus:outline-none focus:border-zinc-700 cursor-pointer"
+                  >
                     <option value="dark">Dark Theme</option>
                     <option value="light">Light Theme</option>
                     <option value="system">System Default</option>
@@ -547,31 +616,13 @@ export default function SettingsPage() {
                     <Label className="text-xs text-zinc-200">Reminders</Label>
                     <p className="text-[10px] text-zinc-500">Enable automated email alerts for upcoming items</p>
                   </div>
-                  <input type="checkbox" checked={reminders} onChange={(e) => setReminders(e.target.checked)}
-                    className="h-4 w-4 bg-zinc-900 border-zinc-800 text-blue-500 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer" />
+                  <input
+                    type="checkbox"
+                    checked={reminders}
+                    onChange={(e) => handleRemindersChange(e.target.checked)}
+                    className="h-4 w-4 bg-zinc-900 border-zinc-800 text-blue-500 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  />
                 </div>
-
-                <Button onClick={handleSavePreferences} size="sm" className="bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-8 font-semibold" disabled={saving}>
-                  <Save className="h-3.5 w-3.5" /> Save Preferences
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Free SMTP Guide Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
-                <ShieldAlert className="h-3.5 w-3.5" /> 100% Free SMTP Guide (OTP & Verification)
-              </h2>
-              <p className="text-[11px] text-zinc-400 leading-relaxed">
-                To send registration codes & OTP reset passwords for free without entering your credit card, customize your active <code>.env</code> file with standard Gmail App Passwords or Brevo SMTP:
-              </p>
-              <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 font-mono text-[10px] text-zinc-500 space-y-1">
-                <p>SMTP_HOST="smtp.gmail.com"</p>
-                <p>SMTP_PORT=587</p>
-                <p>SMTP_USER="your-gmail@gmail.com"</p>
-                <p>SMTP_PASSWORD="your-16-digit-app-password"</p>
               </div>
             </CardContent>
           </Card>
@@ -580,3 +631,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

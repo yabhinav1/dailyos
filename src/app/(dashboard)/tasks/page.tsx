@@ -86,7 +86,7 @@ export default function TasksPage() {
           <Button
             size="sm"
             onClick={() => setShowCreateDialog(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white gap-1 text-xs font-semibold h-8 cursor-pointer"
+            className="gap-1 text-xs font-semibold h-8 cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             New Task

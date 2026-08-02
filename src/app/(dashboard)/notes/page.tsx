@@ -7,7 +7,7 @@ import {
 } from "@/features/notes/actions";
 import {
   FileText, FolderOpen, Plus, Search, Pin, Star, Trash2, FolderPlus, X, Save,
-  PenTool, Type, PanelLeftClose, PanelLeftOpen, ChevronDown, AlertCircle,
+  PenTool, Type, PanelLeftClose, PanelLeftOpen, ChevronDown, AlertCircle, Maximize2, Minimize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ export default function NotesPage() {
   const [panelHidden, setPanelHidden] = useState(false);
   const [foldersCollapsed, setFoldersCollapsed] = useState(false);
   const [notesListCollapsed, setNotesListCollapsed] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Editor state (local buffer while editing)
@@ -43,6 +44,17 @@ export default function NotesPage() {
   const [editorDoodle, setEditorDoodle] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"write" | "doodle">("write");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Esc key listener to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullScreen]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -155,10 +167,25 @@ export default function NotesPage() {
     <div className="flex h-[calc(100vh-120px)] gap-0 -mx-6 -mt-6 overflow-hidden">
       {/* ── LEFT SIDEBAR: Folders + Notes List ── */}
       <div
-        className={`flex flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-200 ${
-          panelHidden ? "w-0 border-r-0" : "w-64"
+        className={`flex flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+          panelHidden ? "w-0 border-r-0 opacity-0 pointer-events-none" : "w-64 opacity-100"
         }`}
       >
+        {/* Sidebar Header with Hide/Collapse Toggle */}
+        <div className="p-3 border-b border-zinc-200 dark:border-zinc-900 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/40">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Notes Sidebar
+          </span>
+          <button
+            onClick={() => setPanelHidden(true)}
+            title="Hide notes sidebar"
+            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-1 text-[10px]"
+          >
+            <PanelLeftClose className="h-3.5 w-3.5" />
+            <span>Hide</span>
+          </button>
+        </div>
+
         {/* Search */}
         <div className="p-3 border-b border-zinc-200 dark:border-zinc-900">
           <div className="relative">
@@ -236,7 +263,7 @@ export default function NotesPage() {
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
                         className="h-7 text-[11px] bg-zinc-900 border-zinc-800 text-white placeholder-zinc-600"
                       />
-                      <button onClick={handleCreateFolder} className="text-blue-500 hover:text-blue-400 p-1">
+                      <button onClick={handleCreateFolder} className="text-indigo-400 hover:text-indigo-300 p-1">
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -276,7 +303,7 @@ export default function NotesPage() {
                 <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${notesListCollapsed ? "-rotate-90" : ""}`} />
                 {notes.length} Notes
               </button>
-              <button onClick={handleCreateNote} className="text-zinc-600 hover:text-blue-400 transition-colors">
+              <button onClick={handleCreateNote} className="text-zinc-600 hover:text-indigo-400 transition-colors">
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -313,25 +340,33 @@ export default function NotesPage() {
 
         {/* Create Note Button */}
         <div className="p-3 border-t border-zinc-200 dark:border-zinc-900">
-          <Button onClick={handleCreateNote} size="sm" className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-8">
+          <Button onClick={handleCreateNote} size="sm" className="w-full text-xs gap-1.5 h-8 font-semibold">
             <Plus className="h-3.5 w-3.5" /> New Note
           </Button>
         </div>
       </div>
 
       {/* ── MAIN EDITOR AREA ── */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden">
+      <div
+        className={
+          isFullScreen
+            ? "fixed inset-0 z-[80] flex flex-col bg-[#0d0d0d] p-6 overflow-hidden animate-in fade-in duration-200"
+            : "flex-1 flex flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden"
+        }
+      >
         {selectedNote ? (
           <>
             {/* Title Bar */}
             <div className="flex items-center gap-3 px-6 pt-5 pb-3 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
-              <button
-                onClick={() => setPanelHidden((v) => !v)}
-                title={panelHidden ? "Show notes list" : "Hide notes list"}
-                className="text-zinc-500 hover:text-white transition-colors shrink-0"
-              >
-                {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-              </button>
+              {!isFullScreen && (
+                <button
+                  onClick={() => setPanelHidden((v) => !v)}
+                  title={panelHidden ? "Show notes list" : "Hide notes list"}
+                  className="text-zinc-500 hover:text-white transition-colors shrink-0"
+                >
+                  {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                </button>
+              )}
               <Input
                 value={editorTitle}
                 onChange={(e) => handleTitleChange(e.target.value)}
@@ -356,6 +391,17 @@ export default function NotesPage() {
                   <PenTool className="h-3 w-3" /> Doodle
                 </button>
               </div>
+
+              {/* Fullscreen Button */}
+              <button
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                title={isFullScreen ? "Exit Fullscreen (Esc)" : "Fullscreen View"}
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] font-medium text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors shrink-0"
+              >
+                {isFullScreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{isFullScreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+              </button>
+
               <span className={`text-[10px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-600 opacity-60"}`}>
                 {saving ? "Saving..." : "Auto-saved"}
               </span>
@@ -406,7 +452,7 @@ export default function NotesPage() {
             <FileText className="h-12 w-12 text-zinc-800" />
             <p className="text-sm font-semibold text-zinc-500">Select a note to start editing</p>
             <p className="text-xs text-zinc-600">Or create a new one from the sidebar</p>
-            <Button onClick={handleCreateNote} size="sm" className="mt-2 bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5">
+            <Button onClick={handleCreateNote} size="sm" className="mt-2 text-xs gap-1.5 font-semibold">
               <Plus className="h-3.5 w-3.5" /> New Note
             </Button>
           </div>

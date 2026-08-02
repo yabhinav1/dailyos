@@ -244,7 +244,7 @@ export default function TaskForm({
         </Button>
         <Button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9"
+          className="text-xs font-semibold h-9 px-4"
           disabled={loading}
         >
           {loading ? "Saving..." : isEdit ? "Save Changes" : "Create Task"}

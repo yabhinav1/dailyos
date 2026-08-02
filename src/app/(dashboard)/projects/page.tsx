@@ -130,7 +130,7 @@ function CreateProjectDialog({
               Cancel
             </Button>
             <Button type="submit"
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9" disabled={loading}>
+              className="text-xs font-semibold h-9 px-4" disabled={loading}>
               {loading ? "Creating..." : "Create Project"}
             </Button>
           </div>
@@ -308,7 +308,7 @@ export default function ProjectsPage() {
         <Button
           size="sm"
           onClick={() => setShowCreate(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white gap-1 text-xs font-semibold h-8 shrink-0"
+          className="gap-1 text-xs font-semibold h-8 shrink-0"
         >
           <Plus className="h-3.5 w-3.5" /> New Project
         </Button>

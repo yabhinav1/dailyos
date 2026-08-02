@@ -93,12 +93,12 @@ export default function DeveloperPage() {
         <div className="flex gap-2">
           {activeTab === "projects" ? (
             <Button size="sm" onClick={() => setShowProjDialog(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white gap-1 text-xs font-semibold h-8 shrink-0">
+              className="gap-1 text-xs font-semibold h-8 shrink-0">
               <Plus className="h-3.5 w-3.5" /> New Project
             </Button>
           ) : (
             <Button size="sm" onClick={() => setShowSnipDialog(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white gap-1 text-xs font-semibold h-8 shrink-0">
+              className="gap-1 text-xs font-semibold h-8 shrink-0">
               <Plus className="h-3.5 w-3.5" /> New Snippet
             </Button>
           )}
@@ -240,7 +240,7 @@ export default function DeveloperPage() {
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowProjDialog(false)}
                 className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-8">Create Project</Button>
+              <Button type="submit" className="text-xs font-semibold h-8 px-4">Create Project</Button>
             </div>
           </form>
         </DialogContent>
@@ -286,7 +286,7 @@ export default function DeveloperPage() {
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowSnipDialog(false)}
                 className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-8">Save Snippet</Button>
+              <Button type="submit" className="text-xs font-semibold h-8 px-4">Save Snippet</Button>
             </div>
           </form>
         </DialogContent>
