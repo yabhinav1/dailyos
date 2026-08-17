@@ -1,4 +1,4 @@
-# 🧠 DailyOS — Personal Productivity Operating System
+# DailyOS — Personal Productivity Operating System
 
 DailyOS is a production-grade, secure, and highly polished personal productivity operating system designed for BTech studies, developer careers, habit tracking, and goal planning.
 
