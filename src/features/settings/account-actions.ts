@@ -70,6 +70,11 @@ async function collectUserData(userId: string) {
   return user;
 }
 
+async function buildExportJson(userId: string) {
+  const data = await collectUserData(userId);
+  return JSON.stringify({ exportedAt: new Date().toISOString(), account: data }, null, 2);
+}
+
 const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address.");
 
 /**
@@ -100,12 +105,7 @@ export async function requestDataExport(alternateEmail?: string) {
       destination = parsed.data;
     }
 
-    const data = await collectUserData(userId);
-    const json = JSON.stringify(
-      { exportedAt: new Date().toISOString(), account: data },
-      null,
-      2
-    );
+    const json = await buildExportJson(userId);
 
     await sendDataExportEmail(destination, json, account.email);
 
@@ -141,7 +141,18 @@ export async function requestAccountDeletion() {
     });
 
     if (user.email) {
-      await sendAccountDeletionScheduledEmail(user.email, deletesAt);
+      // Attach the data to the warning. After the deadline there is no account
+      // to sign into and no link that would still work, so this is the last
+      // moment the data can reliably reach the person it belongs to. A failure
+      // to build or send it must not leave the deletion unscheduled — that is
+      // already committed above.
+      let exportJson: string | undefined;
+      try {
+        exportJson = await buildExportJson(userId);
+      } catch (err) {
+        console.error("[deletion] could not build the export for the notice:", err);
+      }
+      await sendAccountDeletionScheduledEmail(user.email, deletesAt, exportJson);
     }
 
     return { success: true, deletesAt: deletesAt.toISOString() };

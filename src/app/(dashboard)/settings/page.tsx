@@ -14,7 +14,7 @@ import {
   changePassword,
   unlinkAccount,
 } from "@/features/settings/actions";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -46,7 +46,6 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   requestDataExport,
   requestAccountDeletion,
-  cancelAccountDeletion,
 } from "@/features/settings/account-actions";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -165,7 +164,6 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deletionPending, setDeletionPending] = useState<string | null>(null);
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -196,7 +194,6 @@ export default function SettingsPage() {
         setPendingEmail(user?.pendingEmail || null);
         setAvatarUrl(user?.image || "");
         setHasPassword(!!user?.hasPassword);
-        setDeletionPending(user?.deletionScheduledAt ? new Date(user.deletionScheduledAt).toISOString() : null);
         setAccounts(accounts || []);
         if (settings) {
           setTheme(settings.theme);
@@ -234,12 +231,13 @@ export default function SettingsPage() {
     try {
       const res = await requestAccountDeletion();
       if (res.success && res.deletesAt) {
-        setDeletionPending(res.deletesAt);
-        setConfirmDelete(false);
-        showBanner("success", "Account scheduled for deletion. You have 24 hours to change your mind.");
-      } else {
-        showBanner("error", res.message || "Couldn't schedule the deletion.");
+        // Signing out is part of deleting: staying in a workspace you just
+        // asked to have erased makes no sense, and signing back in is what
+        // surfaces the cancel prompt.
+        await signOut({ callbackUrl: "/login?deletion=scheduled" });
+        return;
       }
+      showBanner("error", res.message || "Couldn't schedule the deletion.");
     } catch (err: unknown) {
       showBanner("error", getErrorMessage(err, "Couldn't schedule the deletion."));
     } finally {
@@ -247,22 +245,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCancelDeletion = async () => {
-    setDeleting(true);
-    try {
-      const res = await cancelAccountDeletion();
-      if (res.success) {
-        setDeletionPending(null);
-        showBanner("success", "Deletion cancelled. Your account is safe.");
-      } else {
-        showBanner("error", res.message || "Couldn't cancel the deletion.");
-      }
-    } catch (err: unknown) {
-      showBanner("error", getErrorMessage(err, "Couldn't cancel the deletion."));
-    } finally {
-      setDeleting(false);
-    }
-  };
+
 
   // ---- Avatar ----
   const handleRerollAvatar = async () => {
@@ -837,27 +820,12 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
-                {deletionPending ? (
-                  <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-                    <p className="text-xs text-red-300">
-                      Deletion scheduled for{" "}
-                      {new Date(deletionPending).toLocaleString()}.
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancelDeletion}
-                      disabled={deleting}
-                      className="border-zinc-800 text-xs font-semibold"
-                    >
-                      {deleting ? "Cancelling…" : "Cancel deletion"}
-                    </Button>
-                  </div>
-                ) : confirmDelete ? (
+                {confirmDelete ? (
                   <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
                     <p className="text-xs text-zinc-200">
-                      Schedule this account for deletion? Everything in it goes
-                      after 24 hours.
+                      Schedule this account for deletion? You&apos;ll be signed
+                      out, emailed a copy of your data, and everything goes
+                      after 24 hours unless you sign back in and cancel.
                     </p>
                     <div className="flex gap-2">
                       <Button

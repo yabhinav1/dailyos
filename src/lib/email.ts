@@ -149,8 +149,20 @@ export async function sendExportSentElsewhereEmail(to: string, sentTo: string) {
   });
 }
 
-export async function sendAccountDeletionScheduledEmail(to: string, deletesAt: Date) {
+/**
+ * Warns that an account is going, and carries the data out with it.
+ *
+ * The export is attached rather than offered as a link: once the deadline
+ * passes there is no account left to sign into and no link that could still
+ * work, so the only moment this data can reliably reach its owner is now.
+ */
+export async function sendAccountDeletionScheduledEmail(
+  to: string,
+  deletesAt: Date,
+  exportJson?: string
+) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const filename = `dailyos-export-${new Date().toISOString().slice(0, 10)}.json`;
 
   if (!transporter) {
     console.warn(`[email] SMTP not configured — deletion notice for ${to} not sent`);
@@ -161,13 +173,21 @@ export async function sendAccountDeletionScheduledEmail(to: string, deletesAt: D
     from: fromAddress(),
     to,
     subject: "Your DailyOS account is scheduled for deletion",
-    text: `Your account and everything in it will be permanently deleted at ${deletesAt.toUTCString()}. To stop this, sign in at ${appUrl} before then and choose "Keep my account".`,
+    text: `Your account and everything in it will be permanently deleted at ${deletesAt.toUTCString()}. A full copy of your data is attached. To stop this, sign in at ${appUrl} before then and choose "Keep my account".`,
     html: wrap(
       "Account scheduled for deletion",
       `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">Your account and everything in it will be permanently deleted on <strong>${deletesAt.toUTCString()}</strong>.</p>
+       ${
+         exportJson
+           ? `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">A complete copy of your data is attached to this email. Keep it somewhere safe — once the account is gone we cannot send another.</p>`
+           : ""
+       }
        <p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">Changed your mind? Sign in before then and choose &ldquo;Keep my account&rdquo;.</p>
        <p style="margin:0;font-size:13px;color:#71717a;"><a href="${appUrl}/login" style="color:#2563eb;">${appUrl}/login</a></p>`
     ),
+    attachments: exportJson
+      ? [{ filename, content: exportJson, contentType: "application/json" }]
+      : undefined,
   });
 }
 

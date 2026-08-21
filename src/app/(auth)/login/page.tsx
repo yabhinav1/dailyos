@@ -28,6 +28,9 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/notes";
+  // Set when someone has just scheduled their account for deletion and been
+  // signed out, so the page explains why they are suddenly here.
+  const deletionScheduled = searchParams.get("deletion") === "scheduled";
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -79,6 +82,17 @@ function LoginForm() {
           Login to manage your tasks, coding projects & studies
         </p>
       </div>
+
+      {deletionScheduled && (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
+          <p className="font-semibold">Your account is scheduled for deletion.</p>
+          <p className="mt-1 text-amber-200/80">
+            It will be permanently erased in 24 hours, and a copy of your data
+            is on its way to your email. Sign in any time before then to cancel
+            it.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="p-3 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
