@@ -38,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
 
 type Banner = { type: "success" | "error"; text: string } | null;
@@ -368,9 +368,7 @@ export default function SettingsPage() {
       </div>
 
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-        </div>
+        <SkeletonCards cards={3} />
       ) : (
         <div className="space-y-6">
           <InlineBanner banner={banner} onDismiss={() => setBanner(null)} />

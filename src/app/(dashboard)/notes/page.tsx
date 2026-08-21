@@ -389,7 +389,7 @@ export default function NotesPage() {
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
                         className="h-7 text-[11px] bg-zinc-900 border-zinc-800 text-white placeholder-zinc-600"
                       />
-                      <button onClick={handleCreateFolder} className="text-indigo-400 hover:text-indigo-300 p-1">
+                      <button onClick={handleCreateFolder} aria-label="Create folder" className="text-indigo-400 hover:text-indigo-300 p-1">
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -429,7 +429,7 @@ export default function NotesPage() {
                 <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${notesListCollapsed ? "-rotate-90" : ""}`} />
                 {notes.length} Notes
               </button>
-              <button onClick={handleCreateNote} className="text-zinc-600 hover:text-indigo-400 transition-colors">
+              <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-600 hover:text-indigo-400 transition-colors">
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>

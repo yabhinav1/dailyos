@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
 import type { CodingProject, CodeSnippet } from "@/lib/types";
 
@@ -174,9 +174,7 @@ export default function DeveloperPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-        </div>
+        <SkeletonCards cards={3} />
       ) : activeTab === "playground" ? (
         <div className="space-y-4 p-5 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-xl">
           <div className="flex items-center justify-between border-b border-zinc-900 pb-3">

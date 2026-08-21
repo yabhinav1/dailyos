@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Habit, HabitLog } from "@/lib/types";
 import { toDateKey } from "@/lib/utils";
 
@@ -115,9 +115,7 @@ export default function HabitsPage() {
 
       {/* Habit Grid */}
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-        </div>
+        <SkeletonCards cards={6} />
       ) : habits.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <Flame className="h-10 w-10 text-zinc-700 mx-auto mb-3" />

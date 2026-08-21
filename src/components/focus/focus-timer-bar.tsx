@@ -220,7 +220,7 @@ export default function FocusTimerBar() {
         </div>
 
         {activeSound && (
-          <button onClick={toggleMute} className="p-1 rounded text-zinc-400 hover:text-white">
+          <button onClick={toggleMute} aria-label={isMuted ? "Unmute ambient sound" : "Mute ambient sound"} className="p-1 rounded text-zinc-400 hover:text-white">
             {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
           </button>
         )}

@@ -23,6 +23,7 @@ import {
   Upload,
   AlertCircle,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards, SkeletonList } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
 import type { Project, ProjectResource } from "@/lib/types";
 
@@ -243,7 +244,7 @@ function ProjectFilesDialog({
 
         <div className="max-h-72 overflow-y-auto space-y-1.5 pt-1">
           {loading ? (
-            <div className="py-6 text-center"><Loader /></div>
+            <SkeletonList rows={3} />
           ) : files.length === 0 ? (
             <p className="text-center text-[11px] text-zinc-600 py-4">No files uploaded yet.</p>
           ) : (
@@ -365,10 +366,7 @@ export default function ProjectsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-          <p className="text-[11px] text-zinc-500 mt-2">Loading projects...</p>
-        </div>
+        <SkeletonCards cards={6} />
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <FolderKanban className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
@@ -380,9 +378,17 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence initial={false}>
           {filtered.map((project) => (
-            <Card
+            <motion.div
               key={project.id}
+              layout
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+            <Card
               className={`group border-zinc-850 bg-[#0C0C0E]/40 hover:border-zinc-800 hover:bg-zinc-950/60 transition-all duration-200 shadow-sm ${
                 project.isCompleted ? "opacity-60" : ""
               }`}
@@ -454,7 +460,9 @@ export default function ProjectsPage() {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </div>
       )}
 

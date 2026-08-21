@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getGoalsAction, createGoal, updateGoalProgress, deleteGoal } from "@/features/goals/actions";
 import { Target, Plus, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Goal, GoalTimeframe } from "@/lib/types";
 
 export default function GoalsPage() {
@@ -81,9 +82,7 @@ export default function GoalsPage() {
       </div>
 
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-        </div>
+        <SkeletonCards cards={4} />
       ) : goals.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <Target className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
@@ -99,9 +98,17 @@ export default function GoalsPage() {
             <div className="space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Active Goals</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {activeGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onProgressChange={handleProgressChange} onDelete={handleDelete} />
-                ))}
+                <AnimatePresence initial={false}>
+                  {activeGoals.map((goal) => (
+                    <motion.div key={goal.id} layout
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}>
+                      <GoalCard goal={goal} onProgressChange={handleProgressChange} onDelete={handleDelete} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -109,9 +116,17 @@ export default function GoalsPage() {
             <div className="space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">🎉 Completed</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 opacity-60">
-                {completedGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onProgressChange={handleProgressChange} onDelete={handleDelete} />
-                ))}
+                <AnimatePresence initial={false}>
+                  {completedGoals.map((goal) => (
+                    <motion.div key={goal.id} layout
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}>
+                      <GoalCard goal={goal} onProgressChange={handleProgressChange} onDelete={handleDelete} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
           )}

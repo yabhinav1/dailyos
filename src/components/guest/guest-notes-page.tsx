@@ -105,7 +105,7 @@ export default function GuestNotesPage() {
             <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
               {notes.length} Notes
             </span>
-            <button onClick={handleCreateNote} className="text-zinc-600 hover:text-blue-400 transition-colors">
+            <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-600 hover:text-blue-400 transition-colors">
               <Plus className="h-3.5 w-3.5" />
             </button>
           </div>

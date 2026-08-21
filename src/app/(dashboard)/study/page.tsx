@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards } from "@/components/ui/skeleton";
 import type { StudyData, StudySubject } from "@/lib/types";
 import { getWebkitAudioContext } from "@/lib/utils";
 
@@ -261,9 +261,12 @@ function FlashcardWidget() {
       </div>
 
       {/* 3D Flip Card Container */}
-      <div
+      <button
+        type="button"
         onClick={() => setIsFlipped(!isFlipped)}
-        className="h-32 w-full rounded-xl border border-zinc-800 bg-zinc-900/90 p-5 flex flex-col items-center justify-center text-center cursor-pointer select-none transition-all duration-200 hover:border-zinc-700 shadow-lg"
+        aria-pressed={isFlipped}
+        aria-label={isFlipped ? "Show the question" : "Show the answer"}
+        className="flex h-32 w-full select-none flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/90 p-5 text-center shadow-lg transition-all duration-200 hover:border-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       >
         <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
           {isFlipped ? "Answer" : "Question (Click to flip)"}
@@ -271,7 +274,7 @@ function FlashcardWidget() {
         <p className="text-sm font-semibold text-zinc-200 leading-snug">
           {isFlipped ? card.answer : card.question}
         </p>
-      </div>
+      </button>
 
       <div className="flex justify-between items-center pt-1">
         <Button
@@ -373,9 +376,7 @@ export default function StudyPage() {
       <FlashcardWidget />
 
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader />
-        </div>
+        <SkeletonCards cards={3} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Timer Column */}

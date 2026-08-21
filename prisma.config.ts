@@ -10,10 +10,10 @@ import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations take advisory locks, which Neon's pooled (-pooler) endpoint
+    // will not grant. DIRECT_URL should be the same database on its direct
+    // endpoint; DATABASE_URL is only a fallback for local/unpooled setups.
+    url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
   },
 });

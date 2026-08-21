@@ -106,14 +106,14 @@ export default function CalendarPage() {
 
       {/* Month Navigation */}
       <div className="flex items-center justify-between bg-[#171717]/50 border border-zinc-850 rounded-xl p-3">
-        <button onClick={prevMonth} className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+        <button onClick={prevMonth} aria-label="Previous month" className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="text-center">
           <h2 className="text-sm font-bold text-white">{MONTH_NAMES[month]} {year}</h2>
           <p className="text-[10px] text-zinc-500">{events.length} events this month</p>
         </div>
-        <button onClick={nextMonth} className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+        <button onClick={nextMonth} aria-label="Next month" className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -139,10 +139,14 @@ export default function CalendarPage() {
             const dayEvents = getEventsForDay(day);
 
             return (
-              <div
+              <button
                 key={day}
+                type="button"
                 onClick={() => handleDayClick(day)}
-                className={`min-h-[80px] border-b border-r border-zinc-900/50 p-1.5 cursor-pointer transition-colors hover:bg-zinc-900/30 ${
+                aria-label={`${MONTH_NAMES[month]} ${day}, ${year}${
+                  dayEvents.length ? ` — ${dayEvents.length} event${dayEvents.length === 1 ? "" : "s"}` : ""
+                }`}
+                className={`min-h-[80px] w-full border-b border-r border-zinc-900/50 p-1.5 text-left transition-colors hover:bg-zinc-900/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500 ${
                   isToday ? "bg-blue-950/20" : ""
                 }`}
               >
@@ -162,7 +166,7 @@ export default function CalendarPage() {
                     <span className="text-[9px] text-zinc-500">+{dayEvents.length - 3} more</span>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

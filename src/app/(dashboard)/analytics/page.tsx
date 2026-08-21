@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { getAnalyticsData } from "@/features/analytics/actions";
 import { BarChart3, Calendar, BookOpen, Target, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonCards, SkeletonStats } from "@/components/ui/skeleton";
 import type { AnalyticsData, HabitStat, StudyStat } from "@/lib/types";
 
 export default function AnalyticsPage() {
@@ -26,8 +26,9 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="py-24 text-center">
-        <Loader />
+      <div className="space-y-6">
+        <SkeletonStats tiles={4} />
+        <SkeletonCards cards={2} />
       </div>
     );
   }

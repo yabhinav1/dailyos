@@ -12,7 +12,7 @@ import TaskList from "@/features/tasks/components/task-list";
 import TaskKanban from "@/features/tasks/components/task-kanban";
 import { motion, AnimatePresence } from "framer-motion";
 import TaskForm from "@/features/tasks/components/task-form";
-import { Loader } from "@/components/ui/loader";
+import { SkeletonList } from "@/components/ui/skeleton";
 import type { Task } from "@/lib/types";
 import type { TaskFilters as TaskFilterValues } from "@/features/tasks/queries";
 
@@ -144,10 +144,7 @@ export default function TasksPage() {
       {/* Render list/kanban content */}
       <div className="pt-2">
         {loading ? (
-          <div className="py-24 text-center">
-            <Loader />
-            <p className="text-[11px] text-zinc-500 mt-2 font-medium">Fetching active tasks...</p>
-          </div>
+          <SkeletonList rows={6} />
         ) : (
           <AnimatePresence mode="wait">
             <motion.div

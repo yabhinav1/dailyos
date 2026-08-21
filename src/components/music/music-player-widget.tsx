@@ -450,7 +450,7 @@ export default function MusicPlayerWidget() {
 
           {/* Controls — skip prev/next disabled for search results (no queue context) */}
           <div className="mt-2.5 flex items-center justify-center gap-5">
-            <button onClick={previous} disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
+            <button onClick={previous} aria-label="Previous track" disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
               <SkipBack className="h-4 w-4" />
             </button>
             <button
@@ -460,7 +460,7 @@ export default function MusicPlayerWidget() {
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
             </button>
-            <button onClick={next} disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
+            <button onClick={next} aria-label="Next track" disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
               <SkipForward className="h-4 w-4" />
             </button>
           </div>
