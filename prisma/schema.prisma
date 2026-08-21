@@ -565,6 +565,7 @@ model UserSettings {
   theme          String   @default("dark") // dark, light, system
   widgetConfig   Json?    // dashboard layout widgets config
   pwaInstalled   Boolean  @default(false)
+  onboardedAt    DateTime? // Set once the welcome walkthrough has been seen
   remindersEnabled Boolean @default(true)
   updatedAt      DateTime @updatedAt
 

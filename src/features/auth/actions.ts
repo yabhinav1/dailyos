@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { sendOtpEmail, sendPasswordResetEmail } from "@/lib/email";
+import { sendOtpEmail, sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/email";
 import { generateAvatarUrl } from "@/lib/avatar";
 import { createNotification } from "@/lib/notifications";
 import bcrypt from "bcryptjs";
@@ -175,6 +175,7 @@ export async function verifyOtp(email: string, otpCode: string): Promise<{ succe
     }
 
     // Verify user, clear OTP
+    const alreadyVerified = user.emailVerified !== null;
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -184,6 +185,17 @@ export async function verifyOtp(email: string, otpCode: string): Promise<{ succe
         otpAttempts: 0,
       },
     });
+
+    // Welcome them once the address is confirmed and the account is actually
+    // usable — not at signup, when it might never be. A send failure must not
+    // fail a verification that has already happened.
+    if (!alreadyVerified) {
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (err) {
+        console.error("[auth] welcome email failed:", err);
+      }
+    }
 
     return { success: true, message: "Email verified successfully!" };
   } catch (error) {

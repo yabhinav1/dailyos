@@ -205,3 +205,54 @@ export async function sendAccountDeletionCancelledEmail(to: string) {
     ),
   });
 }
+
+/** Sent once the address is verified and the account is actually usable. */
+export async function sendWelcomeEmail(to: string, name: string | null) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const greeting = name?.trim() ? `Welcome, ${name.trim()}` : "Welcome to DailyOS";
+
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — welcome email for ${to} not sent`);
+    return;
+  }
+
+  const row = (title: string, body: string) =>
+    `<tr>
+       <td style="padding:0 0 14px;">
+         <div style="font-size:14px;font-weight:600;color:#18181b;">${title}</div>
+         <div style="font-size:13px;color:#52525b;margin-top:2px;">${body}</div>
+       </td>
+     </tr>`;
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "Welcome to DailyOS",
+    text: [
+      `${greeting}.`,
+      "",
+      "DailyOS keeps your notes, tasks, habits, goals, calendar and study log in one place.",
+      "",
+      "A few things worth knowing:",
+      "- Notes have three modes: Write for rich text, Doodle for sketching, Canvas for dropping text anywhere.",
+      "- Press Cmd/Ctrl + K anywhere to jump between pages.",
+      "- Habits and goals feed the Analytics page, so the more you log the more it tells you.",
+      "- Settings > Data can email you a full copy of everything you have, any time.",
+      "",
+      `Open your workspace: ${appUrl}/notes`,
+    ].join("\n"),
+    html: wrap(
+      greeting,
+      `<p style="margin:0 0 16px;font-size:14px;color:#3f3f46;">Your notes, tasks, habits, goals, calendar and study log now live in one place. A few things worth knowing before you start:</p>
+       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
+         ${row("Notes have three modes", "Write for rich text, Doodle for sketching, and Canvas — double-click anywhere to drop a text block.")}
+         ${row("Cmd/Ctrl + K goes anywhere", "The command palette jumps between pages without touching the sidebar.")}
+         ${row("Logging feeds Analytics", "Habits, goals and study sessions all roll up there, so it gets more useful the more you use it.")}
+         ${row("Your data stays yours", "Settings &rsaquo; Data emails you a full copy of everything, whenever you want it.")}
+       </table>
+       <p style="margin:20px 0 0;">
+         <a href="${appUrl}/notes" style="display:inline-block;background:#2563eb;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:10px 18px;border-radius:8px;">Open DailyOS</a>
+       </p>`
+    ),
+  });
+}

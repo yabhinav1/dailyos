@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DeletionGuard from "@/components/account/deletion-guard";
+import WelcomeTour from "@/components/onboarding/welcome-tour";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import CommandPalette from "@/components/layout/command-palette";
@@ -28,8 +29,15 @@ export default async function DashboardLayout({
   // workspace is usable, so the check lives here rather than on one page.
   const account = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { deletionScheduledAt: true },
+    select: {
+      deletionScheduledAt: true,
+      settings: { select: { onboardedAt: true } },
+    },
   });
+
+  // An account with no settings row yet has never been through this either.
+  const pendingDeletion = Boolean(account?.deletionScheduledAt);
+  const needsWelcome = !pendingDeletion && !account?.settings?.onboardedAt;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-[#0d0d0d] text-foreground">
@@ -61,9 +69,13 @@ export default async function DashboardLayout({
       {/* Floating music player — hovers over every dashboard page */}
       <MusicPlayerWidget />
 
-      {account?.deletionScheduledAt && (
+      {/* A pending deletion outranks a welcome: someone arriving to a
+          workspace that is about to be erased needs to answer that first. */}
+      {pendingDeletion && account?.deletionScheduledAt && (
         <DeletionGuard deletesAt={account.deletionScheduledAt.toISOString()} />
       )}
+
+      {needsWelcome && <WelcomeTour />}
     </div>
   );
 }
