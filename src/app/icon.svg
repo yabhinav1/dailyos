@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DailyOS">
+  <title>DailyOS</title>
+  <!-- Solid brand tile. A favicon renders as small as 16px, so the mark is
+       filled white on blue rather than the sidebar's thin blue-on-tint icon,
+       which would disappear at that size. Blue reads on both light and dark
+       browser chrome, so no theme variant is needed. -->
+  <rect width="64" height="64" rx="15" fill="#2563eb" />
+  <g fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Branch spine -->
+    <path d="M22 15v34" />
+    <!-- Fork out to the merge point -->
+    <path d="M22 30h11a9 9 0 0 0 9-9" />
+  </g>
+  <g fill="#ffffff">
+    <circle cx="22" cy="15" r="6.5" />
+    <circle cx="22" cy="49" r="6.5" />
+    <circle cx="42" cy="15" r="6.5" />
+  </g>
+</svg>

@@ -52,5 +52,9 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Anything with a file extension is an asset, not a page: the metadata
+  // routes Next generates (icon.svg, apple-icon.png, favicon.ico) are fetched
+  // by the browser with no session cookie, so redirecting them to /login left
+  // the sign-in page with no icon at all.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.[\\w]+$).*)"],
 };
