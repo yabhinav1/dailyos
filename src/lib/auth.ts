@@ -6,6 +6,7 @@ import GitHub from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import { MAX_FAILED_LOGINS, lockoutExpiry } from "@/lib/otp";
 import { authConfig } from "@/lib/auth.config";
+import { purgeAccount } from "@/lib/account-purge";
 
 const nextAuth = NextAuth({
   ...authConfig,
@@ -37,7 +38,7 @@ const nextAuth = NextAuth({
           // rather than by a scheduler. Every app relation cascades from the
           // user row, so this removes everything with it.
           if (dbUser.deletionScheduledAt && dbUser.deletionScheduledAt <= new Date()) {
-            await prisma.user.delete({ where: { id: dbUser.id } });
+            await purgeAccount(dbUser.id);
             return { ...nextToken, sub: undefined };
           }
           nextToken.role = dbUser.role;
@@ -97,7 +98,7 @@ const nextAuth = NextAuth({
         // Past the grace period the account no longer exists, so signing in
         // has to remove it rather than hand back a session for dead data.
         if (user.deletionScheduledAt && user.deletionScheduledAt <= new Date()) {
-          await prisma.user.delete({ where: { id: user.id } });
+          await purgeAccount(user.id);
           return null;
         }
 
