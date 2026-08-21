@@ -278,6 +278,7 @@ model Note {
   title      String
   content    String?     @db.Text
   doodleData String?     @db.Text
+  canvasData String?     @db.Text
   isPinned   Boolean     @default(false)
   isFavorite Boolean     @default(false)
   color      String?

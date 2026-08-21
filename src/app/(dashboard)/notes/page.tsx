@@ -21,12 +21,14 @@ import {
   PanelLeftOpen,
   ChevronDown,
   AlertCircle,
+  LayoutGrid,
   Maximize2,
   Minimize2,
   Download,
   History,
   Hash,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
@@ -36,6 +38,7 @@ import type { Note, NoteFolder } from "@/lib/types";
 // Dynamically import the editor (avoid SSR issues with Tiptap)
 const RichEditor = dynamic(() => import("@/features/notes/components/rich-editor"), { ssr: false });
 const DoodleCanvas = dynamic(() => import("@/components/doodle/doodle-canvas"), { ssr: false });
+const FreeformCanvas = dynamic(() => import("@/components/notes/freeform-canvas"), { ssr: false });
 
 
 export default function NotesPage() {
@@ -62,7 +65,8 @@ export default function NotesPage() {
   const [editorTitle, setEditorTitle] = useState("");
   const [editorContent, setEditorContent] = useState("");
   const [editorDoodle, setEditorDoodle] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"write" | "doodle">("write");
+  const [editorCanvas, setEditorCanvas] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"write" | "doodle" | "canvas">("write");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Extract all hashtags across all notes
   const allTags = React.useMemo(() => {
@@ -149,11 +153,19 @@ export default function NotesPage() {
 
   // Auto-save after 1s of inactivity
   const triggerAutoSave = useCallback(
-    (noteId: string, title: string, content: string, doodleData: string | null) => {
+    (
+      noteId: string,
+      patch: {
+        title: string;
+        content: string;
+        doodleData: string | null;
+        canvasData: string | null;
+      }
+    ) => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(async () => {
         setSaving(true);
-        await updateNote(noteId, { title, content, doodleData });
+        await updateNote(noteId, patch);
         setSaving(false);
         reloadAll();
       }, 1000);
@@ -165,22 +177,37 @@ export default function NotesPage() {
     setEditorTitle(note.title);
     setEditorContent(note.content || "");
     setEditorDoodle(note.doodleData || null);
+    setEditorCanvas(note.canvasData || null);
     setViewMode("write");
   };
 
+  // Each handler sends the whole note, with only its own field replaced, so a
+  // save started from one editor mode can never blank out another's work.
+  const currentPatch = () => ({
+    title: editorTitle,
+    content: editorContent,
+    doodleData: editorDoodle,
+    canvasData: editorCanvas,
+  });
+
   const handleTitleChange = (val: string) => {
     setEditorTitle(val);
-    if (selectedNote) triggerAutoSave(selectedNote.id, val, editorContent, editorDoodle);
+    if (selectedNote) triggerAutoSave(selectedNote.id, { ...currentPatch(), title: val });
+  };
+
+  const handleCanvasChange = (val: string) => {
+    setEditorCanvas(val);
+    if (selectedNote) triggerAutoSave(selectedNote.id, { ...currentPatch(), canvasData: val });
   };
 
   const handleContentChange = (val: string) => {
     setEditorContent(val);
-    if (selectedNote) triggerAutoSave(selectedNote.id, editorTitle, val, editorDoodle);
+    if (selectedNote) triggerAutoSave(selectedNote.id, { ...currentPatch(), content: val });
   };
 
   const handleDoodleChange = (val: string) => {
     setEditorDoodle(val);
-    if (selectedNote) triggerAutoSave(selectedNote.id, editorTitle, editorContent, val);
+    if (selectedNote) triggerAutoSave(selectedNote.id, { ...currentPatch(), doodleData: val });
   };
 
   const handleCreateNote = async () => {
@@ -489,6 +516,14 @@ export default function NotesPage() {
                 >
                   <PenTool className="h-3 w-3" /> Doodle
                 </button>
+                <button
+                  onClick={() => setViewMode("canvas")}
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    viewMode === "canvas" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  <LayoutGrid className="h-3 w-3" /> Canvas
+                </button>
               </div>
               {/* Export Dropdown */}
               <div className="relative shrink-0">
@@ -556,11 +591,24 @@ export default function NotesPage() {
                   : "flex-1 min-h-0 overflow-hidden px-6 py-4 flex"
               }
             >
-              {viewMode === "write" ? (
-                <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." />
-              ) : (
-                <DoodleCanvas value={editorDoodle} onChange={handleDoodleChange} fillContainer className="h-full" />
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={viewMode}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className={viewMode === "write" ? "" : "flex h-full w-full"}
+                >
+                  {viewMode === "write" ? (
+                    <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." />
+                  ) : viewMode === "canvas" ? (
+                    <FreeformCanvas value={editorCanvas} onChange={handleCanvasChange} className="h-full" />
+                  ) : (
+                    <DoodleCanvas value={editorDoodle} onChange={handleDoodleChange} fillContainer className="h-full" />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
             {/* Footer Meta & Smart Stats HUD */}
             <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[10px] text-zinc-500 shrink-0">
@@ -687,24 +735,49 @@ function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
     : "No content";
 
   return (
-    <div
-      onClick={() => onSelect(note)}
-      className={`group px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className={`group relative rounded-lg transition-colors ${
         selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-400 hover:text-zinc-200"
       }`}
     >
-      <div className="flex items-center justify-between gap-1 mb-0.5">
-        <span className="text-[11px] font-semibold truncate max-w-[120px]">{note.title}</span>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button onClick={(e) => onPin(note, e)} className={`p-0.5 rounded hover:text-white ${note.isPinned ? "text-amber-400" : "text-zinc-600"}`}>
-            <Pin className="h-2.5 w-2.5" />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(note.id); }} className="p-0.5 rounded text-zinc-600 hover:text-red-400">
-            <Trash2 className="h-2.5 w-2.5" />
-          </button>
-        </div>
+      {/* The row itself is the button; the per-note actions sit alongside it
+          rather than nested inside, which a button may not contain. */}
+      <button
+        type="button"
+        onClick={() => onSelect(note)}
+        aria-current={selected ? "true" : undefined}
+        className="w-full rounded-lg px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500"
+      >
+        <span className="mb-0.5 block max-w-[120px] truncate pr-12 text-[11px] font-semibold">
+          {note.title}
+        </span>
+        <span className="block truncate text-[10px] text-zinc-600">{preview}</span>
+      </button>
+      <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <button
+          type="button"
+          onClick={(e) => onPin(note, e)}
+          aria-label={note.isPinned ? `Unpin ${note.title}` : `Pin ${note.title}`}
+          className={`rounded p-0.5 hover:text-white focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${
+            note.isPinned ? "text-amber-400" : "text-zinc-600"
+          }`}
+        >
+          <Pin className="h-2.5 w-2.5" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
+          aria-label={`Delete ${note.title}`}
+          className="rounded p-0.5 text-zinc-600 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+        >
+          <Trash2 className="h-2.5 w-2.5" />
+        </button>
       </div>
-      <p className="text-[10px] text-zinc-600 truncate">{preview}</p>
-    </div>
+    </motion.div>
   );
 }
