@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useTheme } from "next-themes";
@@ -37,41 +37,54 @@ export default function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
 
-  const fetchNotifications = async () => {
-    setLoadingNotifs(true);
-    setNotifError(null);
-    try {
-      const res = await getNotifications();
-      if (res.success) {
-        // Guard against a malformed/non-array payload so a bad response
-        // can never throw during render (which used to crash the whole
-        // page via the root error boundary).
-        setNotifications(Array.isArray(res.data) ? res.data : []);
-        setUnreadCount(typeof res.unreadCount === "number" ? res.unreadCount : 0);
-      } else {
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadNotifications = useCallback(() => setReloadToken((n) => n + 1), []);
+
+  // Loads once per reload token and then polls every minute. A response that
+  // arrives after the effect has been torn down is dropped.
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoadingNotifs(true);
+      setNotifError(null);
+      try {
+        const res = await getNotifications();
+        if (cancelled) return;
+        if (res.success) {
+          // Guard against a malformed/non-array payload so a bad response
+          // can never throw during render (which used to crash the whole
+          // page via the root error boundary).
+          setNotifications(Array.isArray(res.data) ? res.data : []);
+          setUnreadCount(typeof res.unreadCount === "number" ? res.unreadCount : 0);
+        } else {
+          setNotifications([]);
+          setUnreadCount(0);
+          setNotifError(res.message || "Couldn't load notifications.");
+        }
+      } catch (err: unknown) {
+        // Belt-and-suspenders: even an unexpected/network-level failure
+        // stays contained to the dropdown instead of bubbling up.
+        if (cancelled) return;
         setNotifications([]);
         setUnreadCount(0);
-        setNotifError(res.message || "Couldn't load notifications.");
+        setNotifError(getErrorMessage(err, "Couldn't load notifications."));
+      } finally {
+        if (!cancelled) setLoadingNotifs(false);
       }
-    } catch (err: unknown) {
-      // Belt-and-suspenders: even an unexpected/network-level failure
-      // stays contained to the dropdown instead of bubbling up.
-      setNotifications([]);
-      setUnreadCount(0);
-      setNotifError(getErrorMessage(err, "Couldn't load notifications."));
-    } finally {
-      setLoadingNotifs(false);
-    }
-  };
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    };
+
+    load();
+    const interval = setInterval(load, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [reloadToken]);
 
   const handleOpenChange = (open: boolean) => {
     setNotifOpen(open);
-    if (open) fetchNotifications();
+    if (open) reloadNotifications();
   };
 
   const handleNotifClick = async (id: string, read: boolean) => {
@@ -79,14 +92,14 @@ export default function Header() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
     const res = await markNotificationRead(id);
-    if (!res.success) fetchNotifications();
+    if (!res.success) reloadNotifications();
   };
 
   const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
     const res = await markAllNotificationsRead();
-    if (!res.success) fetchNotifications();
+    if (!res.success) reloadNotifications();
   };
   const pathSegments = pathname.split("/").filter(Boolean);
   
@@ -162,7 +175,7 @@ export default function Header() {
                 <div className="px-3 py-8 text-center">
                   <p className="text-red-400">{notifError}</p>
                   <button
-                    onClick={fetchNotifications}
+                    onClick={reloadNotifications}
                     className="mt-2 text-[10px] font-medium text-blue-500 hover:text-blue-400"
                   >
                     Try again

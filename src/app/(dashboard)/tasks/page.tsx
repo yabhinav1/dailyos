@@ -29,27 +29,34 @@ export default function TasksPage() {
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "createdAt">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Fetch Tasks
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
-    const filters: TaskFilterValues = {
-      search: search || undefined,
-      status: status === "ALL" ? undefined : status,
-      priority: priority === "ALL" ? undefined : priority,
-      sortBy,
-      sortOrder,
-    };
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadTasks = useCallback(() => setReloadToken((n) => n + 1), []);
 
-    const res = await getTasksAction(filters);
-    if (res.success && res.data) {
-      setTasks(res.data);
-    }
-    setLoading(false);
-  }, [search, status, priority, sortBy, sortOrder]);
-
+  // Fetch Tasks. A filter can change while a request is still in flight, so
+  // stale responses are dropped rather than overwriting the newer result.
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const filters: TaskFilterValues = {
+        search: search || undefined,
+        status: status === "ALL" ? undefined : status,
+        priority: priority === "ALL" ? undefined : priority,
+        sortBy,
+        sortOrder,
+      };
+
+      const res = await getTasksAction(filters);
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setTasks(res.data);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, status, priority, sortBy, sortOrder, reloadToken]);
 
   // The TaskStatus enum has no "DONE" member — this compared against a value
   // that can never occur, so the progress bar was permanently stuck at 0%.
@@ -151,9 +158,9 @@ export default function TasksPage() {
               transition={{ duration: 0.15 }}
             >
               {view === "list" ? (
-                <TaskList tasks={tasks} onRefresh={fetchTasks} />
+                <TaskList tasks={tasks} onRefresh={reloadTasks} />
               ) : (
-                <TaskKanban tasks={tasks} onRefresh={fetchTasks} />
+                <TaskKanban tasks={tasks} onRefresh={reloadTasks} />
               )}
             </motion.div>
           </AnimatePresence>
@@ -169,7 +176,7 @@ export default function TasksPage() {
           <TaskForm
             onSuccess={() => {
               setShowCreateDialog(false);
-              fetchTasks();
+              reloadTasks();
             }}
             onCancel={() => setShowCreateDialog(false)}
           />

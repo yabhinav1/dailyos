@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   getUserSettings,
   updateUserSettings,
@@ -145,27 +145,29 @@ export default function SettingsPage() {
 
   const [linkedBusy, setLinkedBusy] = useState<string | null>(null);
 
-  const fetchSettings = useCallback(async () => {
-    setLoading(true);
-    const res = await getUserSettings();
-    if (res.success && res.data) {
-      const { user, settings, accounts } = res.data;
-      setProfile({ name: user?.name || "", username: user?.username || "", email: user?.email || "" });
-      setPendingEmail(user?.pendingEmail || null);
-      setAvatarUrl(user?.image || "");
-      setHasPassword(!!user?.hasPassword);
-      setAccounts(accounts || []);
-      if (settings) {
-        setTheme(settings.theme);
-        setReminders(settings.remindersEnabled);
-      }
-    }
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    let cancelled = false;
+    (async () => {
+      const res = await getUserSettings();
+      if (cancelled) return;
+      if (res.success && res.data) {
+        const { user, settings, accounts } = res.data;
+        setProfile({ name: user?.name || "", username: user?.username || "", email: user?.email || "" });
+        setPendingEmail(user?.pendingEmail || null);
+        setAvatarUrl(user?.image || "");
+        setHasPassword(!!user?.hasPassword);
+        setAccounts(accounts || []);
+        if (settings) {
+          setTheme(settings.theme);
+          setReminders(settings.remindersEnabled);
+        }
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const showBanner = (type: "success" | "error", text: string) => setBanner({ type, text });
 

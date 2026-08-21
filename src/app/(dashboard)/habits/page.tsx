@@ -33,14 +33,22 @@ export default function HabitsPage() {
   const [newFreq, setNewFreq] = useState<"DAILY" | "WEEKLY" | "MONTHLY">("DAILY");
   const [saving, setSaving] = useState(false);
 
-  const fetchHabits = useCallback(async () => {
-    setLoading(true);
-    const res = await getHabitsAction();
-    if (res.success && res.data) setHabits(res.data);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadHabits = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchHabits(); }, [fetchHabits]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const res = await getHabitsAction();
+      if (cancelled) return;
+      if (res.success && res.data) setHabits(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,18 +58,18 @@ export default function HabitsPage() {
     setNewName(""); setNewDesc(""); setNewFreq("DAILY");
     setShowCreate(false);
     setSaving(false);
-    fetchHabits();
+    reloadHabits();
   };
 
   const handleToggleLog = async (habitId: string, date: string) => {
     await logHabit(habitId, date);
-    fetchHabits();
+    reloadHabits();
   };
 
   const handleDelete = async (habitId: string, name: string) => {
     if (!confirm(`Delete habit "${name}"?`)) return;
     await deleteHabit(habitId);
-    fetchHabits();
+    reloadHabits();
   };
 
   const today = new Date().toISOString().split("T")[0];

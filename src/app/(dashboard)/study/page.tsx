@@ -28,12 +28,15 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; o
   const audioCtxRef = useRef<AudioContext | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Load any previously-saved custom alarm sound
+  // Load any previously-saved custom alarm sound. localStorage is unreadable
+  // during SSR, so this cannot move into a lazy useState initializer without a
+  // hydration mismatch — reading it once after mount is the intended pattern.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ALARM_STORAGE_KEY);
       if (saved) {
         const { name, dataUrl } = JSON.parse(saved);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
         setCustomSoundName(name);
         audioRef.current = new Audio(dataUrl);
       }
@@ -303,21 +306,29 @@ export default function StudyPage() {
   const [subjectCode, setSubjectCode] = useState("");
   const [topicTitle, setTopicTitle] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const res = await getStudyDataAction();
-    if (res.success && res.data) setData(res.data);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadData = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const res = await getStudyDataAction();
+      if (cancelled) return;
+      if (res.success && res.data) setData(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subjectName.trim()) return;
     await createSubject({ name: subjectName, code: subjectCode || undefined });
     setSubjectName(""); setSubjectCode(""); setShowAddSubject(false);
-    fetchData();
+    reloadData();
   };
 
   const handleAddTopic = async (e: React.FormEvent) => {
@@ -325,18 +336,18 @@ export default function StudyPage() {
     if (!topicTitle.trim() || !showAddTopic) return;
     await createTopic({ subjectId: showAddTopic, title: topicTitle });
     setTopicTitle(""); setShowAddTopic(null);
-    fetchData();
+    reloadData();
   };
 
   const handleToggleTopic = async (topicId: string, current: boolean) => {
     await toggleTopicCompleted(topicId, !current);
-    fetchData();
+    reloadData();
   };
 
   const handleSessionEnd = useCallback(async (subjectId: string | null, duration: number) => {
     await logStudySession(subjectId, duration);
-    fetchData();
-  }, [fetchData]);
+    reloadData();
+  }, [reloadData]);
 
   const hours = Math.floor(data.totalMinutesThisWeek / 60);
   const mins = data.totalMinutesThisWeek % 60;
@@ -415,7 +426,7 @@ export default function StudyPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-zinc-500">{completedTopics}/{totalTopics} topics</span>
-                          <button onClick={() => { if (confirm(`Delete "${subject.name}"?`)) { deleteSubject(subject.id).then(fetchData); } }}
+                          <button onClick={() => { if (confirm(`Delete "${subject.name}"?`)) { deleteSubject(subject.id).then(reloadData); } }}
                             className="text-zinc-700 hover:text-red-400 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

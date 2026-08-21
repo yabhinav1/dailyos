@@ -30,12 +30,20 @@ export default function CalendarPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", description: "", startTime: "09:00", endTime: "10:00", color: EVENT_COLORS[0] });
 
-  const fetchEvents = useCallback(async () => {
-    const res = await getEventsAction(year, month);
-    if (res.success && res.data) setEvents(res.data);
-  }, [year, month]);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadEvents = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await getEventsAction(year, month);
+      if (cancelled) return;
+      if (res.success && res.data) setEvents(res.data);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month, reloadToken]);
 
   const prevMonth = () => {
     if (month === 0) { setMonth(11); setYear(year - 1); }
@@ -74,12 +82,12 @@ export default function CalendarPage() {
     setForm({ title: "", description: "", startTime: "09:00", endTime: "10:00", color: EVENT_COLORS[0] });
     setShowCreate(false);
     setSelectedDay(null);
-    fetchEvents();
+    reloadEvents();
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     await deleteEvent(eventId);
-    fetchEvents();
+    reloadEvents();
   };
 
   const handleDayClick = (day: number) => {

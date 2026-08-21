@@ -71,16 +71,22 @@ export default function AdminMusicClient() {
     priority: "0",
   });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await listLavalinkNodes();
-    if (res.success) setNodes(res.data as NodeRow[]);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reload = useCallback(() => setReloadToken((n) => n + 1), []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const res = await listLavalinkNodes();
+      if (cancelled) return;
+      if (res.success) setNodes(res.data as NodeRow[]);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,25 +118,25 @@ export default function AdminMusicClient() {
 
     setForm({ name: "", host: "", port: "2333", password: "", secure: false, priority: "0" });
     setFormOpen(false);
-    await load();
+    reload();
   };
 
   const handleRemove = async (id: string) => {
     if (!confirm("Remove this Lavalink node? This can't be undone.")) return;
     await removeLavalinkNode(id);
-    await load();
+    reload();
   };
 
   const handleToggleEnabled = async (node: NodeRow) => {
     await updateLavalinkNode(node.id, { enabled: !node.enabled });
-    await load();
+    reload();
   };
 
   const handleTest = async (id: string) => {
     setTestingId(id);
     await testLavalinkNode(id);
-    await load();
     setTestingId(null);
+    reload();
   };
 
   const sortedNodes = [...nodes].sort((a, b) => a.priority - b.priority);
@@ -161,7 +167,7 @@ export default function AdminMusicClient() {
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={load} className="h-7 gap-1.5 text-xs text-zinc-500">
+        <Button variant="ghost" size="sm" onClick={reload} className="h-7 gap-1.5 text-xs text-zinc-500">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>

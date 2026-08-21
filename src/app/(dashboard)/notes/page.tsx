@@ -124,18 +124,28 @@ export default function NotesPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullScreen]);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    const [notesRes, foldersRes] = await Promise.all([
-      getNotesAction(search || undefined, selectedFolderId),
-      getFoldersAction(),
-    ]);
-    if (notesRes.success && notesRes.data) setNotes(notesRes.data);
-    if (foldersRes.success && foldersRes.data) setFolders(foldersRes.data);
-    setLoading(false);
-  }, [search, selectedFolderId]);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadAll = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  // Search text and folder both change while requests are in flight, so a
+  // superseded response is discarded instead of clobbering the newer one.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const [notesRes, foldersRes] = await Promise.all([
+        getNotesAction(search || undefined, selectedFolderId),
+        getFoldersAction(),
+      ]);
+      if (cancelled) return;
+      if (notesRes.success && notesRes.data) setNotes(notesRes.data);
+      if (foldersRes.success && foldersRes.data) setFolders(foldersRes.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, selectedFolderId, reloadToken]);
 
   // Auto-save after 1s of inactivity
   const triggerAutoSave = useCallback(
@@ -145,10 +155,10 @@ export default function NotesPage() {
         setSaving(true);
         await updateNote(noteId, { title, content, doodleData });
         setSaving(false);
-        fetchAll();
+        reloadAll();
       }, 1000);
     },
-    [fetchAll]
+    [reloadAll]
   );
   const handleSelectNote = (note: Note) => {
     setSelectedNote(note);
@@ -181,7 +191,7 @@ export default function NotesPage() {
       folderId: selectedFolderId ?? null,
     });
     if (note.success && note.data) {
-      await fetchAll();
+      reloadAll();
       handleSelectNote(note.data);
     } else {
       setError(note.message || "Couldn't create the note. Please try again.");
@@ -192,17 +202,17 @@ export default function NotesPage() {
     if (!confirm("Move this note to trash?")) return;
     await deleteNote(noteId);
     if (selectedNote?.id === noteId) setSelectedNote(null);
-    fetchAll();
+    reloadAll();
   };
   const handlePinToggle = async (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleNotePin(note.id, !note.isPinned);
-    fetchAll();
+    reloadAll();
   };
   const handleFavoriteToggle = async (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleNoteFavorite(note.id, !note.isFavorite);
-    fetchAll();
+    reloadAll();
   };
 
   const handleCreateFolder = async () => {
@@ -215,14 +225,14 @@ export default function NotesPage() {
     }
     setNewFolderName("");
     setShowNewFolder(false);
-    fetchAll();
+    reloadAll();
   };
 
   const handleDeleteFolder = async (folderId: string, name: string) => {
     if (!confirm(`Delete folder "${name}"? Notes inside will be moved to All Notes.`)) return;
     await deleteFolder(folderId);
     if (selectedFolderId === folderId) setSelectedFolderId(undefined);
-    fetchAll();
+    reloadAll();
   };
   const tagFilteredNotes = selectedTag
     ? notes.filter((n) => `${n.title || ""} ${n.content || ""}`.includes(selectedTag))

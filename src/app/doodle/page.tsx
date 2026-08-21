@@ -15,8 +15,12 @@ export default function DoodlePage() {
   const [draft, setDraft] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
+  // localStorage is unreadable during SSR, so the draft cannot come from a lazy
+  // useState initializer without a hydration mismatch. `loaded` keeps the canvas
+  // unmounted until the saved drawing is in hand, so it never starts blank.
   useEffect(() => {
     const saved = window.localStorage.getItem(DRAFT_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
     setDraft(saved);
     setLoaded(true);
   }, []);

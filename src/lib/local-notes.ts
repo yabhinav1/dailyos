@@ -54,7 +54,11 @@ export function useLocalNotes() {
   const [loaded, setLoaded] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
 
+  // localStorage is unreadable during SSR, so this cannot move into a lazy
+  // useState initializer without a hydration mismatch. Reading it once after
+  // mount is the intended pattern; the extra render happens a single time.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
     setNotes(readAll());
     setLoaded(true);
   }, []);

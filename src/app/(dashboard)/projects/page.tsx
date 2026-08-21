@@ -166,15 +166,23 @@ function ProjectFilesDialog({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  const fetchFiles = useCallback(async () => {
-    if (!project) return;
-    setLoading(true);
-    const res = await getResourcesForProject(project.id);
-    if (res.success && res.data) setFiles(res.data);
-    setLoading(false);
-  }, [project]);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadFiles = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchFiles(); }, [fetchFiles]);
+  useEffect(() => {
+    if (!project) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const res = await getResourcesForProject(project.id);
+      if (cancelled) return;
+      if (res.success && res.data) setFiles(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [project, reloadToken]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
@@ -194,7 +202,7 @@ function ProjectFilesDialog({
       if (!res.success) setError(res.message || "Upload failed");
     }
     setUploading(false);
-    fetchFiles();
+    reloadFiles();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -202,7 +210,7 @@ function ProjectFilesDialog({
     if (!confirm("Delete this file?")) return;
     const res = await deleteResource(id);
     if (!res.success) setError(res.message || "Failed to delete file");
-    fetchFiles();
+    reloadFiles();
   };
 
   const isImage = (mime?: string | null) => !!mime && mime.startsWith("image/");
@@ -285,13 +293,21 @@ export default function ProjectsPage() {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [filesProject, setFilesProject] = useState<Project | null>(null);
 
-  const fetchProjects = useCallback(async () => {
-    const res = await getProjectsAction();
-    if (res.success && res.data) setProjects(res.data);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadProjects = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await getProjectsAction();
+      if (cancelled) return;
+      if (res.success && res.data) setProjects(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const filtered = projects.filter((p) => {
     if (filter === "active") return !p.isCompleted;
@@ -302,12 +318,12 @@ export default function ProjectsPage() {
   const handleDelete = async (projectId: string, name: string) => {
     if (!confirm(`Delete project "${name}"? All tasks in it will remain.`)) return;
     await deleteProject(projectId);
-    fetchProjects();
+    reloadProjects();
   };
 
   const handleToggleComplete = async (projectId: string, current: boolean) => {
     await toggleProjectCompleted(projectId, !current);
-    fetchProjects();
+    reloadProjects();
   };
 
   return (
@@ -442,7 +458,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <CreateProjectDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={fetchProjects} />
+      <CreateProjectDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={reloadProjects} />
       <ProjectFilesDialog project={filesProject} onClose={() => setFilesProject(null)} />
     </div>
   );

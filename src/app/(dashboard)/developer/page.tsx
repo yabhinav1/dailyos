@@ -59,17 +59,23 @@ export default function DeveloperPage() {
     }
   };
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const [pRes, sRes] = await Promise.all([getCodingProjects(), getSnippets()]);
-    if (pRes.success && pRes.data) setProjects(pRes.data);
-    if (sRes.success && sRes.data) setSnippets(sRes.data);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadData = useCallback(() => setReloadToken((n) => n + 1), []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const [pRes, sRes] = await Promise.all([getCodingProjects(), getSnippets()]);
+      if (cancelled) return;
+      if (pRes.success && pRes.data) setProjects(pRes.data);
+      if (sRes.success && sRes.data) setSnippets(sRes.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +90,7 @@ export default function DeveloperPage() {
     });
     setProjForm({ name: "", description: "", githubUrl: "", techStack: "", status: "PLANNING" });
     setShowProjDialog(false);
-    fetchData();
+    reloadData();
   };
 
   const handleCreateSnippet = async (e: React.FormEvent) => {
@@ -98,7 +104,7 @@ export default function DeveloperPage() {
     });
     setSnipForm({ title: "", description: "", code: "", language: "javascript" });
     setShowSnipDialog(false);
-    fetchData();
+    reloadData();
   };
 
   const copyToClipboard = (id: string, text: string) => {
@@ -110,7 +116,7 @@ export default function DeveloperPage() {
   const handleDeleteSnippet = async (id: string) => {
     if (!confirm("Are you sure you want to delete this snippet?")) return;
     await deleteSnippet(id);
-    fetchData();
+    reloadData();
   };
 
   return (

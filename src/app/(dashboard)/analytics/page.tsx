@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { getAnalyticsData } from "@/features/analytics/actions";
 import { BarChart3, Calendar, BookOpen, Target, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,16 +11,18 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
-    const res = await getAnalyticsData();
-    if (res.success && res.data) setData(res.data);
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    let cancelled = false;
+    (async () => {
+      const res = await getAnalyticsData();
+      if (cancelled) return;
+      if (res.success && res.data) setData(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return (

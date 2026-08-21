@@ -21,14 +21,22 @@ export default function GoalsPage() {
   );
   const [saving, setSaving] = useState(false);
 
-  const fetchGoals = useCallback(async () => {
-    setLoading(true);
-    const res = await getGoalsAction();
-    if (res.success && res.data) setGoals(res.data);
-    setLoading(false);
-  }, []);
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadGoals = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  useEffect(() => { fetchGoals(); }, [fetchGoals]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const res = await getGoalsAction();
+      if (cancelled) return;
+      if (res.success && res.data) setGoals(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,18 +46,18 @@ export default function GoalsPage() {
     setForm({ title: "", description: "", targetDate: "", timeframe: "MONTHLY" });
     setShowCreate(false);
     setSaving(false);
-    fetchGoals();
+    reloadGoals();
   };
 
   const handleProgressChange = async (goalId: string, progress: number) => {
     await updateGoalProgress(goalId, Math.min(100, Math.max(0, progress)));
-    fetchGoals();
+    reloadGoals();
   };
 
   const handleDelete = async (goalId: string, title: string) => {
     if (!confirm(`Delete goal "${title}"?`)) return;
     await deleteGoal(goalId);
-    fetchGoals();
+    reloadGoals();
   };
 
   const activeGoals = goals.filter((g) => !g.isCompleted);

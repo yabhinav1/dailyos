@@ -41,26 +41,21 @@ export default function FocusTimerBar() {
   const oscillatorNodeRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
-  // Timer countdown
+  // Timer countdown. The end-of-session switch happens inside the tick itself
+  // rather than in a follow-up render pass, so the clock never has to paint
+  // 00:00 and then correct itself.
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      setIsRunning(false);
-      if (mode === "work") {
-        setMode("break");
-        setTimeLeft(5 * 60);
-      } else {
-        setMode("work");
-        setTimeLeft(25 * 60);
+    if (!isRunning) return;
+    const interval = setInterval(() => {
+      if (timeLeft > 1) {
+        setTimeLeft(timeLeft - 1);
+        return;
       }
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+      setIsRunning(false);
+      setMode(mode === "work" ? "break" : "work");
+      setTimeLeft(mode === "work" ? 5 * 60 : 25 * 60);
+    }, 1000);
+    return () => clearInterval(interval);
   }, [isRunning, timeLeft, mode]);
 
   // Ambient sound synthesizer generator using Web Audio API

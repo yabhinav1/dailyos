@@ -51,7 +51,6 @@ export default function MusicPlayerWidget() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     isOpen,
@@ -83,10 +82,21 @@ export default function MusicPlayerWidget() {
 
   // Spotify search (metadata only) — playback resolves via /api/music/external-stream
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SpotifyResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const resultsOpen = searchQuery.trim().length > 0;
+  const [searchState, setSearchState] = useState<{
+    query: string;
+    items: SpotifyResult[];
+    error: string | null;
+  }>({ query: "", items: [], error: null });
+
+  const trimmedQuery = searchQuery.trim();
+  const resultsOpen = trimmedQuery.length > 0;
+
+  // Results stay tied to the query that produced them, so clearing or
+  // retyping the box hides the previous hits without a state reset — and
+  // "still waiting" is just the box disagreeing with the last result.
+  const settled = searchState.query === trimmedQuery;
+  const searching = resultsOpen && !settled;
+  const shown = settled ? searchState : { items: [] as SpotifyResult[], error: null };
 
   // Restore last playback state once, on first mount.
   useEffect(() => {
@@ -102,43 +112,44 @@ export default function MusicPlayerWidget() {
     })();
   }, [setVolume, setMode]);
 
-  const loadTracks = useCallback(async (m: PlayerMode) => {
-    setLoadingTracks(true);
-    const res = await getTracks(m === "DEFAULT" ? undefined : m);
-    if (res.success) {
-      setQueue(res.data as PlayerTrack[]);
-    }
-    setLoadingTracks(false);
-  }, [setQueue]);
+  const [tracksToken, setTracksToken] = useState(0);
+  const reloadTracks = useCallback(() => setTracksToken((n) => n + 1), []);
 
   useEffect(() => {
-    if (restoredOnce) loadTracks(mode);
-  }, [mode, restoredOnce, loadTracks]);
+    if (!restoredOnce) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingTracks(true);
+      const res = await getTracks(mode === "DEFAULT" ? undefined : mode);
+      if (cancelled) return;
+      if (res.success) {
+        setQueue(res.data as PlayerTrack[]);
+      }
+      setLoadingTracks(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, restoredOnce, tracksToken, setQueue]);
 
   // Debounced Spotify search as the user types.
   useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setSearchError(null);
-      return;
-    }
-    setSearching(true);
-    searchDebounceRef.current = setTimeout(async () => {
-      const res = await searchSpotifyTracks(searchQuery.trim());
-      if (res.success) {
-        setSearchResults(res.data as SpotifyResult[]);
-        setSearchError(null);
-      } else {
-        setSearchResults([]);
-        setSearchError(res.message || "Search failed.");
-      }
-      setSearching(false);
+    if (!trimmedQuery) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const res = await searchSpotifyTracks(trimmedQuery);
+      if (cancelled) return;
+      setSearchState({
+        query: trimmedQuery,
+        items: res.success ? (res.data as SpotifyResult[]) : [],
+        error: res.success ? null : res.message || "Search failed.",
+      });
     }, 400);
     return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      cancelled = true;
+      clearTimeout(timer);
     };
-  }, [searchQuery]);
+  }, [trimmedQuery]);
 
   // Wire the <audio> element up to store state.
   useEffect(() => {
@@ -218,7 +229,7 @@ export default function MusicPlayerWidget() {
 
     const res = await uploadTrack(formData);
     if (res.success) {
-      await loadTracks(mode);
+      reloadTracks();
     } else {
       setUploadError(res.message || "Upload failed.");
     }
@@ -348,14 +359,14 @@ export default function MusicPlayerWidget() {
           }`}
         >
           <div className="max-h-56 overflow-y-auto overflow-hidden rounded-xl bg-[#191919]">
-            {searchError ? (
-              <p className="px-3 py-4 text-center text-[11px] text-red-400">{searchError}</p>
-            ) : searchResults.length === 0 ? (
+            {shown.error ? (
+              <p className="px-3 py-4 text-center text-[11px] text-red-400">{shown.error}</p>
+            ) : shown.items.length === 0 ? (
               <p className="px-3 py-4 text-center text-[11px] text-zinc-600">
                 {searching ? "Searching…" : "No results yet."}
               </p>
             ) : (
-              searchResults.map((r) => (
+              shown.items.map((r) => (
                 <button
                   key={r.spotifyId}
                   onClick={() => playSpotifyResult(r)}
