@@ -1,6 +1,8 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import DeletionGuard from "@/components/account/deletion-guard";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import CommandPalette from "@/components/layout/command-palette";
@@ -21,6 +23,13 @@ export default async function DashboardLayout({
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  // Signing in during the deletion grace period has to be answered before the
+  // workspace is usable, so the check lives here rather than on one page.
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { deletionScheduledAt: true },
+  });
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-[#0d0d0d] text-foreground">
@@ -51,6 +60,10 @@ export default async function DashboardLayout({
 
       {/* Floating music player — hovers over every dashboard page */}
       <MusicPlayerWidget />
+
+      {account?.deletionScheduledAt && (
+        <DeletionGuard deletesAt={account.deletionScheduledAt.toISOString()} />
+      )}
     </div>
   );
 }

@@ -35,6 +35,7 @@ export async function getUserSettings() {
         image: true,
         pendingEmail: true,
         password: true,
+        deletionScheduledAt: true,
       },
     });
     const accounts = await prisma.account.findMany({

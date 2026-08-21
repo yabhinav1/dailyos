@@ -21,9 +21,23 @@ const nextAuth = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, role: true, name: true, image: true },
+            select: {
+              id: true,
+              role: true,
+              name: true,
+              image: true,
+              deletionScheduledAt: true,
+            },
           });
           if (!dbUser) {
+            return { ...nextToken, sub: undefined };
+          }
+
+          // Deletion is carried out on first access after the grace period
+          // rather than by a scheduler. Every app relation cascades from the
+          // user row, so this removes everything with it.
+          if (dbUser.deletionScheduledAt && dbUser.deletionScheduledAt <= new Date()) {
+            await prisma.user.delete({ where: { id: dbUser.id } });
             return { ...nextToken, sub: undefined };
           }
           nextToken.role = dbUser.role;
@@ -77,6 +91,13 @@ const nextAuth = NextAuth({
         // nothing from a locked account that a wrong password doesn't tell
         // them, and the real owner is told by email-free UI copy on the form.
         if (user.lockedUntil && user.lockedUntil > new Date()) {
+          return null;
+        }
+
+        // Past the grace period the account no longer exists, so signing in
+        // has to remove it rather than hand back a session for dead data.
+        if (user.deletionScheduledAt && user.deletionScheduledAt <= new Date()) {
+          await prisma.user.delete({ where: { id: user.id } });
           return null;
         }
 

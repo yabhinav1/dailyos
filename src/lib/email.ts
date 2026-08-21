@@ -98,3 +98,90 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     ),
   });
 }
+
+/**
+ * Sends a full copy of the account's data as a JSON attachment.
+ *
+ * `to` may be an address other than the account's own, at the user's request,
+ * so the caller is expected to also notify the registered address — an export
+ * quietly leaving for somewhere else is exactly what an attacker with a
+ * borrowed session would want.
+ */
+export async function sendDataExportEmail(to: string, json: string, accountEmail: string) {
+  const filename = `dailyos-export-${new Date().toISOString().slice(0, 10)}.json`;
+
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — data export for ${to} not sent (${json.length} bytes)`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "Your DailyOS data export",
+    text: `Attached is a full copy of the data held for the DailyOS account ${accountEmail}, as JSON.`,
+    html: wrap(
+      "Your data export",
+      `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">Attached is a full copy of the data held for the account <strong>${accountEmail}</strong>, as JSON.</p>
+       <p style="margin:0;font-size:13px;color:#71717a;">If you didn't ask for this, change your password — someone else may have access to your account.</p>`
+    ),
+    attachments: [{ filename, content: json, contentType: "application/json" }],
+  });
+}
+
+/** Tells the registered address that an export was sent somewhere else. */
+export async function sendExportSentElsewhereEmail(to: string, sentTo: string) {
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — export-notice for ${to} not sent`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "A copy of your DailyOS data was sent to another address",
+    text: `A full export of your DailyOS data was just sent to ${sentTo}. If that wasn't you, change your password immediately.`,
+    html: wrap(
+      "Your data was exported",
+      `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">A full export of your DailyOS data was just sent to <strong>${sentTo}</strong>.</p>
+       <p style="margin:0;font-size:13px;color:#71717a;">If that wasn't you, change your password immediately — someone else has access to your account.</p>`
+    ),
+  });
+}
+
+export async function sendAccountDeletionScheduledEmail(to: string, deletesAt: Date) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — deletion notice for ${to} not sent`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "Your DailyOS account is scheduled for deletion",
+    text: `Your account and everything in it will be permanently deleted at ${deletesAt.toUTCString()}. To stop this, sign in at ${appUrl} before then and choose "Keep my account".`,
+    html: wrap(
+      "Account scheduled for deletion",
+      `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">Your account and everything in it will be permanently deleted on <strong>${deletesAt.toUTCString()}</strong>.</p>
+       <p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">Changed your mind? Sign in before then and choose &ldquo;Keep my account&rdquo;.</p>
+       <p style="margin:0;font-size:13px;color:#71717a;"><a href="${appUrl}/login" style="color:#2563eb;">${appUrl}/login</a></p>`
+    ),
+  });
+}
+
+export async function sendAccountDeletionCancelledEmail(to: string) {
+  if (!transporter) return;
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "Your DailyOS account will not be deleted",
+    text: "The scheduled deletion of your DailyOS account has been cancelled. Nothing was removed.",
+    html: wrap(
+      "Deletion cancelled",
+      `<p style="margin:0;font-size:14px;color:#3f3f46;">The scheduled deletion of your account has been cancelled. Nothing was removed.</p>`
+    ),
+  });
+}

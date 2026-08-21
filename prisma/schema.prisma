@@ -25,6 +25,7 @@ model User {
   otpAttempts   Int             @default(0) // Wrong guesses against the current OTP
   failedLogins  Int             @default(0) // Consecutive failed password attempts
   lockedUntil   DateTime?       // Sign-in refused until this time
+  deletionScheduledAt DateTime?  // Account is purged on next access after this
   resetToken    String?         // Token for password reset
   resetTokenExpires DateTime?   // Expiry time for reset token
   createdAt     DateTime        @default(now())
