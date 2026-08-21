@@ -18,7 +18,6 @@ import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Save,
-  Moon,
   User,
   Shuffle,
   Upload,
@@ -401,7 +400,7 @@ export default function SettingsPage() {
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="flex h-[min(660px,88vh)] w-full max-w-[56rem] flex-col gap-0 overflow-hidden p-0 sm:max-w-[56rem] sm:flex-row"
+        className="flex max-h-[85vh] min-h-[26rem] w-full max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl sm:flex-row"
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
 
@@ -451,7 +450,8 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+            <div className="max-w-lg">
       {loading ? (
         <SkeletonCards cards={3} />
       ) : (
@@ -460,12 +460,8 @@ export default function SettingsPage() {
 
           {/* Profile Card */}
           <SettingsSection active={activeTab} name="profile">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" /> Profile
-              </h2>
-
               <div className="flex items-center gap-4">
                 <Avatar size="lg" className="h-16 w-16 border border-zinc-800">
                   <AvatarImage src={avatarUrl} alt={profile.name} />
@@ -520,12 +516,8 @@ export default function SettingsPage() {
 
           {/* Email Card */}
           <SettingsSection active={activeTab} name="account">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5" /> Email Address
-              </h2>
-
               <div className="space-y-1">
                 <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Current Email</Label>
                 <Input value={profile.email} className="bg-zinc-900/30 border-zinc-850 text-zinc-300 text-xs h-9 cursor-not-allowed" disabled />
@@ -583,7 +575,7 @@ export default function SettingsPage() {
 
           {/* Security / Password Card */}
           <SettingsSection active={activeTab} name="security">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Lock className="h-3.5 w-3.5" /> {hasPassword ? "Change Password" : "Set a Password"}
@@ -637,7 +629,7 @@ export default function SettingsPage() {
 
           {/* Linked Accounts Card */}
           <SettingsSection active={activeTab} name="security">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" /> Linked Accounts
@@ -683,14 +675,9 @@ export default function SettingsPage() {
 
           {/* Preferences Card (Auto-saves on change) */}
           <SettingsSection active={activeTab} name="preferences">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                  <Moon className="h-3.5 w-3.5" /> App Preferences
-                </h2>
-                <span className="text-[11px] text-zinc-400 font-medium">Auto-saves on change</span>
-              </div>
+              <p className="text-xs text-zinc-400">Auto-saves on change</p>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -727,14 +714,9 @@ export default function SettingsPage() {
 
           {/* System Data Backup Card */}
           <SettingsSection active={activeTab} name="data">
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="rounded-none bg-transparent p-0 ring-0">
             <CardContent className="p-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                  <Download className="h-3.5 w-3.5" /> Workspace Data Backup
-                </h2>
-                <span className="text-[11px] text-zinc-400 font-medium">1-Click JSON Backup</span>
-              </div>
+              <p className="text-xs text-zinc-400">1-Click JSON Backup</p>
               <p className="text-xs text-zinc-300">
                 Download a complete offline JSON snapshot of your current DailyOS profile and preference configuration.
               </p>
@@ -766,6 +748,7 @@ export default function SettingsPage() {
           </SettingsSection>
         </div>
       )}
+            </div>
           </div>
         </div>
       </DialogContent>
