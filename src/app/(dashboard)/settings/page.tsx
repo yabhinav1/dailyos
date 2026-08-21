@@ -15,8 +15,8 @@ import {
   unlinkAccount,
 } from "@/features/settings/actions";
 import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
-  Settings,
   Save,
   Moon,
   User,
@@ -32,6 +32,9 @@ import {
   Eye,
   EyeOff,
   Download,
+  X,
+  SlidersHorizontal,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +42,32 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SkeletonCards } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getErrorMessage } from "@/lib/utils";
+
+const SETTINGS_TABS = [
+  { key: "profile", label: "Profile", icon: User },
+  { key: "account", label: "Account", icon: Mail },
+  { key: "security", label: "Security", icon: Lock },
+  { key: "preferences", label: "Preferences", icon: SlidersHorizontal },
+  { key: "data", label: "Data", icon: Database },
+] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]["key"];
+
+/** Renders its children only while its section is the selected one. */
+function SettingsSection({
+  active,
+  name,
+  children,
+}: {
+  active: SettingsTab;
+  name: SettingsTab;
+  children: React.ReactNode;
+}) {
+  if (active !== name) return null;
+  return <>{children}</>;
+}
 
 type Banner = { type: "success" | "error"; text: string } | null;
 
@@ -127,6 +155,8 @@ export default function SettingsPage() {
   const [hasPassword, setHasPassword] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -358,24 +388,80 @@ export default function SettingsPage() {
 
   const isGithubLinked = accounts.some((a) => a.provider === "github");
 
-  return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <Settings className="h-5.5 w-5.5 text-zinc-300" /> Settings
-        </h1>
-        <p className="text-xs text-zinc-300 mt-1">Manage your profile, security, and account preferences.</p>
-      </div>
+  // Settings is a route so it stays linkable and refreshable, but it presents
+  // as a dialog over the workspace. Closing returns to where you came from,
+  // falling back to /notes when this was opened directly.
+  const close = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/notes");
+  };
 
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) close(); }}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="flex h-[min(660px,88vh)] w-full max-w-[56rem] flex-col gap-0 overflow-hidden p-0 sm:max-w-[56rem] sm:flex-row"
+      >
+        <DialogTitle className="sr-only">Settings</DialogTitle>
+
+        {/* Category rail — a scrollable strip on phones, a column from sm up */}
+        <nav
+          aria-label="Settings sections"
+          className="flex shrink-0 gap-1 overflow-x-auto border-b border-zinc-850 p-2 sm:w-52 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:border-b-0 sm:border-r sm:p-3"
+        >
+          <p className="hidden px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-400 sm:block">
+            Settings
+          </p>
+          {SETTINGS_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = tab.key === activeTab;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors ${
+                  isActive
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-300 hover:bg-zinc-900/70 hover:text-white"
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Panel */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-850 px-5 py-3.5">
+            <h2 className="text-sm font-bold text-white">
+              {SETTINGS_TABS.find((t) => t.key === activeTab)?.label}
+            </h2>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close settings"
+              className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
       {loading ? (
         <SkeletonCards cards={3} />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <InlineBanner banner={banner} onDismiss={() => setBanner(null)} />
 
           {/* Profile Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-4">
+          <SettingsSection active={activeTab} name="profile">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <User className="h-3.5 w-3.5" /> Profile
               </h2>
@@ -430,10 +516,12 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+          </SettingsSection>
 
           {/* Email Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-4">
+          <SettingsSection active={activeTab} name="account">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5" /> Email Address
               </h2>
@@ -491,10 +579,12 @@ export default function SettingsPage() {
               )}
             </CardContent>
           </Card>
+          </SettingsSection>
 
           {/* Security / Password Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-4">
+          <SettingsSection active={activeTab} name="security">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Lock className="h-3.5 w-3.5" /> {hasPassword ? "Change Password" : "Set a Password"}
               </h2>
@@ -543,10 +633,12 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+          </SettingsSection>
 
           {/* Linked Accounts Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-3">
+          <SettingsSection active={activeTab} name="security">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" /> Linked Accounts
               </h2>
@@ -587,10 +679,12 @@ export default function SettingsPage() {
               </p>
             </CardContent>
           </Card>
+          </SettingsSection>
 
           {/* Preferences Card (Auto-saves on change) */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-4">
+          <SettingsSection active={activeTab} name="preferences">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                   <Moon className="h-3.5 w-3.5" /> App Preferences
@@ -629,10 +723,12 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+          </SettingsSection>
 
           {/* System Data Backup Card */}
-          <Card className="border-zinc-850 bg-[#0C0C0E]/40">
-            <CardContent className="p-5 space-y-3">
+          <SettingsSection active={activeTab} name="data">
+          <Card className="border-0 bg-transparent shadow-none">
+            <CardContent className="p-0 space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                   <Download className="h-3.5 w-3.5" /> Workspace Data Backup
@@ -667,9 +763,13 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
+          </SettingsSection>
         </div>
       )}
-    </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
