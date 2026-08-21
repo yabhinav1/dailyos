@@ -21,12 +21,22 @@ const nextAuth = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, role: true },
+            select: { id: true, role: true, name: true, image: true },
           });
           if (!dbUser) {
             return { ...nextToken, sub: undefined };
           }
           nextToken.role = dbUser.role;
+          nextToken.name = dbUser.name;
+
+          // This token is serialised into a cookie. An uploaded avatar is a
+          // data URL that can run to two megabytes, which blows past the 4KB
+          // cookie limit and gets split into dozens of chunks — enough to
+          // break the session outright and to put megabytes of cookie on every
+          // single request. Stored avatars are served by URL instead.
+          nextToken.picture = dbUser.image?.startsWith("data:")
+            ? `/api/avatar/${dbUser.id}`
+            : dbUser.image;
         } catch (err) {
           console.error("[auth.jwt] user existence check failed:", err);
           return nextToken;

@@ -207,7 +207,10 @@ export default function SettingsPage() {
       const res = await regenerateAvatar();
       if (res.success && res.image) {
         setAvatarUrl(res.image);
-        await updateSession({ image: res.image });
+        // Refresh only: the jwt callback re-reads the avatar from the
+        // database. Passing the image here would put a data URL in the
+        // session cookie, which is what used to sign people out.
+        await updateSession({});
         showBanner("success", "New avatar generated!");
       }
     } catch (err: unknown) {
@@ -235,7 +238,10 @@ export default function SettingsPage() {
       const res = await uploadCustomAvatar(dataUrl);
       if (res.success && res.image) {
         setAvatarUrl(res.image);
-        await updateSession({ image: res.image });
+        // Refresh only: the jwt callback re-reads the avatar from the
+        // database. Passing the image here would put a data URL in the
+        // session cookie, which is what used to sign people out.
+        await updateSession({});
         showBanner("success", "Profile picture updated!");
       } else {
         showBanner("error", res.message || "Failed to upload image.");

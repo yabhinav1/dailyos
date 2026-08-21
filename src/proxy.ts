@@ -23,14 +23,19 @@ const PUBLIC_ROUTES = [
 ];
 
 // next-auth v5 names its cookie `authjs.session-token`, prefixed with
-// `__Secure-` once it is issued over HTTPS.
+// `__Secure-` once it is issued over HTTPS. A token too large for one cookie
+// is split into `authjs.session-token.0`, `.1` and so on, so this matches the
+// prefix — an exact-name check treats a chunked session as no session at all
+// and bounces a signed-in user to /login.
 function hasSessionCookie(request: NextRequest) {
   return request.cookies
     .getAll()
     .some(
       (cookie) =>
         cookie.name === "authjs.session-token" ||
-        cookie.name === "__Secure-authjs.session-token"
+        cookie.name === "__Secure-authjs.session-token" ||
+        cookie.name.startsWith("authjs.session-token.") ||
+        cookie.name.startsWith("__Secure-authjs.session-token.")
     );
 }
 
