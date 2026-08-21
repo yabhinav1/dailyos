@@ -6,6 +6,7 @@ import { generateAvatarUrl } from "@/lib/avatar";
 import { createNotification } from "@/lib/notifications";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { generateOtp, otpMatches, MAX_OTP_ATTEMPTS } from "@/lib/otp";
 import crypto from "crypto";
 
 const registerSchema = z.object({
@@ -15,7 +16,7 @@ const registerSchema = z.object({
     .min(3, "Username must be at least 3 characters")
     .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters and underscores"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export type RegisterState = {
@@ -29,11 +30,6 @@ export type RegisterState = {
     password?: string[];
   };
 };
-
-// Generates a random 6-digit numeric OTP
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 export async function registerUser(
   prevState: RegisterState | null,
@@ -103,6 +99,7 @@ export async function registerUser(
         image: generateAvatarUrl(username),
         otp,
         otpExpires,
+        otpAttempts: 0,
         settings: {
           create: {
             theme: "dark",
@@ -138,25 +135,43 @@ export async function registerUser(
 
 // Server Action to verify OTP code
 export async function verifyOtp(email: string, otpCode: string): Promise<{ success: boolean; message: string }> {
+  // One message for every failure below. Distinguishing "user not found" from
+  // "wrong code" told an anonymous caller which addresses have accounts.
+  const rejected = {
+    success: false,
+    message: "That code isn't valid. Request a new one and try again.",
+  };
+
   try {
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (!user) {
-      return { success: false, message: "User not found." };
-    }
-
-    if (!user.otp || !user.otpExpires) {
-      return { success: false, message: "No verification code exists for this user." };
+    if (!user || !user.otp || !user.otpExpires) {
+      return rejected;
     }
 
     if (user.otpExpires < new Date()) {
-      return { success: false, message: "Verification code has expired. Please request a new one." };
+      return rejected;
     }
 
-    if (user.otp !== otpCode) {
-      return { success: false, message: "Incorrect verification code." };
+    // A six-digit code is only a million guesses, so the code has to burn
+    // after a handful of wrong ones or the expiry window is long enough to
+    // walk the whole space.
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otp: null, otpExpires: null, otpAttempts: 0 },
+      });
+      return rejected;
+    }
+
+    if (!otpMatches(user.otp, otpCode)) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otpAttempts: { increment: 1 } },
+      });
+      return rejected;
     }
 
     // Verify user, clear OTP
@@ -166,6 +181,7 @@ export async function verifyOtp(email: string, otpCode: string): Promise<{ succe
         emailVerified: new Date(),
         otp: null,
         otpExpires: null,
+        otpAttempts: 0,
       },
     });
 
@@ -195,6 +211,7 @@ export async function resendOtp(email: string): Promise<{ success: boolean; mess
       data: {
         otp,
         otpExpires,
+        otpAttempts: 0,
       },
     });
 
@@ -242,8 +259,8 @@ export async function requestPasswordReset(email: string): Promise<{ success: bo
 
 // Server Action to reset password
 export async function resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
-  if (!password || password.length < 6) {
-    return { success: false, message: "Password must be at least 6 characters long." };
+  if (!password || password.length < 8) {
+    return { success: false, message: "Password must be at least 8 characters long." };
   }
 
   try {

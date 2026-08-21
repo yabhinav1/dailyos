@@ -22,6 +22,9 @@ model User {
   pendingEmail  String?         // New email awaiting OTP confirmation (email-change flow)
   otp           String?         // Numeric code for verification
   otpExpires    DateTime?       // Expiry time for OTP
+  otpAttempts   Int             @default(0) // Wrong guesses against the current OTP
+  failedLogins  Int             @default(0) // Consecutive failed password attempts
+  lockedUntil   DateTime?       // Sign-in refused until this time
   resetToken    String?         // Token for password reset
   resetTokenExpires DateTime?   // Expiry time for reset token
   createdAt     DateTime        @default(now())

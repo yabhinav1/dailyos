@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
+import { MAX_FAILED_LOGINS, lockoutExpiry } from "@/lib/otp";
 import { authConfig } from "@/lib/auth.config";
 
 const nextAuth = NextAuth({
@@ -62,10 +63,34 @@ const nextAuth = NextAuth({
           return null;
         }
 
+        // Refuse while locked out, without saying so — an attacker learns
+        // nothing from a locked account that a wrong password doesn't tell
+        // them, and the real owner is told by email-free UI copy on the form.
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          return null;
+        }
+
         const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
+          // Lock the account for a spell once the failures pile up, so an
+          // online guessing run against one account cannot simply continue.
+          const failed = user.failedLogins + 1;
+          await prisma.user.update({
+            where: { id: user.id },
+            data:
+              failed >= MAX_FAILED_LOGINS
+                ? { failedLogins: 0, lockedUntil: lockoutExpiry() }
+                : { failedLogins: failed },
+          });
           return null;
+        }
+
+        if (user.failedLogins > 0 || user.lockedUntil) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { failedLogins: 0, lockedUntil: null },
+          });
         }
 
         return {

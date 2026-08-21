@@ -8,15 +8,12 @@ import { createNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { getErrorMessage } from "@/lib/utils";
+import { generateOtp, otpMatches, MAX_OTP_ATTEMPTS } from "@/lib/otp";
 
 async function getUserId() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   return session.user.id;
-}
-
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // -------------------------------------------------------------
@@ -144,7 +141,7 @@ export async function requestEmailChange(newEmail: string) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { pendingEmail: normalized, otp, otpExpires },
+      data: { pendingEmail: normalized, otp, otpExpires, otpAttempts: 0 },
     });
 
     await sendOtpEmail(normalized, otp);
@@ -167,7 +164,20 @@ export async function verifyEmailChange(otpCode: string) {
     if (user.otpExpires < new Date()) {
       return { success: false, message: "Code expired. Please request a new one." };
     }
-    if (user.otp !== otpCode) {
+    // Burn the code once it has absorbed a handful of wrong guesses, so the
+    // six-digit space cannot be walked inside the expiry window.
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { otp: null, otpExpires: null, otpAttempts: 0 },
+      });
+      return { success: false, message: "Too many incorrect attempts. Request a new code." };
+    }
+    if (!otpMatches(user.otp, otpCode)) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { otpAttempts: { increment: 1 } },
+      });
       return { success: false, message: "Incorrect verification code." };
     }
 
@@ -180,6 +190,7 @@ export async function verifyEmailChange(otpCode: string) {
         pendingEmail: null,
         otp: null,
         otpExpires: null,
+        otpAttempts: 0,
         emailVerified: new Date(),
       },
     });
@@ -221,7 +232,7 @@ export async function resendEmailChangeOtp() {
     }
     const otp = generateOtp();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
-    await prisma.user.update({ where: { id: userId }, data: { otp, otpExpires } });
+    await prisma.user.update({ where: { id: userId }, data: { otp, otpExpires, otpAttempts: 0 } });
     await sendOtpEmail(user.pendingEmail, otp);
     return { success: true, message: "Code resent." };
   } catch (error: unknown) {
@@ -237,8 +248,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
   try {
     const userId = await getUserId();
 
-    if (!newPassword || newPassword.length < 6) {
-      return { success: false, message: "New password must be at least 6 characters." };
+    if (!newPassword || newPassword.length < 8) {
+      return { success: false, message: "New password must be at least 8 characters." };
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
