@@ -36,7 +36,7 @@ export function LoaderBlock({ label, className }: { label?: string; className?: 
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 py-16", className)}>
       <Loader />
-      {label && <p className="text-xs text-zinc-500">{label}</p>}
+      {label && <p className="text-xs text-zinc-400">{label}</p>}
     </div>
   );
 }

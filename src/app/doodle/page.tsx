@@ -34,13 +34,13 @@ export default function DoodlePage() {
       <div className="flex shrink-0 items-center gap-3 px-4 py-3">
         <Link
           href="/"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
           <h1 className="text-sm font-bold text-white">Doodle</h1>
-          <p className="text-[11px] text-zinc-600">
+          <p className="text-xs text-zinc-400">
             Sketch freely. Saved to this browser automatically.
           </p>
         </div>

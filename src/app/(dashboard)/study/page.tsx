@@ -162,7 +162,7 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; o
   return (
     <Card className="border-zinc-850 bg-[#0C0C0E]/40">
       <CardContent className="p-6 flex flex-col items-center gap-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Pomodoro Timer</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Pomodoro Timer</h2>
 
         <div className="relative w-48 h-48 flex items-center justify-center">
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 180 180">
@@ -190,7 +190,7 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; o
                 <span className="text-4xl font-bold text-white font-mono">:00</span>
               </div>
             )}
-            <div className="text-[10px] text-zinc-500 mt-1">{isRunning ? "Focusing..." : "Ready — edit minutes above"}</div>
+            <div className="text-[11px] text-zinc-400 mt-1">{isRunning ? "Focusing..." : "Ready — edit minutes above"}</div>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; o
             {isRunning ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Start</>}
           </Button>
           <Button size="sm" variant="outline" onClick={resetTimer}
-            className="border-zinc-800 text-zinc-400 text-xs h-8 gap-1">
+            className="border-zinc-800 text-zinc-300 text-xs h-8 gap-1">
             <RotateCcw className="h-3.5 w-3.5" /> Reset
           </Button>
         </div>
@@ -214,20 +214,20 @@ function PomodoroTimer({ subjects, onSessionEnd }: { subjects: StudySubject[]; o
         {/* Alarm sound settings */}
         <div className="w-full pt-3 border-t border-zinc-900 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">Alarm sound</span>
-            <button onClick={playAlarm} className="text-[10px] text-blue-500 hover:text-blue-400">Test</button>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Alarm sound</span>
+            <button onClick={playAlarm} className="text-[11px] text-blue-500 hover:text-blue-400">Test</button>
           </div>
-          <p className="text-[10px] text-zinc-500 truncate">
+          <p className="text-[11px] text-zinc-400 truncate">
             {customSoundName ? `Custom: ${customSoundName}` : "Default beep"}
           </p>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}
-              className="border-zinc-800 text-zinc-400 text-[11px] h-7 flex-1">
+              className="border-zinc-800 text-zinc-300 text-xs h-7 flex-1">
               Upload MP3
             </Button>
             {customSoundName && (
               <Button size="sm" variant="outline" onClick={removeCustomSound}
-                className="border-zinc-800 text-zinc-500 hover:text-red-400 text-[11px] h-7">
+                className="border-zinc-800 text-zinc-400 hover:text-red-400 text-xs h-7">
                 Remove
               </Button>
             )}
@@ -255,9 +255,9 @@ function FlashcardWidget() {
     <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-xl space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-          <BookOpen className="h-3.5 w-3.5 text-zinc-400" /> Interactive Flashcards Deck
+          <BookOpen className="h-3.5 w-3.5 text-zinc-300" /> Interactive Flashcards Deck
         </h3>
-        <span className="text-[10px] font-mono text-zinc-500">Card {currentIndex + 1} of {cards.length}</span>
+        <span className="text-[11px] font-mono text-zinc-400">Card {currentIndex + 1} of {cards.length}</span>
       </div>
 
       {/* 3D Flip Card Container */}
@@ -268,7 +268,7 @@ function FlashcardWidget() {
         aria-label={isFlipped ? "Show the question" : "Show the answer"}
         className="flex h-32 w-full select-none flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/90 p-5 text-center shadow-lg transition-all duration-200 hover:border-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       >
-        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
           {isFlipped ? "Answer" : "Question (Click to flip)"}
         </span>
         <p className="text-sm font-semibold text-zinc-200 leading-snug">
@@ -282,7 +282,7 @@ function FlashcardWidget() {
           size="sm"
           disabled={currentIndex === 0}
           onClick={() => { setCurrentIndex((i) => Math.max(0, i - 1)); setIsFlipped(false); }}
-          className="text-xs border-zinc-800 text-zinc-400 h-7"
+          className="text-xs border-zinc-800 text-zinc-300 h-7"
         >
           Previous
         </Button>
@@ -362,7 +362,7 @@ export default function StudyPage() {
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <GraduationCap className="h-5.5 w-5.5 text-indigo-400" /> Study Mode
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-zinc-300 mt-1">
             {hours}h {mins}m studied this week · {data.subjects.length} subjects
           </p>
         </div>
@@ -387,14 +387,14 @@ export default function StudyPage() {
             {data.recentSessions.length > 0 && (
               <Card className="border-zinc-850 bg-[#0C0C0E]/40">
                 <CardContent className="p-4 space-y-2">
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Recent Sessions</h3>
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Recent Sessions</h3>
                   {data.recentSessions.slice(0, 5).map((s) => (
                     <div key={s.id} className="flex items-center justify-between py-1.5 border-b border-zinc-900 last:border-0">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3 text-zinc-600" />
-                        <span className="text-[11px] text-zinc-400">{s.subject?.name || "General"}</span>
+                        <Clock className="h-3 w-3 text-zinc-400" />
+                        <span className="text-xs text-zinc-300">{s.subject?.name || "General"}</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-zinc-300">{s.duration}m</span>
+                      <span className="text-xs font-semibold text-zinc-200">{s.duration}m</span>
                     </div>
                   ))}
                 </CardContent>
@@ -407,8 +407,8 @@ export default function StudyPage() {
             {data.subjects.length === 0 ? (
               <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
                 <BookOpen className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-zinc-400">No subjects yet</p>
-                <p className="text-xs text-zinc-500 mt-1">Add your first subject to start tracking topics</p>
+                <p className="text-sm font-semibold text-zinc-300">No subjects yet</p>
+                <p className="text-xs text-zinc-400 mt-1">Add your first subject to start tracking topics</p>
               </div>
             ) : (
               data.subjects.map((subject) => {
@@ -423,12 +423,12 @@ export default function StudyPage() {
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full" style={{ background: subject.color || "#6366f1" }} />
                           <h3 className="text-sm font-semibold text-zinc-100">{subject.name}</h3>
-                          {subject.code && <span className="text-[10px] text-zinc-600 px-1.5 py-0.5 bg-zinc-900 rounded">{subject.code}</span>}
+                          {subject.code && <span className="text-[11px] text-zinc-400 px-1.5 py-0.5 bg-zinc-900 rounded">{subject.code}</span>}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-zinc-500">{completedTopics}/{totalTopics} topics</span>
+                          <span className="text-[11px] text-zinc-400">{completedTopics}/{totalTopics} topics</span>
                           <button onClick={() => { if (confirm(`Delete "${subject.name}"?`)) { deleteSubject(subject.id).then(reloadData); } }}
-                            className="text-zinc-700 hover:text-red-400 transition-colors">
+                            className="text-zinc-400 hover:text-red-400 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -450,20 +450,20 @@ export default function StudyPage() {
                               className="shrink-0">
                               {topic.isCompleted
                                 ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                                : <Circle className="h-4 w-4 text-zinc-600 hover:text-indigo-400" />}
+                                : <Circle className="h-4 w-4 text-zinc-400 hover:text-indigo-400" />}
                             </button>
-                            <span className={`text-xs flex-1 ${topic.isCompleted ? "line-through text-zinc-600" : "text-zinc-300"}`}>
+                            <span className={`text-xs flex-1 ${topic.isCompleted ? "line-through text-zinc-400" : "text-zinc-200"}`}>
                               {topic.title}
                             </span>
                             {topic.revisionCount > 0 && (
-                              <span className="text-[9px] text-zinc-600 px-1 bg-zinc-900 rounded">×{topic.revisionCount}</span>
+                              <span className="text-[11px] text-zinc-400 px-1 bg-zinc-900 rounded">×{topic.revisionCount}</span>
                             )}
                           </div>
                         ))}
                       </div>
 
                       <Button size="sm" variant="outline" onClick={() => setShowAddTopic(subject.id)}
-                        className="border-zinc-800 text-zinc-500 text-[11px] h-7 gap-1 hover:text-zinc-300 w-full">
+                        className="border-zinc-800 text-zinc-400 text-xs h-7 gap-1 hover:text-zinc-200 w-full">
                         <Plus className="h-3 w-3" /> Add Topic
                       </Button>
                     </CardContent>
@@ -481,20 +481,20 @@ export default function StudyPage() {
           <DialogHeader><DialogTitle className="text-sm font-bold text-white">Add Subject</DialogTitle></DialogHeader>
           <form onSubmit={handleAddSubject} className="space-y-3 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Subject Name</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Subject Name</Label>
               <Input autoFocus placeholder="e.g. Data Structures" value={subjectName}
                 onChange={(e) => setSubjectName(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Code (optional)</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Code (optional)</Label>
               <Input placeholder="e.g. CS201" value={subjectCode}
                 onChange={(e) => setSubjectCode(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold h-8">Add Subject</Button>
             </div>
           </form>
@@ -507,14 +507,14 @@ export default function StudyPage() {
           <DialogHeader><DialogTitle className="text-sm font-bold text-white">Add Topic</DialogTitle></DialogHeader>
           <form onSubmit={handleAddTopic} className="space-y-3 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Topic Title</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Topic Title</Label>
               <Input autoFocus placeholder="e.g. Binary Trees" value={topicTitle}
                 onChange={(e) => setTopicTitle(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowAddTopic(null)}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold h-8">Add Topic</Button>
             </div>
           </form>

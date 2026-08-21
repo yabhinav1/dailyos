@@ -18,7 +18,7 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-500">Loading...</div>}>
+    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-400">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );
@@ -75,7 +75,7 @@ function LoginForm() {
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Welcome back</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-300">
           Login to manage your tasks, coding projects & studies
         </p>
       </div>
@@ -88,16 +88,16 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-zinc-300 text-xs">Username or Email</Label>
+          <Label htmlFor="identifier" className="text-zinc-200 text-xs">Username or Email</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="identifier"
               type="text"
               placeholder="username or name@example.com"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={loading}
             />
@@ -106,20 +106,20 @@ function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-zinc-300 text-xs">Password</Label>
-            <Link href="/forgot-password" className="text-[11px] text-blue-500 hover:text-blue-400 font-medium">
+            <Label htmlFor="password" className="text-zinc-200 text-xs">Password</Label>
+            <Link href="/forgot-password" className="text-xs text-blue-500 hover:text-blue-400 font-medium">
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={loading}
             />
@@ -133,16 +133,16 @@ function LoginForm() {
 
       <div className="relative flex py-2 items-center">
         <div className="flex-grow border-t border-zinc-800"></div>
-        <span className="flex-shrink mx-4 text-zinc-500 text-xs uppercase tracking-wider">or continue with</span>
+        <span className="flex-shrink mx-4 text-zinc-400 text-xs uppercase tracking-wider">or continue with</span>
         <div className="flex-grow border-t border-zinc-800"></div>
       </div>
 
       <Button type="button" variant="outline" onClick={() => handleOAuthLogin("github")} className="w-full bg-zinc-900/50 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700 text-white" disabled={loading}>
-        <GithubIcon className="mr-2 h-4 w-4 text-zinc-300" />
+        <GithubIcon className="mr-2 h-4 w-4 text-zinc-200" />
         GitHub
       </Button>
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-zinc-400">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="text-blue-500 hover:text-blue-400 font-medium">
           Sign up

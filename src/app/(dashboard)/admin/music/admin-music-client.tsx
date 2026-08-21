@@ -43,11 +43,11 @@ function StatusBadge({ status, lastError }: { status: string; lastError: string 
     ONLINE: { icon: <CheckCircle2 className="h-3 w-3" />, cls: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20", label: "Online" },
     OFFLINE: { icon: <XCircle className="h-3 w-3" />, cls: "text-red-500 bg-red-500/10 border-red-500/20", label: "Offline" },
     ERROR: { icon: <AlertTriangle className="h-3 w-3" />, cls: "text-amber-500 bg-amber-500/10 border-amber-500/20", label: "Error" },
-    UNKNOWN: { icon: <Circle className="h-3 w-3" />, cls: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20", label: "Unknown" },
+    UNKNOWN: { icon: <Circle className="h-3 w-3" />, cls: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20", label: "Unknown" },
   };
   const s = map[status] || map.UNKNOWN;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${s.cls}`} title={lastError || undefined}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${s.cls}`} title={lastError || undefined}>
       {s.icon}
       {s.label}
     </span>
@@ -150,14 +150,14 @@ export default function AdminMusicClient() {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">Lavalink Nodes</h1>
-          <p className="text-xs text-zinc-500">Manage playback nodes for the music player. Lower priority is tried first; a down node fails over automatically.</p>
+          <p className="text-xs text-zinc-400">Manage playback nodes for the music player. Lower priority is tried first; a down node fails over automatically.</p>
         </div>
       </div>
 
       {/* Active node summary */}
       <div className="mb-5 flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 px-4 py-3">
         <ShieldCheck className="h-4 w-4 text-blue-500 shrink-0" />
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+        <p className="text-xs text-zinc-400 dark:text-zinc-300">
           {activeNode ? (
             <>Currently routing playback through <span className="font-semibold text-zinc-900 dark:text-white">{activeNode.name}</span>.</>
           ) : (
@@ -167,7 +167,7 @@ export default function AdminMusicClient() {
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={reload} className="h-7 gap-1.5 text-xs text-zinc-500">
+        <Button variant="ghost" size="sm" onClick={reload} className="h-7 gap-1.5 text-xs text-zinc-400">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
@@ -182,31 +182,31 @@ export default function AdminMusicClient() {
           <CardContent className="p-4">
             <form onSubmit={handleAdd} className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-500">Name</Label>
+                <Label className="text-xs text-zinc-400">Name</Label>
                 <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Primary (US-East)" className="h-8 text-xs" />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-500">Priority</Label>
+                <Label className="text-xs text-zinc-400">Priority</Label>
                 <Input type="number" value={form.priority} onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))} placeholder="0" className="h-8 text-xs" />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-500">Host</Label>
+                <Label className="text-xs text-zinc-400">Host</Label>
                 <Input value={form.host} onChange={(e) => setForm((f) => ({ ...f, host: e.target.value }))} placeholder="lavalink.example.com" className="h-8 text-xs" />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-zinc-500">Port</Label>
+                <Label className="text-xs text-zinc-400">Port</Label>
                 <Input type="number" value={form.port} onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))} placeholder="2333" className="h-8 text-xs" />
               </div>
               <div className="col-span-2 space-y-1">
-                <Label className="text-[11px] text-zinc-500">Password</Label>
+                <Label className="text-xs text-zinc-400">Password</Label>
                 <Input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Node authorization password" className="h-8 text-xs" autoComplete="new-password" />
               </div>
-              <label className="col-span-2 flex items-center gap-2 text-xs text-zinc-500">
+              <label className="col-span-2 flex items-center gap-2 text-xs text-zinc-400">
                 <input type="checkbox" checked={form.secure} onChange={(e) => setForm((f) => ({ ...f, secure: e.target.checked }))} className="h-3.5 w-3.5" />
                 Use secure connection (https/wss)
               </label>
 
-              {formError && <p className="col-span-2 text-[11px] text-red-500">{formError}</p>}
+              {formError && <p className="col-span-2 text-xs text-red-500">{formError}</p>}
 
               <div className="col-span-2 flex justify-end gap-2 pt-1">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setFormOpen(false)} className="h-7 text-xs">
@@ -224,9 +224,9 @@ export default function AdminMusicClient() {
 
       <div className="space-y-2">
         {loading && nodes.length === 0 ? (
-          <p className="py-8 text-center text-xs text-zinc-500">Loading nodes…</p>
+          <p className="py-8 text-center text-xs text-zinc-400">Loading nodes…</p>
         ) : nodes.length === 0 ? (
-          <p className="py-8 text-center text-xs text-zinc-500">No nodes configured yet. Add one above.</p>
+          <p className="py-8 text-center text-xs text-zinc-400">No nodes configured yet. Add one above.</p>
         ) : (
           sortedNodes.map((node) => (
             <div
@@ -236,13 +236,13 @@ export default function AdminMusicClient() {
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <span className="shrink-0 rounded bg-zinc-100 dark:bg-zinc-900 px-1.5 py-0.5 text-[10px] font-mono text-zinc-500">#{node.priority}</span>
+                <span className="shrink-0 rounded bg-zinc-100 dark:bg-zinc-900 px-1.5 py-0.5 text-[11px] font-mono text-zinc-400">#{node.priority}</span>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-xs font-semibold text-zinc-900 dark:text-white">{node.name}</p>
                     <StatusBadge status={node.status} lastError={node.lastError} />
                   </div>
-                  <p className="truncate text-[10px] text-zinc-500">
+                  <p className="truncate text-[11px] text-zinc-400">
                     {node.secure ? "wss" : "ws"}://{node.host}:{node.port}
                     {node.lastError ? ` — ${node.lastError}` : ""}
                   </p>
@@ -250,7 +250,7 @@ export default function AdminMusicClient() {
               </div>
 
               <div className="flex shrink-0 items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => handleTest(node.id)} disabled={testingId === node.id} className="h-7 w-7 p-0 text-zinc-500">
+                <Button variant="ghost" size="sm" onClick={() => handleTest(node.id)} disabled={testingId === node.id} className="h-7 w-7 p-0 text-zinc-400">
                   <RefreshCw className={`h-3.5 w-3.5 ${testingId === node.id ? "animate-spin" : ""}`} />
                 </Button>
                 <button

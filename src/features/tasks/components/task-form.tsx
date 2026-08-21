@@ -93,7 +93,7 @@ export default function TaskForm({
 
       {/* Task Title */}
       <div className="space-y-1">
-        <Label htmlFor="title" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+        <Label htmlFor="title" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
           Task Title
         </Label>
         <Input
@@ -101,7 +101,7 @@ export default function TaskForm({
           placeholder="What needs to be done?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500 text-xs"
+          className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400 text-xs"
           required
           disabled={loading}
         />
@@ -109,7 +109,7 @@ export default function TaskForm({
 
       {/* Description */}
       <div className="space-y-1">
-        <Label htmlFor="description" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+        <Label htmlFor="description" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
           Description
         </Label>
         <Textarea
@@ -117,7 +117,7 @@ export default function TaskForm({
           placeholder="Add details, links, or instructions..."
           value={description}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-          className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500 text-xs min-h-[80px]"
+          className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400 text-xs min-h-[80px]"
           disabled={loading}
         />
       </div>
@@ -125,7 +125,7 @@ export default function TaskForm({
       {/* Status and Priority Row */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <Label htmlFor="status" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="status" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Status
           </Label>
           <select
@@ -144,7 +144,7 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="priority" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="priority" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Priority
           </Label>
           <select
@@ -166,7 +166,7 @@ export default function TaskForm({
       {/* Due Date & Estimates Row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1 col-span-1.5">
-          <Label htmlFor="dueDate" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="dueDate" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Due Date
           </Label>
           <Input
@@ -180,7 +180,7 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-1 col-span-0.5">
-          <Label htmlFor="dueTime" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="dueTime" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Time
           </Label>
           <Input
@@ -195,7 +195,7 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="est" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="est" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Est. Time (min)
           </Label>
           <Input
@@ -213,7 +213,7 @@ export default function TaskForm({
       {/* Project Workspace Selector */}
       {projects.length > 0 && (
         <div className="space-y-1">
-          <Label htmlFor="project" className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+          <Label htmlFor="project" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
             Project Workspace
           </Label>
           <select
@@ -239,7 +239,7 @@ export default function TaskForm({
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-zinc-850 hover:bg-zinc-900 text-zinc-400 text-xs h-9"
+          className="border-zinc-850 hover:bg-zinc-900 text-zinc-300 text-xs h-9"
           disabled={loading}
         >
           Cancel

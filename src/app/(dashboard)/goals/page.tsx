@@ -71,7 +71,7 @@ export default function GoalsPage() {
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <Target className="h-5.5 w-5.5 text-emerald-400" /> Goals
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-zinc-300 mt-1">
             {activeGoals.length} active · {completedGoals.length} completed
           </p>
         </div>
@@ -86,8 +86,8 @@ export default function GoalsPage() {
       ) : goals.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <Target className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-400">No goals set yet</p>
-          <p className="text-xs text-zinc-500 mt-1">Define clear goals to track your long-term growth</p>
+          <p className="text-sm font-semibold text-zinc-300">No goals set yet</p>
+          <p className="text-xs text-zinc-400 mt-1">Define clear goals to track your long-term growth</p>
           <Button size="sm" onClick={() => setShowCreate(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs gap-1">
             <Plus className="h-3.5 w-3.5" /> Set First Goal
           </Button>
@@ -96,7 +96,7 @@ export default function GoalsPage() {
         <div className="space-y-6">
           {activeGoals.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Active Goals</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Active Goals</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <AnimatePresence initial={false}>
                   {activeGoals.map((goal) => (
@@ -114,7 +114,7 @@ export default function GoalsPage() {
           )}
           {completedGoals.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">🎉 Completed</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">🎉 Completed</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 opacity-60">
                 <AnimatePresence initial={false}>
                   {completedGoals.map((goal) => (
@@ -140,20 +140,20 @@ export default function GoalsPage() {
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Goal Title</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Goal Title</Label>
               <Input autoFocus placeholder="e.g. Complete DSA Roadmap" value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required disabled={saving} />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required disabled={saving} />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Description</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Description</Label>
               <Textarea placeholder="Why is this important?" value={form.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs min-h-[60px]" disabled={saving} />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs min-h-[60px]" disabled={saving} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Timeframe</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Timeframe</Label>
                 <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value as GoalTimeframe })}
                   className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white">
                   <option value="WEEKLY">Weekly</option>
@@ -162,14 +162,14 @@ export default function GoalsPage() {
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Target Date</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Target Date</Label>
                 <Input type="date" value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
                   className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" disabled={saving} />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold h-8" disabled={saving}>
                 {saving ? "Saving..." : "Create Goal"}
               </Button>
@@ -197,17 +197,17 @@ function GoalCard({ goal, onProgressChange, onDelete }: { goal: Goal; onProgress
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className={`text-sm font-semibold ${goal.isCompleted ? "line-through text-zinc-500" : "text-zinc-100"}`}>{goal.title}</p>
-            {goal.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{goal.description}</p>}
+            <p className={`text-sm font-semibold ${goal.isCompleted ? "line-through text-zinc-400" : "text-zinc-100"}`}>{goal.title}</p>
+            {goal.description && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{goal.description}</p>}
           </div>
-          <button onClick={() => onDelete(goal.id, goal.title)} className="text-zinc-700 hover:text-red-400 transition-colors p-1 shrink-0">
+          <button onClick={() => onDelete(goal.id, goal.title)} className="text-zinc-400 hover:text-red-400 transition-colors p-1 shrink-0">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-zinc-500 uppercase font-bold tracking-wider">{goal.timeframe}</span>
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-zinc-400 uppercase font-bold tracking-wider">{goal.timeframe}</span>
             <span className={`font-bold ${localProgress >= 100 ? "text-emerald-400" : localProgress > 50 ? "text-blue-400" : "text-amber-400"}`}>
               {localProgress}%
             </span>
@@ -223,7 +223,7 @@ function GoalCard({ goal, onProgressChange, onDelete }: { goal: Goal; onProgress
         </div>
 
         {goal.targetDate && (
-          <div className="text-[10px] text-zinc-600">
+          <div className="text-[11px] text-zinc-400">
             Target: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </div>
         )}

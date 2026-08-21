@@ -10,7 +10,7 @@ import { GitBranch, ShieldCheck } from "lucide-react";
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-500">Loading...</div>}>
+    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-400">Loading...</div>}>
       <VerifyOtpForm />
     </Suspense>
   );
@@ -87,10 +87,10 @@ function VerifyOtpForm() {
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Verify your email</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-300">
           We sent a verification code to <span className="text-zinc-200 font-semibold">{email}</span>
         </p>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-400">
           Don&apos;t see it? Check your spam or junk folder — it can take a minute to arrive.
         </p>
       </div>
@@ -109,9 +109,9 @@ function VerifyOtpForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="otp" className="text-zinc-300 text-xs">Verification Code (6 Digits)</Label>
+          <Label htmlFor="otp" className="text-zinc-200 text-xs">Verification Code (6 Digits)</Label>
           <div className="relative">
-            <ShieldCheck className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <ShieldCheck className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="otp"
               type="text"
@@ -121,7 +121,7 @@ function VerifyOtpForm() {
               placeholder="123456"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="pl-10 text-center tracking-[0.5em] text-lg bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500 font-mono"
+              className="pl-10 text-center tracking-[0.5em] text-lg bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400 font-mono"
               required
               disabled={loading}
             />
@@ -138,11 +138,11 @@ function VerifyOtpForm() {
       </form>
 
       <div className="text-center text-xs">
-        <span className="text-zinc-500">Didn&apos;t receive code? </span>
+        <span className="text-zinc-400">Didn&apos;t receive code? </span>
         <button
           onClick={handleResend}
           disabled={resending || countdown > 0}
-          className="text-blue-500 hover:text-blue-400 font-medium disabled:text-zinc-600 disabled:no-underline"
+          className="text-blue-500 hover:text-blue-400 font-medium disabled:text-zinc-400 disabled:no-underline"
         >
           {countdown > 0 ? `Resend in ${countdown}s` : resending ? "Resending..." : "Resend code"}
         </button>
@@ -151,7 +151,7 @@ function VerifyOtpForm() {
       <div className="text-center">
         <button
           onClick={() => router.push("/notes")}
-          className="text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-2"
+          className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2"
         >
           Verify later, skip for now
         </button>

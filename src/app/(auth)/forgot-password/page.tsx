@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Reset your password</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-300">
           Enter your email address and we will send you a link to reset your password
         </p>
       </div>
@@ -57,16 +57,16 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-zinc-300 text-xs">Email Address</Label>
+          <Label htmlFor="email" className="text-zinc-200 text-xs">Email Address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="email"
               type="email"
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={loading}
             />
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-zinc-400">
         Remembered your password?{" "}
         <Link href="/login" className="text-blue-500 hover:text-blue-400 font-medium">
           Login

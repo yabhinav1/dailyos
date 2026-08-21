@@ -277,13 +277,13 @@ export default function NotesPage() {
       >
         {/* Sidebar Header with Hide/Collapse Toggle */}
         <div className="p-3 border-b border-zinc-200 dark:border-zinc-900 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/40">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Notes Sidebar
           </span>
           <button
             onClick={() => setPanelHidden(true)}
             title="Hide notes sidebar"
-            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-1 text-[10px]"
+            className="p-1 rounded text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-1 text-[11px]"
           >
             <PanelLeftClose className="h-3.5 w-3.5" />
             <span>Hide</span>
@@ -293,18 +293,18 @@ export default function NotesPage() {
         {/* Search */}
         <div className="p-3 border-b border-zinc-200 dark:border-zinc-900">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
             <Input
               placeholder="Search notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600"
+              className="pl-8 h-8 bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400"
             />
           </div>
         </div>
 
         {error && (
-          <div className="mx-3 mt-2 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-[11px] text-red-400">
+          <div className="mx-3 mt-2 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-xs text-red-400">
             <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
             <span className="flex-1">{error}</span>
             <button onClick={() => setError(null)} className="text-red-400/70 hover:text-red-400">
@@ -317,24 +317,24 @@ export default function NotesPage() {
           <div className="p-2 space-y-0.5">
             <button
               onClick={() => { setSelectedFolderId(undefined); setSelectedTag(null); }}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium transition-colors text-left ${
-                selectedFolderId === undefined && !selectedTag ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
+                selectedFolderId === undefined && !selectedTag ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/60 hover:text-zinc-200"
               }`}
             >
               <FileText className="h-3.5 w-3.5" /> All Notes
             </button>
             <button
               onClick={() => setSelectedFolderId(null)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium transition-colors text-left ${
-                selectedFolderId === null ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
+                selectedFolderId === null ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/60 hover:text-zinc-200"
               }`}
             >
-              <FileText className="h-3.5 w-3.5 text-zinc-600" /> Uncategorized
+              <FileText className="h-3.5 w-3.5 text-zinc-400" /> Uncategorized
             </button>
             {/* Smart Hashtags */}
             {allTags.length > 0 && (
               <div className="pt-2 pb-1">
-                <div className="px-2.5 mb-1 text-[9px] font-bold uppercase tracking-wider text-zinc-600 flex items-center gap-1">
+                <div className="px-2.5 mb-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
                   <Hash className="h-3 w-3" /> Hashtags
                 </div>
                 <div className="flex flex-wrap gap-1 px-2">
@@ -342,10 +342,10 @@ export default function NotesPage() {
                     <button
                       key={tag}
                       onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition-colors ${
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors ${
                         selectedTag === tag
                           ? "bg-zinc-100 text-zinc-950 font-bold"
-                          : "bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
+                          : "bg-zinc-900/80 text-zinc-300 hover:text-zinc-200 border border-zinc-800"
                       }`}
                     >
                       {tag}
@@ -359,14 +359,14 @@ export default function NotesPage() {
               <div className="flex items-center justify-between px-2.5 mb-1">
                 <button
                   onClick={() => setFoldersCollapsed((v) => !v)}
-                  className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-zinc-600 hover:text-zinc-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${foldersCollapsed ? "-rotate-90" : ""}`} />
                   Folders
                 </button>
                 <button
                   onClick={() => setShowNewFolder(!showNewFolder)}
-                  className="text-zinc-600 hover:text-zinc-300 transition-colors"
+                  className="text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <FolderPlus className="h-3.5 w-3.5" />
                 </button>
@@ -387,7 +387,7 @@ export default function NotesPage() {
                         value={newFolderName}
                         onChange={(e) => setNewFolderName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
-                        className="h-7 text-[11px] bg-zinc-900 border-zinc-800 text-white placeholder-zinc-600"
+                        className="h-7 text-xs bg-zinc-900 border-zinc-800 text-white placeholder-zinc-400"
                       />
                       <button onClick={handleCreateFolder} aria-label="Create folder" className="text-indigo-400 hover:text-indigo-300 p-1">
                         <Plus className="h-3.5 w-3.5" />
@@ -399,16 +399,16 @@ export default function NotesPage() {
                     <div
                       key={folder.id}
                       onClick={() => setSelectedFolderId(folder.id)}
-                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer transition-colors ${
-                        selectedFolderId === folder.id ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200"
+                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                        selectedFolderId === folder.id ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/50 hover:text-zinc-200"
                       }`}
                     >
                       <FolderOpen className="h-3.5 w-3.5 shrink-0" />
                       <span className="flex-1 truncate">{folder.name}</span>
-                      <span className="text-[10px] text-zinc-600">{folder._count?.notes}</span>
+                      <span className="text-[11px] text-zinc-400">{folder._count?.notes}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition"
+                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-400 transition"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -424,12 +424,12 @@ export default function NotesPage() {
             <div className="flex items-center justify-between px-1.5 pb-1">
               <button
                 onClick={() => setNotesListCollapsed((v) => !v)}
-                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-zinc-600 hover:text-zinc-300 transition-colors"
+                className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-200 transition-colors"
               >
                 <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${notesListCollapsed ? "-rotate-90" : ""}`} />
                 {notes.length} Notes
               </button>
-              <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-600 hover:text-indigo-400 transition-colors">
+              <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-400 hover:text-indigo-400 transition-colors">
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -449,7 +449,7 @@ export default function NotesPage() {
                   <>
                     {pinnedNotes.length > 0 && (
                       <>
-                        <div className="px-1.5 py-1 text-[9px] font-bold uppercase tracking-wider text-zinc-600">📌 Pinned</div>
+                        <div className="px-1.5 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">📌 Pinned</div>
                         {pinnedNotes.map((note) => <NoteItem key={note.id} note={note} selected={selectedNote?.id === note.id} onSelect={handleSelectNote} onPin={handlePinToggle} onFavorite={handleFavoriteToggle} onDelete={handleDeleteNote} />)}
                         <div className="my-1 border-t border-zinc-200 dark:border-zinc-900" />
                       </>
@@ -488,7 +488,7 @@ export default function NotesPage() {
                 <button
                   onClick={() => setPanelHidden((v) => !v)}
                   title={panelHidden ? "Show notes list" : "Hide notes list"}
-                  className="text-zinc-500 hover:text-white transition-colors shrink-0"
+                  className="text-zinc-400 hover:text-white transition-colors shrink-0"
                 >
                   {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
                 </button>
@@ -497,29 +497,29 @@ export default function NotesPage() {
                 value={editorTitle}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Untitled Note"
-                className="text-xl font-bold text-zinc-900 dark:text-white border-0 bg-transparent p-0 focus:ring-0 focus:outline-none placeholder-zinc-600 h-auto shadow-none"
+                className="text-xl font-bold text-zinc-900 dark:text-white border-0 bg-transparent p-0 focus:ring-0 focus:outline-none placeholder-zinc-400 h-auto shadow-none"
               />
               <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-0.5 shrink-0">
                 <button
                   onClick={() => setViewMode("write")}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    viewMode === "write" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "write" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   <Type className="h-3 w-3" /> Write
                 </button>
                 <button
                   onClick={() => setViewMode("doodle")}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    viewMode === "doodle" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "doodle" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   <PenTool className="h-3 w-3" /> Doodle
                 </button>
                 <button
                   onClick={() => setViewMode("canvas")}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    viewMode === "canvas" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "canvas" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   <LayoutGrid className="h-3 w-3" /> Canvas
@@ -530,37 +530,37 @@ export default function NotesPage() {
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
                   title="Export Note"
-                  className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] font-medium text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Export</span>
                 </button>
                 {showExportMenu && (
                   <div className="absolute right-0 top-8 z-50 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-2 py-1 text-[10px] uppercase font-bold text-zinc-500 tracking-wider border-b border-zinc-900 mb-1">
+                    <div className="px-2 py-1 text-[11px] uppercase font-bold text-zinc-400 tracking-wider border-b border-zinc-900 mb-1">
                       Export Note As
                     </div>
                     <button
                       onClick={() => handleExportNote("md")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-300 hover:text-white transition-colors text-xs"
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
                     >
                       📄 Markdown (.md)
                     </button>
                     <button
                       onClick={() => handleExportNote("html")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-300 hover:text-white transition-colors text-xs"
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
                     >
                       🌐 HTML Document (.html)
                     </button>
                     <button
                       onClick={() => handleExportNote("txt")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-300 hover:text-white transition-colors text-xs"
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
                     >
                       📝 Plain Text (.txt)
                     </button>
                     <button
                       onClick={() => handleExportNote("pdf")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-300 hover:text-white transition-colors text-xs border-t border-zinc-900 mt-1 pt-1"
+                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs border-t border-zinc-900 mt-1 pt-1"
                     >
                       🖨️ Print / Save to PDF
                     </button>
@@ -572,13 +572,13 @@ export default function NotesPage() {
               <button
                 onClick={() => setIsFullScreen(!isFullScreen)}
                 title={isFullScreen ? "Exit Fullscreen (Esc)" : "Fullscreen View"}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] font-medium text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors shrink-0"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors shrink-0"
               >
                 {isFullScreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{isFullScreen ? "Exit Fullscreen" : "Fullscreen"}</span>
               </button>
 
-              <span className={`text-[10px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-600 opacity-60"}`}>
+              <span className={`text-[11px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-400 opacity-60"}`}>
                 {saving ? "Saving..." : "Auto-saved"}
               </span>
             </div>
@@ -611,15 +611,15 @@ export default function NotesPage() {
               </AnimatePresence>
             </div>
             {/* Footer Meta & Smart Stats HUD */}
-            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[10px] text-zinc-500 shrink-0">
+            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
               <div className="flex items-center gap-3">
                 <span>Updated {new Date(selectedNote.updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="text-zinc-700">•</span>
-                <span className="font-mono text-zinc-400">{wordCount} words</span>
+                <span className="font-mono text-zinc-300">{wordCount} words</span>
                 <span className="text-zinc-700">•</span>
-                <span className="font-mono text-zinc-400">{charCount} chars</span>
+                <span className="font-mono text-zinc-300">{charCount} chars</span>
                 <span className="text-zinc-700">•</span>
-                <span className="text-zinc-400">{readTimeMins} min read</span>
+                <span className="text-zinc-300">{readTimeMins} min read</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -639,18 +639,18 @@ export default function NotesPage() {
                     setShowHistoryDrawer(!showHistoryDrawer);
                   }}
                   title="View Note Revision History"
-                  className="flex items-center gap-1 text-zinc-500 hover:text-white transition-colors"
+                  className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
                 >
                   <History className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">History</span>
                 </button>
-                <button onClick={(e) => handlePinToggle(selectedNote, e)} className={`hover:text-white transition-colors ${selectedNote.isPinned ? "text-amber-400" : "text-zinc-600"}`}>
+                <button onClick={(e) => handlePinToggle(selectedNote, e)} className={`hover:text-white transition-colors ${selectedNote.isPinned ? "text-amber-400" : "text-zinc-400"}`}>
                   <Pin className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={(e) => handleFavoriteToggle(selectedNote, e)} className={`hover:text-white transition-colors ${selectedNote.isFavorite ? "text-amber-400" : "text-zinc-600"}`}>
+                <button onClick={(e) => handleFavoriteToggle(selectedNote, e)} className={`hover:text-white transition-colors ${selectedNote.isFavorite ? "text-amber-400" : "text-zinc-400"}`}>
                   <Star className={`h-3.5 w-3.5 ${selectedNote.isFavorite ? "fill-amber-400" : ""}`} />
                 </button>
-                <button onClick={() => handleDeleteNote(selectedNote.id)} className="text-zinc-600 hover:text-red-400 transition-colors">
+                <button onClick={() => handleDeleteNote(selectedNote.id)} className="text-zinc-400 hover:text-red-400 transition-colors">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -661,21 +661,21 @@ export default function NotesPage() {
                 <div className="bg-[#171717] border border-zinc-800 rounded-xl p-5 max-w-md w-full space-y-3 shadow-2xl">
                   <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <History className="h-4 w-4 text-zinc-400" /> Revision History
+                      <History className="h-4 w-4 text-zinc-300" /> Revision History
                     </h3>
-                    <button onClick={() => setShowHistoryDrawer(false)} className="text-zinc-400 hover:text-white p-1">
+                    <button onClick={() => setShowHistoryDrawer(false)} className="text-zinc-300 hover:text-white p-1">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {snapshots.length === 0 ? (
-                      <p className="text-xs text-zinc-500 py-4 text-center">No previous revisions recorded yet. Make edits to create auto-snapshots.</p>
+                      <p className="text-xs text-zinc-400 py-4 text-center">No previous revisions recorded yet. Make edits to create auto-snapshots.</p>
                     ) : (
                       snapshots.map((snap, idx) => (
                         <div key={snap.id} className="p-3 rounded-lg border border-zinc-800 bg-zinc-950 flex items-center justify-between">
                           <div>
                             <div className="text-xs font-semibold text-zinc-200">{snap.title || "Untitled Note"}</div>
-                            <div className="text-[10px] text-zinc-500">Snapshot #{idx + 1} • {snap.time}</div>
+                            <div className="text-[11px] text-zinc-400">Snapshot #{idx + 1} • {snap.time}</div>
                           </div>
                           <Button
                             size="xs"
@@ -685,7 +685,7 @@ export default function NotesPage() {
                               setEditorDoodle(snap.doodle);
                               setShowHistoryDrawer(false);
                             }}
-                            className="text-[10px] h-6 px-2"
+                            className="text-[11px] h-6 px-2"
                           >
                             Restore
                           </Button>
@@ -703,14 +703,14 @@ export default function NotesPage() {
               <button
                 onClick={() => setPanelHidden(false)}
                 title="Show notes list"
-                className="absolute top-5 left-6 text-zinc-500 hover:text-white transition-colors"
+                className="absolute top-5 left-6 text-zinc-400 hover:text-white transition-colors"
               >
                 <PanelLeftOpen className="h-4 w-4" />
               </button>
             )}
             <FileText className="h-12 w-12 text-zinc-800" />
-            <p className="text-sm font-semibold text-zinc-500">Select a note to start editing</p>
-            <p className="text-xs text-zinc-600">Or create a new one from the sidebar</p>
+            <p className="text-sm font-semibold text-zinc-400">Select a note to start editing</p>
+            <p className="text-xs text-zinc-400">Or create a new one from the sidebar</p>
             <Button onClick={handleCreateNote} size="sm" className="mt-2 text-xs gap-1.5 font-semibold">
               <Plus className="h-3.5 w-3.5" /> New Note
             </Button>
@@ -742,7 +742,7 @@ function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
       className={`group relative rounded-lg transition-colors ${
-        selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-400 hover:text-zinc-200"
+        selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-300 hover:text-zinc-200"
       }`}
     >
       {/* The row itself is the button; the per-note actions sit alongside it
@@ -753,10 +753,10 @@ function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
         aria-current={selected ? "true" : undefined}
         className="w-full rounded-lg px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500"
       >
-        <span className="mb-0.5 block max-w-[120px] truncate pr-12 text-[11px] font-semibold">
+        <span className="mb-0.5 block max-w-[120px] truncate pr-12 text-xs font-semibold">
           {note.title}
         </span>
-        <span className="block truncate text-[10px] text-zinc-600">{preview}</span>
+        <span className="block truncate text-[11px] text-zinc-400">{preview}</span>
       </button>
       <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         <button
@@ -764,7 +764,7 @@ function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
           onClick={(e) => onPin(note, e)}
           aria-label={note.isPinned ? `Unpin ${note.title}` : `Pin ${note.title}`}
           className={`rounded p-0.5 hover:text-white focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${
-            note.isPinned ? "text-amber-400" : "text-zinc-600"
+            note.isPinned ? "text-amber-400" : "text-zinc-400"
           }`}
         >
           <Pin className="h-2.5 w-2.5" />
@@ -773,7 +773,7 @@ function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
           type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
           aria-label={`Delete ${note.title}`}
-          className="rounded p-0.5 text-zinc-600 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+          className="rounded p-0.5 text-zinc-400 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
         >
           <Trash2 className="h-2.5 w-2.5" />
         </button>

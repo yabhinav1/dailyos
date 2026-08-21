@@ -5,6 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* zinc-850 is used on 44 card borders but is not a Tailwind default, so
+     until now none of them compiled and every one of those borders was
+     invisible. Sits midway between zinc-800 (#27272a) and zinc-900 (#18181b). */
+  --color-zinc-850: #202024;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -120,6 +125,22 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Every interactive element gets a visible keyboard focus ring by default.
+     Individual components may restyle it, but none can end up with none. */
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500, #3b82f6);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
   body {
     @apply bg-background text-foreground;

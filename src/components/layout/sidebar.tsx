@@ -86,7 +86,7 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#171717] text-zinc-500 dark:text-zinc-400 transition-all duration-300 ease-in-out z-30",
+        "relative flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#171717] text-zinc-400 dark:text-zinc-300 transition-all duration-300 ease-in-out z-30",
         isCollapsed ? "w-16" : "w-64"
       )}
     >
@@ -107,7 +107,7 @@ export default function Sidebar() {
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="h-7 w-7 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+            className="h-7 w-7 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -121,18 +121,18 @@ export default function Sidebar() {
             variant="ghost"
             size="icon"
             onClick={toggleCommandPalette}
-            className="w-10 h-10 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 mx-auto block rounded-lg border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+            className="w-10 h-10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 mx-auto block rounded-lg border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           >
             <Search className="h-4.5 w-4.5 mx-auto" />
           </Button>
         ) : (
           <button
             onClick={toggleCommandPalette}
-            className="flex w-full items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/40 px-3 py-1.5 text-left text-xs text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+            className="flex w-full items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/40 px-3 py-1.5 text-left text-xs text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
           >
             <Search className="h-3.5 w-3.5" />
             <span>Search...</span>
-            <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-0.5 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-950 px-1.5 font-mono text-[9px] font-medium text-zinc-500">
+            <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-0.5 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-950 px-1.5 font-mono text-[11px] font-medium text-zinc-400">
               <span className="text-xs">Ctrl</span>K
             </kbd>
           </button>
@@ -159,7 +159,7 @@ export default function Sidebar() {
               <Icon
                 className={cn(
                   "h-4 w-4 shrink-0 transition-colors",
-                  isActive ? "text-blue-500" : "text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
+                  isActive ? "text-blue-500" : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
                 )}
               />
               {!isCollapsed && <span>{item.name}</span>}
@@ -175,7 +175,7 @@ export default function Sidebar() {
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+            className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -208,13 +208,13 @@ export default function Sidebar() {
                 <span className="truncate text-xs font-semibold text-zinc-900 dark:text-white leading-tight">
                   {session?.user?.name || "User Account"}
                 </span>
-                <span className="truncate text-[10px] text-zinc-500 mt-0.5">
+                <span className="truncate text-[11px] text-zinc-400 mt-0.5">
                   {session?.user?.email ? maskEmail(session.user.email) : ""}
                 </span>
               </div>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-300">
             <DropdownMenuLabel className="text-xs text-zinc-900 dark:text-white">My Account</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
             <DropdownMenuItem onClick={() => router.push("/settings")} className="hover:bg-zinc-100 dark:hover:bg-zinc-900 focus:bg-zinc-100 dark:focus:bg-zinc-900 focus:text-zinc-900 dark:focus:text-white text-xs cursor-pointer flex items-center gap-2">

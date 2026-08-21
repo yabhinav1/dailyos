@@ -102,10 +102,10 @@ export default function GuestNotesPage() {
 
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           <div className="flex items-center justify-between px-1.5 pb-1 pt-1">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
               {notes.length} Notes
             </span>
-            <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-600 hover:text-blue-400 transition-colors">
+            <button onClick={handleCreateNote} aria-label="New note" className="text-zinc-400 hover:text-blue-400 transition-colors">
               <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -141,7 +141,7 @@ export default function GuestNotesPage() {
           </Button>
           <Link
             href="/login"
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 py-2 text-[11px] font-medium text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors"
           >
             <LogIn className="h-3.5 w-3.5" /> Sign in to save permanently
           </Link>
@@ -156,7 +156,7 @@ export default function GuestNotesPage() {
               <button
                 onClick={() => setPanelHidden((v) => !v)}
                 title={panelHidden ? "Show notes list" : "Hide notes list"}
-                className="text-zinc-500 hover:text-white transition-colors shrink-0"
+                className="text-zinc-400 hover:text-white transition-colors shrink-0"
               >
                 {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </button>
@@ -164,21 +164,21 @@ export default function GuestNotesPage() {
                 value={editorTitle}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Untitled Note"
-                className="flex-1 text-xl font-bold text-zinc-900 dark:text-white bg-transparent p-0 focus:outline-none placeholder-zinc-600"
+                className="flex-1 text-xl font-bold text-zinc-900 dark:text-white bg-transparent p-0 focus:outline-none placeholder-zinc-400"
               />
               <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-0.5 shrink-0">
                 <button
                   onClick={() => setViewMode("write")}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    viewMode === "write" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "write" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   <Type className="h-3 w-3" /> Write
                 </button>
                 <button
                   onClick={() => setViewMode("doodle")}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    viewMode === "doodle" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "doodle" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   <PenTool className="h-3 w-3" /> Doodle
@@ -188,7 +188,7 @@ export default function GuestNotesPage() {
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {storageError && (
-                <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-400">
+                <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-400">
                   {storageError}
                 </div>
               )}
@@ -199,18 +199,18 @@ export default function GuestNotesPage() {
               )}
             </div>
 
-            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[10px] text-zinc-600 shrink-0">
+            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
               <span>Saved to this browser only</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => togglePin(selectedNote.id)}
-                  className={`hover:text-white transition-colors ${selectedNote.isPinned ? "text-amber-400" : "text-zinc-600"}`}
+                  className={`hover:text-white transition-colors ${selectedNote.isPinned ? "text-amber-400" : "text-zinc-400"}`}
                 >
                   <Pin className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => handleDeleteNote(selectedNote.id)}
-                  className="text-zinc-600 hover:text-red-400 transition-colors"
+                  className="text-zinc-400 hover:text-red-400 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -223,13 +223,13 @@ export default function GuestNotesPage() {
               <button
                 onClick={() => setPanelHidden(false)}
                 title="Show notes list"
-                className="absolute top-5 left-6 text-zinc-500 hover:text-white transition-colors"
+                className="absolute top-5 left-6 text-zinc-400 hover:text-white transition-colors"
               >
                 <PanelLeftOpen className="h-4 w-4" />
               </button>
             )}
             <FileText className="h-12 w-12 text-zinc-800" />
-            <p className="text-sm font-semibold text-zinc-500">Select a note to start editing</p>
+            <p className="text-sm font-semibold text-zinc-400">Select a note to start editing</p>
           </div>
         )}
       </div>
@@ -256,18 +256,18 @@ function GuestNoteItem({
     <div
       onClick={() => onSelect(note)}
       className={`group px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
-        selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-400 hover:text-zinc-200"
+        selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-300 hover:text-zinc-200"
       }`}
     >
       <div className="flex items-center justify-between gap-1 mb-0.5">
-        <span className="text-[11px] font-semibold truncate max-w-[120px]">{note.title}</span>
+        <span className="text-xs font-semibold truncate max-w-[120px]">{note.title}</span>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onPin(note.id);
             }}
-            className={`p-0.5 rounded hover:text-white ${note.isPinned ? "text-amber-400" : "text-zinc-600"}`}
+            className={`p-0.5 rounded hover:text-white ${note.isPinned ? "text-amber-400" : "text-zinc-400"}`}
           >
             <Pin className="h-2.5 w-2.5" />
           </button>
@@ -276,13 +276,13 @@ function GuestNoteItem({
               e.stopPropagation();
               onDelete(note.id);
             }}
-            className="p-0.5 rounded text-zinc-600 hover:text-red-400"
+            className="p-0.5 rounded text-zinc-400 hover:text-red-400"
           >
             <Trash2 className="h-2.5 w-2.5" />
           </button>
         </div>
       </div>
-      <p className="text-[10px] text-zinc-600 truncate">{preview}</p>
+      <p className="text-[11px] text-zinc-400 truncate">{preview}</p>
     </div>
   );
 }

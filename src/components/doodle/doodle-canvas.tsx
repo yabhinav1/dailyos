@@ -466,7 +466,7 @@ export default function DoodleCanvas({
       <button
         onClick={() => setToolbarPos(isSide ? "top" : "side")}
         title={isSide ? "Move toolbar to top" : "Move toolbar to side"}
-        className="flex items-center gap-1.5 self-start rounded px-1.5 py-1 text-[11px] font-medium text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
+        className="flex items-center gap-1.5 self-start rounded px-1.5 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
       >
         {isSide ? <PanelTop className="h-3.5 w-3.5" /> : <PanelLeft className="h-3.5 w-3.5" />}
         {isSide ? "Top" : "Side"}
@@ -510,8 +510,8 @@ export default function DoodleCanvas({
 
       <button
         onClick={() => setIsErasing((v) => !v)}
-        className={`flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
-          isErasing ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+        className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
+          isErasing ? "bg-zinc-800 text-white" : "text-zinc-300 hover:bg-zinc-900 hover:text-zinc-200"
         }`}
       >
         <Eraser className="h-3.5 w-3.5" />
@@ -522,7 +522,7 @@ export default function DoodleCanvas({
 
       {/* Background color */}
       <div className={`flex items-center gap-1.5 ${isSide ? "flex-wrap" : ""}`}>
-        <PaintBucket className="h-3.5 w-3.5 text-zinc-500" />
+        <PaintBucket className="h-3.5 w-3.5 text-zinc-400" />
         {BG_PRESETS.map((c) => (
           <button
             key={c}
@@ -538,21 +538,21 @@ export default function DoodleCanvas({
       </div>
 
       <div className={`flex items-center gap-1.5 ${isSide ? "flex-col items-stretch" : "ml-auto"}`}>
-        <label className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors cursor-pointer">
+        <label className="flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium text-zinc-300 hover:bg-zinc-900 hover:text-zinc-200 transition-colors cursor-pointer">
           <ImagePlus className="h-3.5 w-3.5" />
           Add Image
           <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
         </label>
         <button
           onClick={handleDownload}
-          className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
+          className="flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium text-zinc-300 hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
         >
           <Download className="h-3.5 w-3.5" />
           Save PNG
         </button>
         <button
           onClick={handleClear}
-          className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium text-zinc-400 hover:bg-red-950/40 hover:text-red-400 transition-colors"
+          className="flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium text-zinc-300 hover:bg-red-950/40 hover:text-red-400 transition-colors"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Clear
@@ -569,7 +569,7 @@ export default function DoodleCanvas({
       <div className={isSide ? "w-52 shrink-0" : ""}>{toolbar}</div>
 
       {!isSide && (
-        <p className="text-[10px] text-zinc-600 -mt-1">
+        <p className="text-[11px] text-zinc-400 -mt-1">
           Tip: paste an image (Ctrl+V), then drag it or pull its 8 Canva handles to resize and move freely.
         </p>
       )}

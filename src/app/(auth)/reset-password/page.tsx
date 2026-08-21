@@ -10,7 +10,7 @@ import { GitBranch, Lock } from "lucide-react";
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-500">Loading...</div>}>
+    <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-400">Loading...</div>}>
       <ResetPasswordForm />
     </Suspense>
   );
@@ -74,7 +74,7 @@ function ResetPasswordForm() {
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Choose a new password</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-300">
           Enter your new password below to update your account access
         </p>
       </div>
@@ -93,16 +93,16 @@ function ResetPasswordForm() {
       {token && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-zinc-300 text-xs">New Password</Label>
+            <Label htmlFor="password" className="text-zinc-200 text-xs">New Password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+                className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
                 required
                 disabled={loading}
               />
@@ -110,16 +110,16 @@ function ResetPasswordForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-zinc-300 text-xs">Confirm New Password</Label>
+            <Label htmlFor="confirmPassword" className="text-zinc-200 text-xs">Confirm New Password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
               <Input
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+                className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
                 required
                 disabled={loading}
               />
@@ -136,7 +136,7 @@ function ResetPasswordForm() {
         </form>
       )}
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-zinc-400">
         Back to{" "}
         <Link href="/login" className="text-blue-500 hover:text-blue-400 font-medium">
           Login

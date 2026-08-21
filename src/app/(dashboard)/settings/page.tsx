@@ -56,7 +56,7 @@ function InlineBanner({ banner, onDismiss }: { banner: Banner; onDismiss: () => 
     >
       {isSuccess ? <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" /> : <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />}
       <span className="flex-1">{banner.text}</span>
-      <button onClick={onDismiss} className="text-[10px] opacity-70 hover:opacity-100">
+      <button onClick={onDismiss} className="text-[11px] opacity-70 hover:opacity-100">
         Dismiss
       </button>
     </div>
@@ -91,7 +91,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors p-0.5 rounded focus:outline-none"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-300 hover:text-zinc-200 transition-colors p-0.5 rounded focus:outline-none"
         tabIndex={-1}
         aria-label={showPassword ? "Hide password" : "Show password"}
       >
@@ -362,9 +362,9 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <Settings className="h-5.5 w-5.5 text-zinc-400" /> Settings
+          <Settings className="h-5.5 w-5.5 text-zinc-300" /> Settings
         </h1>
-        <p className="text-xs text-zinc-400 mt-1">Manage your profile, security, and account preferences.</p>
+        <p className="text-xs text-zinc-300 mt-1">Manage your profile, security, and account preferences.</p>
       </div>
 
       {loading ? (
@@ -376,7 +376,7 @@ export default function SettingsPage() {
           {/* Profile Card */}
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <User className="h-3.5 w-3.5" /> Profile
               </h2>
 
@@ -409,18 +409,18 @@ export default function SettingsPage() {
                     <Upload className="h-3.5 w-3.5" /> {uploadingAvatar ? "Uploading..." : "Upload photo"}
                   </Button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChosen} />
-                  <p className="w-full text-[10px] text-zinc-500">PNG/JPG, up to 2MB — or reroll for a random robot.</p>
+                  <p className="w-full text-[11px] text-zinc-400">PNG/JPG, up to 2MB — or reroll for a random robot.</p>
                 </div>
               </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-3">
                 <div className="space-y-1">
-                  <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Full Name</Label>
+                  <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Full Name</Label>
                   <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                     className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" required disabled={saving} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Username</Label>
+                  <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Username</Label>
                   <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })}
                     className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" required disabled={saving} />
                 </div>
@@ -434,18 +434,18 @@ export default function SettingsPage() {
           {/* Email Card */}
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5" /> Email Address
               </h2>
 
               <div className="space-y-1">
-                <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Current Email</Label>
-                <Input value={profile.email} className="bg-zinc-900/30 border-zinc-850 text-zinc-400 text-xs h-9 cursor-not-allowed" disabled />
+                <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Current Email</Label>
+                <Input value={profile.email} className="bg-zinc-900/30 border-zinc-850 text-zinc-300 text-xs h-9 cursor-not-allowed" disabled />
               </div>
 
               {pendingEmail ? (
                 <form onSubmit={handleVerifyEmailChange} className="space-y-3 border-t border-zinc-900 pt-4">
-                  <p className="text-[11px] text-zinc-400">
+                  <p className="text-xs text-zinc-300">
                     We sent a 6-digit code to <span className="text-zinc-200 font-medium">{pendingEmail}</span>. Enter it below to confirm the change.
                   </p>
                   <div className="flex gap-2">
@@ -461,18 +461,18 @@ export default function SettingsPage() {
                       Verify
                     </Button>
                   </div>
-                  <div className="flex gap-3 text-[10px] text-zinc-500">
+                  <div className="flex gap-3 text-[11px] text-zinc-400">
                     <button type="button" onClick={handleResendEmailOtp} disabled={emailBusy} className="text-blue-500 hover:text-blue-400 font-medium">
                       Resend code
                     </button>
-                    <button type="button" onClick={handleCancelEmailChange} disabled={emailBusy} className="hover:text-zinc-300">
+                    <button type="button" onClick={handleCancelEmailChange} disabled={emailBusy} className="hover:text-zinc-200">
                       Cancel
                     </button>
                   </div>
                 </form>
               ) : (
                 <form onSubmit={handleRequestEmailChange} className="space-y-2 border-t border-zinc-900 pt-4">
-                  <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Change Email</Label>
+                  <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Change Email</Label>
                   <div className="flex gap-2">
                     <Input
                       type="email"
@@ -486,7 +486,7 @@ export default function SettingsPage() {
                       Send code
                     </Button>
                   </div>
-                  <p className="text-[10px] text-zinc-500">We&apos;ll send a verification code to your new address before switching over.</p>
+                  <p className="text-[11px] text-zinc-400">We&apos;ll send a verification code to your new address before switching over.</p>
                 </form>
               )}
             </CardContent>
@@ -495,10 +495,10 @@ export default function SettingsPage() {
           {/* Security / Password Card */}
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Lock className="h-3.5 w-3.5" /> {hasPassword ? "Change Password" : "Set a Password"}
               </h2>
-              <p className="text-[11px] text-zinc-500 -mt-2">
+              <p className="text-xs text-zinc-400 -mt-2">
                 {hasPassword
                   ? "Update the password used to sign in with your email."
                   : "You currently sign in with a linked account only. Set a password to also enable email + password login."}
@@ -506,7 +506,7 @@ export default function SettingsPage() {
               <form onSubmit={handleChangePassword} className="space-y-3">
                 {hasPassword && (
                   <div className="space-y-1">
-                    <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Current Password</Label>
+                    <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Current Password</Label>
                     <PasswordInput
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
@@ -515,7 +515,7 @@ export default function SettingsPage() {
                   </div>
                 )}
                 <div className="space-y-1">
-                  <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">New Password</Label>
+                  <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">New Password</Label>
                   <PasswordInput
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -524,7 +524,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Confirm New Password</Label>
+                  <Label className="text-zinc-400 text-[11px] uppercase font-bold tracking-wider">Confirm New Password</Label>
                   <PasswordInput
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -547,15 +547,15 @@ export default function SettingsPage() {
           {/* Linked Accounts Card */}
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" /> Linked Accounts
               </h2>
               <div className="flex items-center justify-between rounded-lg border border-zinc-900 bg-zinc-950/40 px-3 py-2.5">
                 <div className="flex items-center gap-2.5">
-                  <GithubMark className="h-4 w-4 text-zinc-300" />
+                  <GithubMark className="h-4 w-4 text-zinc-200" />
                   <div>
                     <p className="text-xs font-medium text-zinc-200">GitHub</p>
-                    <p className="text-[10px] text-zinc-500">{isGithubLinked ? "Connected" : "Not connected"}</p>
+                    <p className="text-[11px] text-zinc-400">{isGithubLinked ? "Connected" : "Not connected"}</p>
                   </div>
                 </div>
                 {isGithubLinked ? (
@@ -565,7 +565,7 @@ export default function SettingsPage() {
                     variant="outline"
                     onClick={() => handleUnlink("github")}
                     disabled={linkedBusy === "github"}
-                    className="bg-zinc-900/50 hover:bg-red-950/40 hover:text-red-400 hover:border-red-900 border-zinc-800 text-zinc-300 text-xs gap-1.5 h-8"
+                    className="bg-zinc-900/50 hover:bg-red-950/40 hover:text-red-400 hover:border-red-900 border-zinc-800 text-zinc-200 text-xs gap-1.5 h-8"
                   >
                     <Unlink className="h-3.5 w-3.5" /> {linkedBusy === "github" ? "Removing..." : "Disconnect"}
                   </Button>
@@ -580,7 +580,7 @@ export default function SettingsPage() {
                   </Button>
                 )}
               </div>
-              <p className="text-[10px] text-zinc-500">
+              <p className="text-[11px] text-zinc-400">
                 {hasPassword
                   ? "You have a password set, so you can safely disconnect linked accounts."
                   : "Set a password above before disconnecting your only sign-in method."}
@@ -592,16 +592,16 @@ export default function SettingsPage() {
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                   <Moon className="h-3.5 w-3.5" /> App Preferences
                 </h2>
-                <span className="text-[10px] text-zinc-500 font-medium">Auto-saves on change</span>
+                <span className="text-[11px] text-zinc-400 font-medium">Auto-saves on change</span>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-xs text-zinc-200">Theme Mode</Label>
-                    <p className="text-[10px] text-zinc-500">Select application visual theme</p>
+                    <p className="text-[11px] text-zinc-400">Select application visual theme</p>
                   </div>
                   <select
                     value={theme}
@@ -617,7 +617,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between border-t border-zinc-900 pt-4">
                   <div className="space-y-0.5">
                     <Label className="text-xs text-zinc-200">Reminders</Label>
-                    <p className="text-[10px] text-zinc-500">Enable automated email alerts for upcoming items</p>
+                    <p className="text-[11px] text-zinc-400">Enable automated email alerts for upcoming items</p>
                   </div>
                   <input
                     type="checkbox"
@@ -634,12 +634,12 @@ export default function SettingsPage() {
           <Card className="border-zinc-850 bg-[#0C0C0E]/40">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                   <Download className="h-3.5 w-3.5" /> Workspace Data Backup
                 </h2>
-                <span className="text-[10px] text-zinc-500 font-medium">1-Click JSON Backup</span>
+                <span className="text-[11px] text-zinc-400 font-medium">1-Click JSON Backup</span>
               </div>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-zinc-300">
                 Download a complete offline JSON snapshot of your current DailyOS profile and preference configuration.
               </p>
               <Button

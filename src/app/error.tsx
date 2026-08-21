@@ -18,7 +18,7 @@ export default function ErrorPage({
     <div className="flex h-screen w-full flex-col items-center justify-center gap-3 bg-white dark:bg-[#0d0d0d] text-center px-6">
       <AlertTriangle className="h-12 w-12 text-amber-500" />
       <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">Something went wrong</h1>
-      <p className="max-w-sm text-sm text-zinc-500">
+      <p className="max-w-sm text-sm text-zinc-400">
         An unexpected error occurred. You can try again, or head back and pick up where you left off.
       </p>
       <button

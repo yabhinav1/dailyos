@@ -70,10 +70,10 @@ export default function TasksPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <CheckSquare className="h-5.5 w-5.5 text-zinc-300" />
+            <CheckSquare className="h-5.5 w-5.5 text-zinc-200" />
             Tasks Board
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">Manage and track your private productivity items</p>
+          <p className="text-xs text-zinc-300 mt-1">Manage and track your private productivity items</p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
@@ -82,14 +82,14 @@ export default function TasksPage() {
             <TabsList className="bg-zinc-950 border border-zinc-850 p-0.5 h-8">
               <TabsTrigger
                 value="list"
-                className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white text-[11px] h-7 px-2.5 flex items-center gap-1 text-zinc-500 cursor-pointer"
+                className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white text-xs h-7 px-2.5 flex items-center gap-1 text-zinc-400 cursor-pointer"
               >
                 <List className="h-3.5 w-3.5" />
                 <span>List</span>
               </TabsTrigger>
               <TabsTrigger
                 value="kanban"
-                className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white text-[11px] h-7 px-2.5 flex items-center gap-1 text-zinc-500 cursor-pointer"
+                className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white text-xs h-7 px-2.5 flex items-center gap-1 text-zinc-400 cursor-pointer"
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
                 <span>Kanban</span>
@@ -113,8 +113,8 @@ export default function TasksPage() {
       {totalCount > 0 && (
         <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-md space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-zinc-300">Overall Task Completion</span>
-            <span className="font-mono text-zinc-400">{completedCount} of {totalCount} completed ({percentComplete}%)</span>
+            <span className="font-semibold text-zinc-200">Overall Task Completion</span>
+            <span className="font-mono text-zinc-300">{completedCount} of {totalCount} completed ({percentComplete}%)</span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
             <div

@@ -208,7 +208,7 @@ export default function ColorPicker({ value, onChange, recent = [], align = "lef
               value={hexInput}
               onChange={(e) => commitHex(e.target.value)}
               spellCheck={false}
-              className="h-7 flex-1 min-w-0 rounded-md border border-zinc-800 bg-zinc-900/70 px-2 text-[11px] font-mono text-zinc-200 outline-none focus:border-blue-600"
+              className="h-7 flex-1 min-w-0 rounded-md border border-zinc-800 bg-zinc-900/70 px-2 text-xs font-mono text-zinc-200 outline-none focus:border-blue-600"
             />
           </div>
 
@@ -234,7 +234,7 @@ export default function ColorPicker({ value, onChange, recent = [], align = "lef
 
           {recent.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600">Recent</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Recent</p>
               <div className="flex flex-wrap gap-1.5">
                 {recent.map((c, i) => (
                   <button

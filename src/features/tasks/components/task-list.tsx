@@ -63,14 +63,14 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
       case Priority.MEDIUM:
         return "bg-blue-500/10 text-blue-500 border-blue-500/25";
       case Priority.LOW:
-        return "bg-zinc-500/10 text-zinc-500 border-zinc-800";
+        return "bg-zinc-500/10 text-zinc-400 border-zinc-800";
     }
   };
 
   if (tasks.length === 0) {
     return (
       <div className="py-12 text-center border border-dashed border-zinc-850 rounded-xl bg-zinc-950/20">
-        <p className="text-xs text-zinc-500">No tasks found matching your filter criteria.</p>
+        <p className="text-xs text-zinc-400">No tasks found matching your filter criteria.</p>
       </div>
     );
   }
@@ -80,7 +80,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="border-b border-zinc-850 bg-zinc-950/50 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+            <tr className="border-b border-zinc-850 bg-zinc-950/50 text-[11px] uppercase font-bold tracking-wider text-zinc-400">
               <th className="py-3 px-4 w-10"></th>
               <th className="py-3 px-2">Task</th>
               <th className="py-3 px-4 w-28">Status</th>
@@ -106,7 +106,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
                   <td className="py-3 px-4 text-center">
                     <button
                       onClick={() => handleStatusToggle(task)}
-                      className="text-zinc-600 hover:text-blue-500 transition-colors"
+                      className="text-zinc-400 hover:text-blue-500 transition-colors"
                     >
                       {isCompleted ? (
                         <CheckCircle2 className="h-4.5 w-4.5 text-blue-500" />
@@ -128,7 +128,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
                         {task.title}
                       </span>
                       {task.description && (
-                        <span className="text-[10px] text-zinc-500 line-clamp-1 max-w-lg">
+                        <span className="text-[11px] text-zinc-400 line-clamp-1 max-w-lg">
                           {task.description}
                         </span>
                       )}
@@ -137,7 +137,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
 
                   {/* Status Badge */}
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-[9px] font-bold text-zinc-400 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[11px] font-bold text-zinc-300 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded-full uppercase">
                       {task.status.replace("_", " ")}
                     </span>
                   </td>
@@ -146,16 +146,16 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
                   <td className="py-3 px-4">
                     <Badge
                       variant="outline"
-                      className={`text-[9px] font-semibold uppercase ${getPriorityColor(task.priority)}`}
+                      className={`text-[11px] font-semibold uppercase ${getPriorityColor(task.priority)}`}
                     >
                       {task.priority}
                     </Badge>
                   </td>
 
                   {/* Due date */}
-                  <td className="py-3 px-4 whitespace-nowrap text-zinc-500">
+                  <td className="py-3 px-4 whitespace-nowrap text-zinc-400">
                     {task.dueDate ? (
-                      <span className={`flex items-center gap-1 text-[10px] ${isOverdue ? "text-red-400" : ""}`}>
+                      <span className={`flex items-center gap-1 text-[11px] ${isOverdue ? "text-red-400" : ""}`}>
                         {isOverdue ? (
                           <AlertCircle className="h-3 w-3 text-red-450" />
                         ) : (
@@ -176,7 +176,7 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
                     <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleFavoriteToggle(task)}
-                        className="text-zinc-600 hover:text-amber-500 p-1"
+                        className="text-zinc-400 hover:text-amber-500 p-1"
                       >
                         <Star
                           className={`h-3.5 w-3.5 ${
@@ -186,10 +186,10 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
                       </button>
 
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="text-zinc-600 hover:text-zinc-300 focus:outline-none p-1 cursor-pointer">
+                        <DropdownMenuTrigger className="text-zinc-400 hover:text-zinc-200 focus:outline-none p-1 cursor-pointer">
                           <MoreHorizontal className="h-3.5 w-3.5" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-400 text-xs">
+                        <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-300 text-xs">
                           <DropdownMenuItem
                             onClick={() => openEditDialog(task)}
                             className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer flex items-center gap-2"

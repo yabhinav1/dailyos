@@ -62,7 +62,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
       case Priority.MEDIUM:
         return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case Priority.LOW:
-        return "bg-zinc-500/10 text-zinc-500 border-zinc-800";
+        return "bg-zinc-500/10 text-zinc-400 border-zinc-800";
     }
   };
 
@@ -89,7 +89,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
               {/* Star Button */}
               <button
                 onClick={handleFavoriteToggle}
-                className="text-zinc-600 hover:text-amber-500 transition-colors p-1"
+                className="text-zinc-400 hover:text-amber-500 transition-colors p-1"
               >
                 <Star
                   className={`h-3.5 w-3.5 ${
@@ -100,10 +100,10 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
 
               {/* Action Dropdown Menu */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-zinc-600 hover:text-zinc-300 focus:outline-none p-1 cursor-pointer">
+                <DropdownMenuTrigger className="text-zinc-400 hover:text-zinc-200 focus:outline-none p-1 cursor-pointer">
                   <MoreVertical className="h-3.5 w-3.5" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-400 text-xs">
+                <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-300 text-xs">
                   <DropdownMenuItem
                     onClick={() => setShowEditDialog(true)}
                     className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer flex items-center gap-2"
@@ -125,33 +125,33 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
 
           {/* Description snippet if exists */}
           {task.description && (
-            <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
               {task.description}
             </p>
           )}
 
           {/* Badges / Indicators row */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-900/60 text-[10px]">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-900/60 text-[11px]">
             {/* Status Indicator */}
-            <span className="text-[10px] text-zinc-500 font-medium px-1.5 py-0.5 rounded bg-zinc-900/80 border border-zinc-850 uppercase">
+            <span className="text-[11px] text-zinc-400 font-medium px-1.5 py-0.5 rounded bg-zinc-900/80 border border-zinc-850 uppercase">
               {getStatusLabel(task.status)}
             </span>
 
             {/* Priority Badge */}
-            <Badge variant="outline" className={`text-[9px] font-semibold border ${getPriorityColor(task.priority)}`}>
+            <Badge variant="outline" className={`text-[11px] font-semibold border ${getPriorityColor(task.priority)}`}>
               {task.priority}
             </Badge>
 
             {/* Project Indicator */}
             {task.project && (
-              <span className="text-zinc-500 bg-zinc-900/40 px-1.5 py-0.5 rounded border border-transparent">
+              <span className="text-zinc-400 bg-zinc-900/40 px-1.5 py-0.5 rounded border border-transparent">
                 💼 {task.project.name}
               </span>
             )}
 
             {/* Subtask count */}
             {totalSubtasks > 0 && (
-              <span className="flex items-center gap-1 text-zinc-500">
+              <span className="flex items-center gap-1 text-zinc-400">
                 <CheckSquare className="h-3 w-3" />
                 {completedSubtasks}/{totalSubtasks}
               </span>
@@ -161,13 +161,13 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
             {task.dueDate && (
               <span
                 className={`flex items-center gap-1 ml-auto font-medium ${
-                  isOverdue ? "text-red-400" : "text-zinc-500"
+                  isOverdue ? "text-red-400" : "text-zinc-400"
                 }`}
               >
                 {isOverdue ? (
                   <AlertCircle className="h-3 w-3 text-red-400" />
                 ) : (
-                  <Calendar className="h-3 w-3 text-zinc-500" />
+                  <Calendar className="h-3 w-3 text-zinc-400" />
                 )}
                 {new Date(task.dueDate).toLocaleDateString("en-US", {
                   month: "short",
@@ -178,7 +178,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
 
             {/* Estimated/Actual Times */}
             {task.estimatedTime && (
-              <span className="flex items-center gap-1 text-zinc-500">
+              <span className="flex items-center gap-1 text-zinc-400">
                 <Clock className="h-3 w-3" />
                 {task.estimatedTime}m
               </span>

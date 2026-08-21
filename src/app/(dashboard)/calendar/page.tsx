@@ -106,14 +106,14 @@ export default function CalendarPage() {
 
       {/* Month Navigation */}
       <div className="flex items-center justify-between bg-[#171717]/50 border border-zinc-850 rounded-xl p-3">
-        <button onClick={prevMonth} aria-label="Previous month" className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+        <button onClick={prevMonth} aria-label="Previous month" className="text-zinc-300 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="text-center">
           <h2 className="text-sm font-bold text-white">{MONTH_NAMES[month]} {year}</h2>
-          <p className="text-[10px] text-zinc-500">{events.length} events this month</p>
+          <p className="text-[11px] text-zinc-400">{events.length} events this month</p>
         </div>
-        <button onClick={nextMonth} aria-label="Next month" className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+        <button onClick={nextMonth} aria-label="Next month" className="text-zinc-300 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -123,7 +123,7 @@ export default function CalendarPage() {
         {/* Day Headers */}
         <div className="grid grid-cols-7 border-b border-zinc-900">
           {DAY_LABELS.map((d) => (
-            <div key={d} className="p-2 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-600">{d}</div>
+            <div key={d} className="p-2 text-center text-[11px] font-bold uppercase tracking-wider text-zinc-400">{d}</div>
           ))}
         </div>
 
@@ -150,20 +150,20 @@ export default function CalendarPage() {
                   isToday ? "bg-blue-950/20" : ""
                 }`}
               >
-                <span className={`text-[11px] font-semibold inline-flex h-5 w-5 items-center justify-center rounded-full ${
-                  isToday ? "bg-blue-500 text-white" : "text-zinc-400"
+                <span className={`text-xs font-semibold inline-flex h-5 w-5 items-center justify-center rounded-full ${
+                  isToday ? "bg-blue-500 text-white" : "text-zinc-300"
                 }`}>
                   {day}
                 </span>
                 <div className="mt-0.5 space-y-0.5">
                   {dayEvents.slice(0, 3).map((ev) => (
-                    <div key={ev.id} className="text-[9px] px-1 py-0.5 rounded truncate font-medium"
+                    <div key={ev.id} className="text-[11px] px-1 py-0.5 rounded truncate font-medium"
                       style={{ background: `${ev.color || "#3b82f6"}20`, color: ev.color || "#3b82f6" }}>
                       {ev.title}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
-                    <span className="text-[9px] text-zinc-500">+{dayEvents.length - 3} more</span>
+                    <span className="text-[11px] text-zinc-400">+{dayEvents.length - 3} more</span>
                   )}
                 </div>
               </button>
@@ -175,14 +175,14 @@ export default function CalendarPage() {
       {/* Upcoming Events List */}
       {events.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Events This Month</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Events This Month</h3>
           <div className="space-y-1.5">
             {events.map((ev) => (
               <div key={ev.id} className="flex items-center gap-3 p-3 bg-[#171717]/50 border border-zinc-850 rounded-lg group">
                 <div className="h-2 w-2 rounded-full shrink-0" style={{ background: ev.color || "#3b82f6" }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-zinc-200 truncate">{ev.title}</p>
-                  <p className="text-[10px] text-zinc-500 flex items-center gap-1">
+                  <p className="text-[11px] text-zinc-400 flex items-center gap-1">
                     <Clock className="h-2.5 w-2.5" />
                     {new Date(ev.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     {" · "}
@@ -190,7 +190,7 @@ export default function CalendarPage() {
                   </p>
                 </div>
                 <button onClick={() => handleDeleteEvent(ev.id)}
-                  className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all p-1">
+                  className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-400 transition-all p-1">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -209,25 +209,25 @@ export default function CalendarPage() {
           </DialogHeader>
           <form onSubmit={handleCreateEvent} className="space-y-3 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Event Title</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Event Title</Label>
               <Input autoFocus placeholder="e.g. Team Meeting" value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Start</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Start</Label>
                 <Input type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })}
                   className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">End</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">End</Label>
                 <Input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })}
                   className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9" />
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Color</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Color</Label>
               <div className="flex gap-2">
                 {EVENT_COLORS.map((c) => (
                   <button key={c} type="button" onClick={() => setForm({ ...form, color: c })}
@@ -238,7 +238,7 @@ export default function CalendarPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => { setShowCreate(false); setSelectedDay(null); }}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold h-8">Create Event</Button>
             </div>
           </form>

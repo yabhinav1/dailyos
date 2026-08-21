@@ -97,8 +97,8 @@ function DroppableColumn({ id, title, color, count, children }: ColumnProps) {
       }`}
     >
       <div className="flex items-center justify-between mb-4 px-1">
-        <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">{title}</h3>
-        <span className="text-[10px] font-bold text-zinc-500 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded-full">
+        <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">{title}</h3>
+        <span className="text-[11px] font-bold text-zinc-400 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded-full">
           {count}
         </span>
       </div>

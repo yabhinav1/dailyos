@@ -28,11 +28,11 @@ export default function MobileNavBar() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors ${
-                isActive ? "text-white font-semibold" : "text-zinc-500 hover:text-zinc-300"
+                isActive ? "text-white font-semibold" : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? "text-white" : ""}`} />
-              <span className="text-[10px] tracking-tight">{item.label}</span>
+              <span className="text-[11px] tracking-tight">{item.label}</span>
             </Link>
           );
         })}

@@ -150,11 +150,11 @@ export default function FreeformCanvas({
         <button
           type="button"
           onClick={() => addBlock(48, 48 + blocks.length * 12)}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
         >
           <Type className="h-3.5 w-3.5" /> Add text
         </button>
-        <p className="text-[11px] text-zinc-600">
+        <p className="text-xs text-zinc-400">
           Double-click anywhere to write. Drag to move.
         </p>
       </div>
@@ -169,8 +169,8 @@ export default function FreeformCanvas({
       >
         {blocks.length === 0 && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
-            <p className="text-sm font-medium text-zinc-500">Nothing here yet</p>
-            <p className="text-[11px] text-zinc-600">
+            <p className="text-sm font-medium text-zinc-400">Nothing here yet</p>
+            <p className="text-xs text-zinc-400">
               Double-click anywhere on the grid to start writing.
             </p>
           </div>
@@ -204,14 +204,14 @@ export default function FreeformCanvas({
                   rows={Math.max(1, block.text.split("\n").length)}
                   placeholder="Write…"
                   aria-label="Canvas text block"
-                  className="w-[220px] resize-none bg-transparent px-2.5 py-1.5 text-sm leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-600 dark:text-zinc-100"
+                  className="w-[220px] resize-none bg-transparent px-2.5 py-1.5 text-sm leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
                 />
                 {isActive && (
                   <button
                     type="button"
                     onClick={() => removeBlock(block.id)}
                     aria-label="Delete this text block"
-                    className="absolute -right-2 -top-2 rounded-full border border-zinc-700 bg-zinc-900 p-1 text-zinc-400 transition-colors hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                    className="absolute -right-2 -top-2 rounded-full border border-zinc-700 bg-zinc-900 p-1 text-zinc-300 transition-colors hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

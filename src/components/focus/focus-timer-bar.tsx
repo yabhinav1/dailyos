@@ -137,15 +137,15 @@ export default function FocusTimerBar() {
     <div className="flex items-center gap-2">
       {/* Timer Bar Pill */}
       <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-1 text-xs shadow-md">
-        <Clock className="h-3.5 w-3.5 text-zinc-400" />
+        <Clock className="h-3.5 w-3.5 text-zinc-300" />
         <span className="font-mono font-bold text-white text-xs">{formatTime(timeLeft)}</span>
-        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+        <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
           {mode === "work" ? "Focus" : "Break"}
         </span>
 
         <button
           onClick={() => setIsRunning(!isRunning)}
-          className="p-1 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+          className="p-1 rounded hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors"
           title={isRunning ? "Pause timer" : "Start timer"}
         >
           {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
@@ -153,7 +153,7 @@ export default function FocusTimerBar() {
 
         <button
           onClick={resetTimer}
-          className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+          className="p-1 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
           title="Reset timer"
         >
           <RotateCcw className="h-3 w-3" />
@@ -165,8 +165,8 @@ export default function FocusTimerBar() {
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className={`flex items-center gap-1 p-1 rounded transition-colors text-[11px] font-medium ${
-              activeSound ? "text-white font-semibold" : "text-zinc-400 hover:text-white"
+            className={`flex items-center gap-1 p-1 rounded transition-colors text-xs font-medium ${
+              activeSound ? "text-white font-semibold" : "text-zinc-300 hover:text-white"
             }`}
             title="Ambient Focus Sounds"
           >
@@ -176,13 +176,13 @@ export default function FocusTimerBar() {
 
           {showMenu && (
             <div className="absolute right-0 top-8 z-50 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-2 py-1 text-[10px] uppercase font-bold text-zinc-500 tracking-wider border-b border-zinc-900 mb-1">
+              <div className="px-2 py-1 text-[11px] uppercase font-bold text-zinc-400 tracking-wider border-b border-zinc-900 mb-1">
                 Ambient Focus Sounds
               </div>
               <button
                 onClick={() => { toggleSound("rain"); setShowMenu(false); }}
                 className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between text-xs transition-colors ${
-                  activeSound === "rain" ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  activeSound === "rain" ? "bg-zinc-800 text-white font-medium" : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
                 }`}
               >
                 <span>🌧️ Rain Storm</span>
@@ -191,7 +191,7 @@ export default function FocusTimerBar() {
               <button
                 onClick={() => { toggleSound("waves"); setShowMenu(false); }}
                 className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between text-xs transition-colors ${
-                  activeSound === "waves" ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  activeSound === "waves" ? "bg-zinc-800 text-white font-medium" : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
                 }`}
               >
                 <span>🌊 Ocean Waves</span>
@@ -200,7 +200,7 @@ export default function FocusTimerBar() {
               <button
                 onClick={() => { toggleSound("space"); setShowMenu(false); }}
                 className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between text-xs transition-colors ${
-                  activeSound === "space" ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  activeSound === "space" ? "bg-zinc-800 text-white font-medium" : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
                 }`}
               >
                 <span>🪐 Deep Space Ambient</span>
@@ -210,7 +210,7 @@ export default function FocusTimerBar() {
               {activeSound && (
                 <button
                   onClick={() => { stopAmbientSound(); setShowMenu(false); }}
-                  className="w-full text-center px-2 py-1 rounded text-[11px] text-red-400 hover:bg-red-500/10 mt-1"
+                  className="w-full text-center px-2 py-1 rounded text-xs text-red-400 hover:bg-red-500/10 mt-1"
                 >
                   Turn Off Sound
                 </button>
@@ -220,7 +220,7 @@ export default function FocusTimerBar() {
         </div>
 
         {activeSound && (
-          <button onClick={toggleMute} aria-label={isMuted ? "Unmute ambient sound" : "Mute ambient sound"} className="p-1 rounded text-zinc-400 hover:text-white">
+          <button onClick={toggleMute} aria-label={isMuted ? "Unmute ambient sound" : "Mute ambient sound"} className="p-1 rounded text-zinc-300 hover:text-white">
             {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
           </button>
         )}

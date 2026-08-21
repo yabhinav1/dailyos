@@ -127,7 +127,7 @@ export default function DeveloperPage() {
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <Terminal className="h-5.5 w-5.5 text-blue-400" /> Developer Mode
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">Manage project roadmaps and save reusable code snippets.</p>
+          <p className="text-xs text-zinc-300 mt-1">Manage project roadmaps and save reusable code snippets.</p>
         </div>
         <div className="flex gap-2">
           {activeTab === "projects" ? (
@@ -148,24 +148,24 @@ export default function DeveloperPage() {
       <div className="flex items-center gap-1 border-b border-zinc-900 pb-0">
         <button
           onClick={() => setActiveTab("projects")}
-          className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-            activeTab === "projects" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+            activeTab === "projects" ? "border-white text-white" : "border-transparent text-zinc-400 hover:text-zinc-200"
           }`}
         >
           <Folder className="h-3.5 w-3.5" /> Projects
         </button>
         <button
           onClick={() => setActiveTab("snippets")}
-          className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-            activeTab === "snippets" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+            activeTab === "snippets" ? "border-white text-white" : "border-transparent text-zinc-400 hover:text-zinc-200"
           }`}
         >
           <Code className="h-3.5 w-3.5" /> Snippets
         </button>
         <button
           onClick={() => setActiveTab("playground")}
-          className={`px-3 py-2 text-[11px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-            activeTab === "playground" ? "border-white text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+          className={`px-3 py-2 text-xs font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+            activeTab === "playground" ? "border-white text-white" : "border-transparent text-zinc-400 hover:text-zinc-200"
           }`}
         >
           <Terminal className="h-3.5 w-3.5" /> API Tester
@@ -179,7 +179,7 @@ export default function DeveloperPage() {
         <div className="space-y-4 p-5 rounded-xl border border-zinc-800 bg-zinc-950/80 shadow-xl">
           <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-zinc-400" /> HTTP API Request Playground
+              <Terminal className="h-4 w-4 text-zinc-300" /> HTTP API Request Playground
             </h2>
             {apiStatus && <span className="text-xs font-mono text-emerald-400">{apiStatus}</span>}
           </div>
@@ -204,7 +204,7 @@ export default function DeveloperPage() {
           </div>
           {apiResult && (
             <div className="space-y-1 pt-2">
-              <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Response Data</label>
+              <label className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">Response Data</label>
               <pre className="p-4 rounded-lg bg-[#0a0a0c] border border-zinc-850 font-mono text-xs text-zinc-200 overflow-x-auto max-h-96 leading-relaxed select-all">
                 {apiResult}
               </pre>
@@ -215,8 +215,8 @@ export default function DeveloperPage() {
         projects.length === 0 ? (
           <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
             <Folder className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-zinc-400">No coding projects yet</p>
-            <p className="text-xs text-zinc-500 mt-1">Add your development project to start tracking your tech stack and issues.</p>
+            <p className="text-sm font-semibold text-zinc-300">No coding projects yet</p>
+            <p className="text-xs text-zinc-400 mt-1">Add your development project to start tracking your tech stack and issues.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,12 +227,12 @@ export default function DeveloperPage() {
                     <div>
                       <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
                         {project.name}
-                        <span className="text-[9px] px-1.5 py-0.5 bg-zinc-900 text-zinc-400 rounded-full">{project.status}</span>
+                        <span className="text-[11px] px-1.5 py-0.5 bg-zinc-900 text-zinc-300 rounded-full">{project.status}</span>
                       </h3>
-                      {project.description && <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">{project.description}</p>}
+                      {project.description && <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{project.description}</p>}
                     </div>
                     {project.githubUrl && (
-                      <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition">
+                      <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition">
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
@@ -241,12 +241,12 @@ export default function DeveloperPage() {
                   {project.techStack.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {project.techStack.map((tech: string) => (
-                        <span key={tech} className="text-[9px] px-2 py-0.5 bg-blue-950/20 text-blue-400 border border-blue-900/30 rounded">{tech}</span>
+                        <span key={tech} className="text-[11px] px-2 py-0.5 bg-blue-950/20 text-blue-400 border border-blue-900/30 rounded">{tech}</span>
                       ))}
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4 text-[10px] text-zinc-500 border-t border-zinc-900/60 pt-3">
+                  <div className="flex items-center gap-4 text-[11px] text-zinc-400 border-t border-zinc-900/60 pt-3">
                     <span>{project.issues.length} Issues</span>
                     <span>{project.changelogs.length} Releases</span>
                   </div>
@@ -258,8 +258,8 @@ export default function DeveloperPage() {
       ) : snippets.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <Code className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-400">No code snippets saved</p>
-          <p className="text-xs text-zinc-500 mt-1">Save syntax structures, boilerplate classes, and snippets.</p>
+          <p className="text-sm font-semibold text-zinc-300">No code snippets saved</p>
+          <p className="text-xs text-zinc-400 mt-1">Save syntax structures, boilerplate classes, and snippets.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -269,18 +269,18 @@ export default function DeveloperPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-xs font-bold text-zinc-200">{snip.title}</h3>
-                    {snip.description && <p className="text-[10px] text-zinc-500 mt-0.5">{snip.description}</p>}
+                    {snip.description && <p className="text-[11px] text-zinc-400 mt-0.5">{snip.description}</p>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => copyToClipboard(snip.id, snip.code)} className="text-zinc-500 hover:text-white transition p-1">
+                    <button onClick={() => copyToClipboard(snip.id, snip.code)} className="text-zinc-400 hover:text-white transition p-1">
                       {copiedId === snip.id ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
-                    <button onClick={() => handleDeleteSnippet(snip.id)} className="text-zinc-500 hover:text-red-400 transition p-1">
+                    <button onClick={() => handleDeleteSnippet(snip.id)} className="text-zinc-400 hover:text-red-400 transition p-1">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
-                <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 font-mono text-[11px] text-zinc-300 overflow-x-auto whitespace-pre">
+                <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 font-mono text-xs text-zinc-200 overflow-x-auto whitespace-pre">
                   <code>{snip.code}</code>
                 </div>
               </CardContent>
@@ -295,32 +295,32 @@ export default function DeveloperPage() {
           <DialogHeader><DialogTitle className="text-sm font-bold text-white">New Coding Project</DialogTitle></DialogHeader>
           <form onSubmit={handleCreateProject} className="space-y-3 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Project Name</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Project Name</Label>
               <Input autoFocus placeholder="e.g. DailyOS Productivity" value={projForm.name}
                 onChange={(e) => setProjForm({ ...projForm, name: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Description</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Description</Label>
               <Textarea placeholder="What are you building?" value={projForm.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setProjForm({ ...projForm, description: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs min-h-[60px]" />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs min-h-[60px]" />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">GitHub URL</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">GitHub URL</Label>
               <Input placeholder="https://github.com/..." value={projForm.githubUrl}
                 onChange={(e) => setProjForm({ ...projForm, githubUrl: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Tech Stack (comma separated)</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Tech Stack (comma separated)</Label>
               <Input placeholder="React, Node, Prisma, PostgreSQL" value={projForm.techStack}
                 onChange={(e) => setProjForm({ ...projForm, techStack: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowProjDialog(false)}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="text-xs font-semibold h-8 px-4">Create Project</Button>
             </div>
           </form>
@@ -334,13 +334,13 @@ export default function DeveloperPage() {
           <form onSubmit={handleCreateSnippet} className="space-y-3 pt-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Snippet Title</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Snippet Title</Label>
                 <Input autoFocus placeholder="e.g. Next.js Prisma init" value={snipForm.title}
                   onChange={(e) => setSnipForm({ ...snipForm, title: e.target.value })}
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" required />
+                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
               </div>
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Language</Label>
+                <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Language</Label>
                 <select value={snipForm.language} onChange={(e) => setSnipForm({ ...snipForm, language: e.target.value })}
                   className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white">
                   <option value="javascript">JavaScript</option>
@@ -353,20 +353,20 @@ export default function DeveloperPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Description</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Description</Label>
               <Input placeholder="Quick description of what this does" value={snipForm.description}
                 onChange={(e) => setSnipForm({ ...snipForm, description: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs" />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Code Block</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Code Block</Label>
               <Textarea placeholder="Paste code here..." value={snipForm.code}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSnipForm({ ...snipForm, code: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-500 text-xs min-h-[140px] font-mono" required />
+                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs min-h-[140px] font-mono" required />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowSnipDialog(false)}
-                className="border-zinc-800 text-zinc-400 text-xs h-8">Cancel</Button>
+                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
               <Button type="submit" className="text-xs font-semibold h-8 px-4">Save Snippet</Button>
             </div>
           </form>

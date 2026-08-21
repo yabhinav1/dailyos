@@ -295,14 +295,14 @@ export default function MusicPlayerWidget() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 pt-2.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
             <Music2 className="h-3 w-3 text-emerald-500" />
             Player
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowQueue((v) => !v)}
-              className={`rounded p-1 text-zinc-500 hover:bg-white/5 hover:text-zinc-200 ${showQueue ? "bg-white/5 text-emerald-400" : ""}`}
+              className={`rounded p-1 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 ${showQueue ? "bg-white/5 text-emerald-400" : ""}`}
               aria-label="Toggle your library"
               title="Your library"
             >
@@ -310,7 +310,7 @@ export default function MusicPlayerWidget() {
             </button>
             <button
               onClick={toggleOpen}
-              className="rounded p-1 text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+              className="rounded p-1 text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
               aria-label="Close player"
               title="Close"
             >
@@ -325,10 +325,10 @@ export default function MusicPlayerWidget() {
             <button
               key={m.value}
               onClick={() => setMode(m.value)}
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors ${
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 mode === m.value
                   ? "bg-emerald-600 text-white"
-                  : "bg-white/5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300"
+                  : "bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
               }`}
             >
               {m.label}
@@ -339,15 +339,15 @@ export default function MusicPlayerWidget() {
         {/* Spotify search */}
         <div className="px-3 pt-1.5">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-600" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
             {searching && (
-              <Loader2 className="absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-zinc-600" />
+              <Loader2 className="absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-zinc-400" />
             )}
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search a song to play..."
-              className="h-7 w-full rounded-lg bg-white/5 pl-7 pr-7 text-[11px] text-zinc-200 placeholder-zinc-600 outline-none focus:bg-white/10"
+              className="h-7 w-full rounded-lg bg-white/5 pl-7 pr-7 text-xs text-zinc-200 placeholder-zinc-400 outline-none focus:bg-white/10"
             />
           </div>
         </div>
@@ -360,9 +360,9 @@ export default function MusicPlayerWidget() {
         >
           <div className="max-h-56 overflow-y-auto overflow-hidden rounded-xl bg-[#191919]">
             {shown.error ? (
-              <p className="px-3 py-4 text-center text-[11px] text-red-400">{shown.error}</p>
+              <p className="px-3 py-4 text-center text-xs text-red-400">{shown.error}</p>
             ) : shown.items.length === 0 ? (
-              <p className="px-3 py-4 text-center text-[11px] text-zinc-600">
+              <p className="px-3 py-4 text-center text-xs text-zinc-400">
                 {searching ? "Searching…" : "No results yet."}
               </p>
             ) : (
@@ -381,14 +381,14 @@ export default function MusicPlayerWidget() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={r.albumArt} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <Music2 className="h-full w-full p-1.5 text-zinc-600" />
+                      <Music2 className="h-full w-full p-1.5 text-zinc-400" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-medium text-zinc-200">{r.title}</p>
-                    <p className="truncate text-[10px] text-zinc-500">{r.artist}</p>
+                    <p className="truncate text-xs font-medium text-zinc-200">{r.title}</p>
+                    <p className="truncate text-[11px] text-zinc-400">{r.artist}</p>
                   </div>
-                  <span className="shrink-0 text-[9px] tabular-nums text-zinc-600">
+                  <span className="shrink-0 text-[11px] tabular-nums text-zinc-400">
                     {formatTime(r.durationMs / 1000)}
                   </span>
                 </button>
@@ -423,10 +423,10 @@ export default function MusicPlayerWidget() {
               {currentTrack ? (
                 <>
                   <p className="truncate text-xs font-semibold text-white">{currentTrack.title}</p>
-                  <p className="truncate text-[10px] text-zinc-500">{currentTrack.artist || "Unknown artist"}</p>
+                  <p className="truncate text-[11px] text-zinc-400">{currentTrack.artist || "Unknown artist"}</p>
                 </>
               ) : (
-                <p className="truncate text-[11px] text-zinc-500">
+                <p className="truncate text-xs text-zinc-400">
                   {loadingTracks ? "Loading tracks…" : "Search a song above, or open your library."}
                 </p>
               )}
@@ -435,7 +435,7 @@ export default function MusicPlayerWidget() {
 
           {/* Scrubber */}
           <div className="mt-2.5 flex items-center gap-2">
-            <span className="w-7 text-right text-[9px] tabular-nums text-zinc-600">{formatTime(currentTime)}</span>
+            <span className="w-7 text-right text-[11px] tabular-nums text-zinc-400">{formatTime(currentTime)}</span>
             <input
               type="range"
               min={0}
@@ -445,12 +445,12 @@ export default function MusicPlayerWidget() {
               disabled={!currentTrack}
               className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
             />
-            <span className="w-7 text-[9px] tabular-nums text-zinc-600">{formatTime(duration)}</span>
+            <span className="w-7 text-[11px] tabular-nums text-zinc-400">{formatTime(duration)}</span>
           </div>
 
           {/* Controls — skip prev/next disabled for search results (no queue context) */}
           <div className="mt-2.5 flex items-center justify-center gap-5">
-            <button onClick={previous} aria-label="Previous track" disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
+            <button onClick={previous} aria-label="Previous track" disabled={!currentTrack || isExternal} className="text-zinc-300 hover:text-white disabled:opacity-30">
               <SkipBack className="h-4 w-4" />
             </button>
             <button
@@ -460,14 +460,14 @@ export default function MusicPlayerWidget() {
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
             </button>
-            <button onClick={next} aria-label="Next track" disabled={!currentTrack || isExternal} className="text-zinc-400 hover:text-white disabled:opacity-30">
+            <button onClick={next} aria-label="Next track" disabled={!currentTrack || isExternal} className="text-zinc-300 hover:text-white disabled:opacity-30">
               <SkipForward className="h-4 w-4" />
             </button>
           </div>
 
           {/* Volume */}
           <div className="mt-2.5 flex items-center gap-2">
-            <button onClick={() => setVolume(volume === 0 ? 80 : 0)} className="text-zinc-500 hover:text-zinc-300">
+            <button onClick={() => setVolume(volume === 0 ? 80 : 0)} className="text-zinc-400 hover:text-zinc-200">
               {volume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
             </button>
             <input
@@ -493,14 +493,14 @@ export default function MusicPlayerWidget() {
         >
           <div className="max-h-48 overflow-y-auto overflow-hidden rounded-xl bg-[#191919]">
             {queue.length === 0 ? (
-              <p className="px-4 py-4 text-center text-[11px] text-zinc-600">Nothing in this mode yet.</p>
+              <p className="px-4 py-4 text-center text-xs text-zinc-400">Nothing in this mode yet.</p>
             ) : (
               queue.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => playTrack(t)}
-                  className={`flex w-full items-center gap-2 px-4 py-2 text-left text-[11px] transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                    !isExternal && currentTrack?.id === t.id ? "bg-emerald-600/10 text-emerald-400" : "text-zinc-400 hover:bg-white/5"
+                  className={`flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                    !isExternal && currentTrack?.id === t.id ? "bg-emerald-600/10 text-emerald-400" : "text-zinc-300 hover:bg-white/5"
                   }`}
                 >
                   <Music2 className="h-3 w-3 shrink-0 opacity-60" />
@@ -513,7 +513,7 @@ export default function MusicPlayerWidget() {
 
         {/* Upload */}
         <div className="px-3 py-2.5">
-          <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 py-2 text-[10px] font-medium text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300">
+          <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 py-2 text-[11px] font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-200">
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
             {uploading ? "Uploading…" : "Upload MP3 / MP4"}
             <input
@@ -525,7 +525,7 @@ export default function MusicPlayerWidget() {
               disabled={uploading}
             />
           </label>
-          {uploadError && <p className="mt-1.5 text-[10px] text-red-400">{uploadError}</p>}
+          {uploadError && <p className="mt-1.5 text-[11px] text-red-400">{uploadError}</p>}
         </div>
       </div>
     </>

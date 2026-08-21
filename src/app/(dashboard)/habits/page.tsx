@@ -86,7 +86,7 @@ export default function HabitsPage() {
             <Flame className="h-5.5 w-5.5 text-orange-400" />
             Habits Tracker
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-zinc-300 mt-1">
             Build consistent habits.{" "}
             <span className="text-orange-400 font-semibold">{todayCompletedCount}/{habits.length}</span> completed today.
           </p>
@@ -101,13 +101,13 @@ export default function HabitsPage() {
       {habits.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Total Habits", value: habits.length, color: "text-zinc-300" },
+            { label: "Total Habits", value: habits.length, color: "text-zinc-200" },
             { label: "Best Streak", value: `${Math.max(...habits.map((h) => h.maxStreak), 0)}d`, color: "text-amber-400" },
             { label: "Today Done", value: `${todayCompletedCount}/${habits.length}`, color: "text-emerald-400" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl border border-zinc-850 bg-[#171717]/50 p-4 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">{s.label}</div>
+              <div className="text-[11px] text-zinc-400 mt-0.5">{s.label}</div>
             </div>
           ))}
         </div>
@@ -119,8 +119,8 @@ export default function HabitsPage() {
       ) : habits.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-zinc-850 rounded-xl">
           <Flame className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-400">No habits tracked yet</p>
-          <p className="text-xs text-zinc-500 mt-1">Start small. Build something sustainable.</p>
+          <p className="text-sm font-semibold text-zinc-300">No habits tracked yet</p>
+          <p className="text-xs text-zinc-400 mt-1">Start small. Build something sustainable.</p>
           <Button size="sm" onClick={() => setShowCreate(true)} className="mt-4 bg-orange-500 hover:bg-orange-400 text-white text-xs gap-1">
             <Plus className="h-3.5 w-3.5" /> Add First Habit
           </Button>
@@ -143,14 +143,14 @@ export default function HabitsPage() {
                       >
                         {isCompletedToday
                           ? <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                          : <Circle className="h-5 w-5 text-zinc-600 hover:text-emerald-400" />}
+                          : <Circle className="h-5 w-5 text-zinc-400 hover:text-emerald-400" />}
                       </button>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${isCompletedToday ? "line-through text-zinc-500" : "text-zinc-100"}`}>
+                        <p className={`text-sm font-semibold ${isCompletedToday ? "line-through text-zinc-400" : "text-zinc-100"}`}>
                           {habit.name}
                         </p>
                         {habit.description && (
-                          <p className="text-[11px] text-zinc-500 truncate">{habit.description}</p>
+                          <p className="text-xs text-zinc-400 truncate">{habit.description}</p>
                         )}
                       </div>
                     </div>
@@ -160,11 +160,11 @@ export default function HabitsPage() {
                           <Flame className="h-3.5 w-3.5" />
                           {habit.streak}
                         </div>
-                        <div className="text-[9px] text-zinc-600">streak</div>
+                        <div className="text-[11px] text-zinc-400">streak</div>
                       </div>
                       <button
                         onClick={() => handleDelete(habit.id, habit.name)}
-                        className="text-zinc-700 hover:text-red-400 transition-colors p-1"
+                        className="text-zinc-400 hover:text-red-400 transition-colors p-1"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -203,21 +203,21 @@ export default function HabitsPage() {
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4 pt-2">
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Habit Name</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Habit Name</Label>
               <Input autoFocus placeholder="e.g. Morning workout" value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500 text-xs"
+                className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400 text-xs"
                 required disabled={saving} />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Description (optional)</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Description (optional)</Label>
               <Input placeholder="30 min cardio or weights" value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500 text-xs"
+                className="bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400 text-xs"
                 disabled={saving} />
             </div>
             <div className="space-y-1">
-              <Label className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Frequency</Label>
+              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Frequency</Label>
               <select value={newFreq} onChange={(e) => setNewFreq(e.target.value as "DAILY" | "WEEKLY" | "MONTHLY")}
                 className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white focus:border-zinc-700 focus:outline-none">
                 <option value="DAILY">Daily</option>
@@ -227,7 +227,7 @@ export default function HabitsPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}
-                className="border-zinc-800 hover:bg-zinc-900 text-zinc-400 text-xs h-8" disabled={saving}>Cancel</Button>
+                className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 text-xs h-8" disabled={saving}>Cancel</Button>
               <Button type="submit"
                 className="bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold h-8" disabled={saving}>
                 {saving ? "Saving..." : "Add Habit"}

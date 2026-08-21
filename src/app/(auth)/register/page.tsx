@@ -44,7 +44,7 @@ export default function RegisterPage() {
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Create an account</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-300">
           Get started with your personal productivity system
         </p>
       </div>
@@ -63,15 +63,15 @@ export default function RegisterPage() {
 
       <form action={formAction} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-zinc-300 text-xs">Full Name</Label>
+          <Label htmlFor="name" className="text-zinc-200 text-xs">Full Name</Label>
           <div className="relative">
-            <User className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <User className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="name"
               name="name"
               type="text"
               placeholder="John Doe"
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={isPending || state?.success}
             />
@@ -82,15 +82,15 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-zinc-300 text-xs">Username</Label>
+          <Label htmlFor="username" className="text-zinc-200 text-xs">Username</Label>
           <div className="relative">
-            <User className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <User className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="username"
               name="username"
               type="text"
               placeholder="johndoe"
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={isPending || state?.success}
             />
@@ -101,9 +101,9 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-zinc-300 text-xs">Email Address</Label>
+          <Label htmlFor="email" className="text-zinc-200 text-xs">Email Address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="email"
               name="email"
@@ -111,7 +111,7 @@ export default function RegisterPage() {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={isPending || state?.success}
             />
@@ -122,9 +122,9 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-zinc-300 text-xs">Password</Label>
+          <Label htmlFor="password" className="text-zinc-200 text-xs">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
             <Input
               id="password"
               name="password"
@@ -132,7 +132,7 @@ export default function RegisterPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-500"
+              className="pl-10 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder-zinc-400"
               required
               disabled={isPending || state?.success}
             />
@@ -151,7 +151,7 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-zinc-400">
         Already have an account?{" "}
         <Link href="/login" className="text-blue-500 hover:text-blue-400 font-medium">
           Login

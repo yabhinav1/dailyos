@@ -117,21 +117,21 @@ export default function Header() {
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+            className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           >
             <Menu className="h-4.5 w-4.5" />
           </Button>
         )}
         <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-xs font-medium">
-          <span className="text-zinc-500">DailyOS</span>
+          <span className="text-zinc-400">DailyOS</span>
           {pathSegments.map((segment, index) => {
             const isLast = index === pathSegments.length - 1;
             
 
             return (
               <React.Fragment key={segment}>
-                <span className="text-zinc-400 dark:text-zinc-700">/</span>
-                <span className={isLast ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-500"}>
+                <span className="text-zinc-300 dark:text-zinc-700">/</span>
+                <span className={isLast ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-400"}>
                   {formatSegment(segment)}
                 </span>
               </React.Fragment>
@@ -143,7 +143,7 @@ export default function Header() {
         <FocusTimerBar />
         <DropdownMenu open={notifOpen} onOpenChange={handleOpenChange}>
           <DropdownMenuTrigger
-            className="relative flex h-8 w-8 items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
+            className="relative flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
           >
             <Bell className="h-4.5 w-4.5" />
             {unreadCount > 0 && (
@@ -152,14 +152,14 @@ export default function Header() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-80 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs p-0 overflow-hidden"
+            className="w-80 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-300 text-xs p-0 overflow-hidden"
           >
             <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-200 dark:border-zinc-800">
               <DropdownMenuLabel className="p-0 text-xs text-zinc-900 dark:text-white">Notifications</DropdownMenuLabel>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="flex items-center gap-1 text-[10px] font-medium text-blue-500 hover:text-blue-400"
+                  className="flex items-center gap-1 text-[11px] font-medium text-blue-500 hover:text-blue-400"
                 >
                   <CheckCheck className="h-3 w-3" /> Mark all read
                 </button>
@@ -176,13 +176,13 @@ export default function Header() {
                   <p className="text-red-400">{notifError}</p>
                   <button
                     onClick={reloadNotifications}
-                    className="mt-2 text-[10px] font-medium text-blue-500 hover:text-blue-400"
+                    className="mt-2 text-[11px] font-medium text-blue-500 hover:text-blue-400"
                   >
                     Try again
                   </button>
                 </div>
               ) : notifications.length === 0 ? (
-                <p className="px-3 py-8 text-center text-zinc-500">You&apos;re all caught up.</p>
+                <p className="px-3 py-8 text-center text-zinc-400">You&apos;re all caught up.</p>
               ) : (
                 notifications.map((n, i) => (
                   <button
@@ -196,7 +196,7 @@ export default function Header() {
                       <span className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${typeDotColor[n?.type] || "bg-zinc-500"}`} />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-zinc-900 dark:text-white truncate">{n?.title ?? "Untitled"}</p>
-                        <p className="text-[11px] text-zinc-500 line-clamp-2 mt-0.5">{n?.message ?? ""}</p>
+                        <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5">{n?.message ?? ""}</p>
                       </div>
                     </div>
                   </button>
@@ -209,13 +209,13 @@ export default function Header() {
         {/* Theme Switcher Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex h-8 w-8 items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
+            className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
           >
             <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Toggle theme</span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs">
+          <DropdownMenuContent align="end" className="bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-300 text-xs">
             <DropdownMenuItem onClick={() => setTheme("light")} className="hover:bg-zinc-100 dark:hover:bg-zinc-900 focus:bg-zinc-100 dark:focus:bg-zinc-900 focus:text-zinc-900 dark:focus:text-white cursor-pointer">
               Light
             </DropdownMenuItem>
