@@ -80,60 +80,7 @@ const nextAuth = NextAuth({
   ],
 });
 
-export const { handlers, signIn, signOut } = nextAuth;
-
-/**
- * Custom auth helper that returns the active session, or falls back to a demo user
- * so the workspace can be tested locally without hitting auth walls.
- */
-export async function auth() {
-  try {
-    const session = await nextAuth.auth();
-    if (session?.user?.id) {
-      return session;
-    }
-  } catch {
-    // Ignore error and fall through
-  }
-
-  try {
-    let demoUser = await prisma.user.findFirst({
-      where: { email: "demo@dailyos.local" },
-    });
-    if (!demoUser) {
-      demoUser = await prisma.user.create({
-        data: {
-          name: "Demo User",
-          email: "demo@dailyos.local",
-          username: "demouser",
-          role: "ADMIN",
-        },
-      });
-    }
-    return {
-      user: {
-        id: demoUser.id,
-        name: demoUser.name || "Demo User",
-        email: demoUser.email,
-        image: demoUser.image || null,
-        role: demoUser.role || "ADMIN",
-      },
-      expires: new Date(Date.now() + 86400 * 1000).toISOString(),
-    };
-  } catch (err) {
-    console.error("[auth] Fallback user creation error:", err);
-    return {
-      user: {
-        id: "demo-user-fallback",
-        name: "Demo User",
-        email: "demo@dailyos.local",
-        image: null,
-        role: "ADMIN",
-      },
-      expires: new Date(Date.now() + 86400 * 1000).toISOString(),
-    };
-  }
-}
+export const { handlers, signIn, signOut, auth } = nextAuth;
 
 /**
  * Server-side helper: throws if the current session user is not an admin.
