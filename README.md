@@ -1,83 +1,106 @@
-# DailyOS — Personal Productivity Operating System
+# DailyOS
 
-DailyOS is a production-grade, secure, and highly polished personal productivity operating system designed for BTech studies, developer careers, habit tracking, and goal planning.
+**A personal productivity OS — [dailyos.dpdns.org](https://dailyos.dpdns.org)**
 
-It features a dark-first aesthetic inspired by Linear, Notion, and the Vercel Dashboard.
+Notes, tasks, projects, calendar, habits, goals, study tracking, analytics, a
+focus timer, a doodle canvas and a developer log. Eleven modules over **34
+Prisma models in one schema**, so a task can come out of a note and a habit can
+roll into a goal without an integration sitting between them.
 
----
+![Next.js](https://img.shields.io/badge/next.js-16-black)
+![React](https://img.shields.io/badge/react-19-black)
+![Postgres](https://img.shields.io/badge/db-postgres%20%2F%20neon-black)
+![Auth](https://img.shields.io/badge/auth-auth.js%20v5-black)
 
-## Features
+## What's in it
 
-- **Advanced Task Management**: List, Kanban, Calendar, and Timeline views with drag-and-drop support, checklists, time-tracking, and priority statuses.
-- **Project Workspaces**: Dedicated dashboards for academic courses, coding projects, and personal objectives.
-- **Developer Mode**: In-app bug/feature tracker, changelog recorder, dev logs, and markdown code snippet manager with language syntax highlighting.
-- **Study Mode**: Subject & topic tracker, revision scheduler, Pomodoro timer, and streak stats.
-- **Notion-Like Notes System**: Autocached rich markdown editor with folders, search, and favorites.
-- **Integrated Calendar**: Aggregated overview of tasks, deadlines, and study sessions.
-- **Habits & Goals Tracker**: Daily/weekly habits with streak heatmaps, and hierarchical goals (yearly → monthly → weekly).
-- **Linear-Style Command Palette**: Keyboard-shortcut driven (`Ctrl + K`) global search and navigation.
-- **Productivity Analytics**: Completion rate trends, study hours logged, and habit consistency charts.
+- **Notes** — folders, search, tags, pinning, full-screen editing and revision
+  snapshots. Three editing modes share one note: rich text, a sketch pad, and a
+  freeform canvas where you double-click anywhere to drop a text block and drag
+  it where you want it.
+- **Tasks** — list and kanban views, filters, priorities, due dates.
+- **Projects** — per-project workspaces with file attachments.
+- **Habits & goals** — streaks and logs that feed the analytics page.
+- **Study** — subjects, topics, sessions, and a pomodoro timer with a custom
+  alarm sound.
+- **Calendar** — month view over events and deadlines.
+- **Developer mode** — code snippets with syntax highlighting and an HTTP
+  request playground.
+- **Music player** — uploaded tracks over GridFS plus Spotify search, with
+  Lavalink node management behind an admin role.
+- **Guest mode** — notes and doodles that live in `localStorage` until you sign
+  in, then migrate into the account.
+- **Command palette** — `Cmd`/`Ctrl + K` to move between pages.
 
----
+Accounts can request a full JSON export by email, to their own address or
+another one, and can schedule deletion with a 24-hour window to change their
+mind. Signing in during that window blocks the workspace until the choice is
+made either way.
 
-## Tech Stack
+## Stack
 
-- **Frontend**: Next.js 15+ (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Framer Motion, Zustand.
-- **Backend**: Next.js Server Actions, Prisma ORM.
-- **Database**: PostgreSQL (Neon / Supabase).
-- **Authentication**: Auth.js v5 (NextAuth.js v5).
-- **Deployment**: Vercel.
+Next.js 16 (App Router, server actions) · React 19 · TypeScript · Tailwind v4 ·
+shadcn/ui · Framer Motion · Zustand · Tiptap · Prisma 7 over Postgres (Neon) ·
+MongoDB GridFS for file bytes · Auth.js v5 · nodemailer over ZeptoMail ·
+deployed on Vercel behind Cloudflare.
 
----
+Files live in GridFS rather than Postgres so a large PDF doesn't sit in the row
+you query on every page load. Everything else is relational.
 
-## Getting Started
+## Running it locally
 
-### Prerequisites
+Requires Node 20+, a Postgres database, and a MongoDB cluster if you want file
+uploads to work.
 
-- Node.js v20.x or later
-- npm v10.x or later
-- A running PostgreSQL instance (e.g. Neon or Supabase)
+```bash
+npm install --legacy-peer-deps
+cp .env.example .env.local     # then fill it in
+npx prisma db push             # create the tables
+npm run dev
+```
 
-### Setup Instructions
+`.env.local` rather than `.env` — `prisma.config.ts` loads that file
+explicitly, matching the Next.js convention. Every variable is documented in
+`.env.example`; at minimum you need `DATABASE_URL` and `AUTH_SECRET`
+(`openssl rand -base64 32`).
 
-1. **Clone the Repository**
-   ```bash
-   git clone <your-repository-url>
-   cd dailyos
-   ```
+Sign-in works three ways — Google, GitHub, or email and password with a
+six-digit verification code. The OAuth providers each need a callback URL of
+`<NEXT_PUBLIC_APP_URL>/api/auth/callback/<provider>`, and the whole app runs
+fine with neither of them configured.
 
-2. **Install Dependencies**
-   ```bash
-   npm install --legacy-peer-deps
-   ```
+### Checks
 
-3. **Configure Environment Variables**
-   Copy the example environment file and fill in your variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Open `.env` and fill in your:
-   - `DATABASE_URL` & `DIRECT_URL` (from Neon or Supabase)
-   - `AUTH_SECRET` (generate with `npx auth secret`)
-   - `AUTH_GITHUB_ID` & `AUTH_GITHUB_SECRET` (from GitHub developer settings)
+No test runner. Three scripts cover the logic where being wrong is expensive:
 
-4. **Initialize the Database**
-   Push the schema to your database and generate the Prisma Client:
-   ```bash
-   npx prisma db push
-   ```
+```bash
+node scripts/test-otp.mjs              # code generation and comparison
+node scripts/test-freeform-blocks.mjs  # canvas serialisation
+node scripts/test-avatar-data-url.mjs  # avatar data-URL parsing
+```
 
-5. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) to view your local instance.
+## Deploying
 
----
+Import to Vercel, set the variables from `.env.example`, deploy.
 
-## Deployment to Vercel
+Two that are easy to miss:
 
-1. Push your repository to GitHub.
-2. Go to the [Vercel Dashboard](https://vercel.com) and import the repository.
-3. Under **Project Settings**, add your environment variables (`DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, etc.).
-4. Click **Deploy**. Vercel will build and deploy the App Router-first serverless architecture automatically.
+- **`CRON_SECRET`** — `vercel.json` schedules `/api/cron/purge-accounts` daily
+  to remove accounts past their deletion deadline. Without this the route
+  refuses to run rather than running unauthenticated, so nothing is purged.
+- **`sslmode=verify-full`** in `DATABASE_URL` — Neon hands you `sslmode=require`
+  when you copy a connection string, and `pg` v9 will reinterpret that with
+  weaker guarantees. Neon presents a publicly trusted certificate, so
+  verify-full works as-is.
+
+## Notes for anyone reading the code
+
+Data loading sits inside the effect that needs it, with a cancelled flag
+guarding every `setState` after the await, and a reload token instead of a
+callable fetcher. That is what stops a slow response landing after a newer one
+on the pages where filters change mid-request.
+
+Auth is layered on purpose. `proxy.ts` does an optimistic session-cookie check
+to keep prefetches off the database, and the `(dashboard)` layout resolves the
+real session before any page renders, so a forged cookie that gets past the
+proxy still gets nothing.
