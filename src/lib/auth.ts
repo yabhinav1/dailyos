@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { MAX_FAILED_LOGINS, lockoutExpiry } from "@/lib/otp";
 import { authConfig } from "@/lib/auth.config";
@@ -64,6 +65,16 @@ const nextAuth = NextAuth({
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      // Google verifies the address it hands us, so matching an existing
+      // account by email is safe here in a way it would not be with a provider
+      // that lets anyone claim any address. Without this, someone who signed
+      // up with a password and later clicks "Google" hits
+      // OAuthAccountNotLinked with no way forward.
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: "Credentials",
