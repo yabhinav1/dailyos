@@ -24,6 +24,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import TaskForm from "./task-form";
 import type { Task } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface TaskCardProps {
   task: Task;
@@ -32,6 +33,7 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardProps) {
+  const confirm = useConfirm();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [favorite, setFavorite] = useState(task.isFavorite);
 
@@ -47,10 +49,14 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this task?")) {
-      await deleteTask(task.id);
-      onRefresh();
-    }
+    const ok = await confirm({
+      title: `Delete "${task.title}"?`,
+      confirmLabel: "Delete task",
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteTask(task.id);
+    onRefresh();
   };
 
   const getPriorityColor = (p: Priority) => {

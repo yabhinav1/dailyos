@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import TaskForm from "./task-form";
 import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface TaskListProps {
   tasks: Task[];
@@ -31,6 +32,7 @@ interface TaskListProps {
 }
 
 export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListProps) {
+  const confirm = useConfirm();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const handleStatusToggle = async (task: Task) => {
@@ -44,10 +46,14 @@ export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListPr
     onRefresh();
   };
   const handleDelete = async (task: Task) => {
-    if (confirm(`Are you sure you want to delete "${task.title}"?`)) {
-      await deleteTask(task.id);
-      onRefresh();
-    }
+    const ok = await confirm({
+      title: `Delete "${task.title}"?`,
+      confirmLabel: "Delete task",
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteTask(task.id);
+    onRefresh();
   };
   const openEditDialog = (task: Task) => {
     setSelectedTask(task);

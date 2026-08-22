@@ -36,6 +36,7 @@ import {
 import { SkeletonCards, SkeletonList } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
 import type { Project, ProjectResource } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 // Keep in sync with MAX_UPLOAD_BYTES in src/features/projects/actions.ts.
 const MAX_UPLOAD_MB = 50;
@@ -161,6 +162,7 @@ function ProjectFilesDialog({
   project: Project | null;
   onClose: () => void;
 }) {
+  const confirm = useConfirm();
   const [files, setFiles] = useState<ProjectResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -208,7 +210,13 @@ function ProjectFilesDialog({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this file?")) return;
+    const ok = await confirm({
+      title: "Delete this file?",
+      body: "The file is removed from storage and can't be recovered.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await deleteResource(id);
     if (!res.success) setError(res.message || "Failed to delete file");
     reloadFiles();
@@ -288,6 +296,7 @@ function ProjectFilesDialog({
 }
 
 export default function ProjectsPage() {
+  const confirm = useConfirm();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -317,7 +326,13 @@ export default function ProjectsPage() {
   });
 
   const handleDelete = async (projectId: string, name: string) => {
-    if (!confirm(`Delete project "${name}"? All tasks in it will remain.`)) return;
+    const ok = await confirm({
+      title: `Delete "${name}"?`,
+      body: "Tasks in this project stay where they are — only the project is removed.",
+      confirmLabel: "Delete project",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteProject(projectId);
     reloadProjects();
   };

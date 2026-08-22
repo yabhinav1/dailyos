@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface NodeRow {
   id: string;
@@ -55,6 +56,7 @@ function StatusBadge({ status, lastError }: { status: string; lastError: string 
 }
 
 export default function AdminMusicClient() {
+  const confirm = useConfirm();
   const [nodes, setNodes] = useState<NodeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -122,7 +124,13 @@ export default function AdminMusicClient() {
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm("Remove this Lavalink node? This can't be undone.")) return;
+    const ok = await confirm({
+      title: "Remove this Lavalink node?",
+      body: "Playback falls back to the next reachable node.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     await removeLavalinkNode(id);
     reload();
   };

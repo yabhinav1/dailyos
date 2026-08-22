@@ -12,8 +12,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
 import type { CodingProject, CodeSnippet } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export default function DeveloperPage() {
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState<"projects" | "snippets" | "playground">("projects");
   const [projects, setProjects] = useState<CodingProject[]>([]);
   const [snippets, setSnippets] = useState<CodeSnippet[]>([]);
@@ -114,7 +116,13 @@ export default function DeveloperPage() {
   };
 
   const handleDeleteSnippet = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this snippet?")) return;
+    const ok = await confirm({
+      title: "Delete this snippet?",
+      body: "It can't be recovered afterwards.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteSnippet(id);
     reloadData();
   };

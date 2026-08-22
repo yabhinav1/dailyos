@@ -14,6 +14,8 @@ import { NextResponse, type NextRequest } from "next/server";
 // that saves to localStorage until someone signs in.
 const PUBLIC_ROUTES = [
   "/",
+  // Fetched by the browser with no session cookie when installing the app.
+  "/manifest.webmanifest",
   "/login",
   "/register",
   "/forgot-password",

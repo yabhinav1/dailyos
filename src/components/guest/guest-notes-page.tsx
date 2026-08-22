@@ -6,11 +6,13 @@ import dynamic from "next/dynamic";
 import { useLocalNotes, type LocalNote } from "@/lib/local-notes";
 import { FileText, Plus, Pin, Trash2, PenTool, Type, LogIn, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const RichEditor = dynamic(() => import("@/features/notes/components/rich-editor"), { ssr: false });
 const DoodleCanvas = dynamic(() => import("@/components/doodle/doodle-canvas"), { ssr: false });
 
 export default function GuestNotesPage() {
+  const confirm = useConfirm();
   const { notes, loaded, storageError, createNote, updateNote, deleteNote, togglePin } = useLocalNotes();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorTitle, setEditorTitle] = useState("");
@@ -73,8 +75,14 @@ export default function GuestNotesPage() {
     handleSelectNote(note);
   };
 
-  const handleDeleteNote = (id: string) => {
-    if (!confirm("Delete this note? This can't be undone.")) return;
+  const handleDeleteNote = async (id: string) => {
+    const ok = await confirm({
+      title: "Delete this note?",
+      body: "Guest notes live only in this browser, so this can't be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     deleteNote(id);
     if (selectedId === id) {
       const remaining = notes.filter((n) => n.id !== id);

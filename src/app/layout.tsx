@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -17,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DailyOS — Personal Productivity OS",
-  description: "A world-class secure personal productivity operating system.",
+  description:
+    "Notes, tasks, habits, goals, calendar and study tracking in one workspace.",
 };
 
 export default function RootLayout({
@@ -37,7 +39,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <TooltipProvider>{children}</TooltipProvider>
+            <TooltipProvider>
+              <ConfirmProvider>{children}</ConfirmProvider>
+            </TooltipProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

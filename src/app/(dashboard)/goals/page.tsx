@@ -12,8 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Goal, GoalTimeframe } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export default function GoalsPage() {
+  const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -56,7 +58,13 @@ export default function GoalsPage() {
   };
 
   const handleDelete = async (goalId: string, title: string) => {
-    if (!confirm(`Delete goal "${title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete "${title}"?`,
+      body: "Its progress history goes with it.",
+      confirmLabel: "Delete goal",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteGoal(goalId);
     reloadGoals();
   };

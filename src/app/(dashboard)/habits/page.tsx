@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Habit, HabitLog } from "@/lib/types";
 import { toDateKey } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 function generateLast30Days(): string[] {
   const days: string[] = [];
@@ -25,6 +26,7 @@ function generateLast30Days(): string[] {
 const DAYS_30 = generateLast30Days();
 
 export default function HabitsPage() {
+  const confirm = useConfirm();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -67,7 +69,13 @@ export default function HabitsPage() {
   };
 
   const handleDelete = async (habitId: string, name: string) => {
-    if (!confirm(`Delete habit "${name}"?`)) return;
+    const ok = await confirm({
+      title: `Delete "${name}"?`,
+      body: "Its full check-in history and streak go with it.",
+      confirmLabel: "Delete habit",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteHabit(habitId);
     reloadHabits();
   };

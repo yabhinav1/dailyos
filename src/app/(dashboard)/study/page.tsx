@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import type { StudyData, StudySubject } from "@/lib/types";
 import { getWebkitAudioContext } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 // ── Pomodoro Timer ──
 const ALARM_STORAGE_KEY = "dailyos-pomodoro-alarm";
@@ -301,6 +302,7 @@ function FlashcardWidget() {
 }
 
 export default function StudyPage() {
+  const confirm = useConfirm();
   const [data, setData] = useState<StudyData>({ subjects: [], recentSessions: [], totalMinutesThisWeek: 0 });
   const [loading, setLoading] = useState(true);
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -427,7 +429,20 @@ export default function StudyPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] text-zinc-400">{completedTopics}/{totalTopics} topics</span>
-                          <button onClick={() => { if (confirm(`Delete "${subject.name}"?`)) { deleteSubject(subject.id).then(reloadData); } }}
+                          <button
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: `Delete "${subject.name}"?`,
+                                body: "Its topics and logged study sessions go with it.",
+                                confirmLabel: "Delete subject",
+                                destructive: true,
+                              });
+                              if (ok) {
+                                await deleteSubject(subject.id);
+                                reloadData();
+                              }
+                            }}
+                            aria-label={`Delete ${subject.name}`}
                             className="text-zinc-400 hover:text-red-400 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

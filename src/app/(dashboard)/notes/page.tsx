@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
 import { Loader } from "@/components/ui/loader";
 import type { Note, NoteFolder } from "@/lib/types";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 // Dynamically import the editor (avoid SSR issues with Tiptap)
 const RichEditor = dynamic(() => import("@/features/notes/components/rich-editor"), { ssr: false });
@@ -42,6 +43,7 @@ const FreeformCanvas = dynamic(() => import("@/components/notes/freeform-canvas"
 
 
 export default function NotesPage() {
+  const confirm = useConfirm();
   const [notes, setNotes] = useState<Note[]>([]);
   const [folders, setFolders] = useState<NoteFolder[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -226,7 +228,12 @@ export default function NotesPage() {
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm("Move this note to trash?")) return;
+    const ok = await confirm({
+      title: "Move this note to trash?",
+      body: "You can still find it in trash afterwards.",
+      confirmLabel: "Move to trash",
+    });
+    if (!ok) return;
     await deleteNote(noteId);
     if (selectedNote?.id === noteId) setSelectedNote(null);
     reloadAll();
@@ -256,7 +263,13 @@ export default function NotesPage() {
   };
 
   const handleDeleteFolder = async (folderId: string, name: string) => {
-    if (!confirm(`Delete folder "${name}"? Notes inside will be moved to All Notes.`)) return;
+    const ok = await confirm({
+      title: `Delete folder "${name}"?`,
+      body: "Notes inside are kept and move to All Notes.",
+      confirmLabel: "Delete folder",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteFolder(folderId);
     if (selectedFolderId === folderId) setSelectedFolderId(undefined);
     reloadAll();
