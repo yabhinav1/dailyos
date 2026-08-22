@@ -91,6 +91,29 @@ export async function deleteNote(noteId: string) {
   }
 }
 
+/**
+ * Undoes a soft delete. Exists for the Undo button on the deletion toast —
+ * there is no trash page, so this is the only road back.
+ */
+export async function restoreNote(noteId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+
+    const existing = await prisma.note.findFirst({ where: { id: noteId, userId } });
+    if (!existing) throw new Error("Note not found or access denied.");
+
+    await prisma.note.update({
+      where: { id: noteId },
+      data: { deletedAt: null },
+    });
+
+    revalidatePath("/notes");
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to restore note") };
+  }
+}
+
 export async function toggleNotePin(noteId: string, isPinned: boolean) {
   try {
     const userId = await getUserIdOrThrow();

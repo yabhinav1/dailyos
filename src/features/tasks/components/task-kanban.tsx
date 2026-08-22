@@ -7,9 +7,11 @@ import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from "
 import { useDroppable } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 import TaskCard from "./task-card";
+import { toast } from "@/stores/toast-store";
 import type { Task } from "@/lib/types";
 
 interface TaskKanbanProps {
+  onPatch?: (taskId: string, patch: Partial<Task>) => void;
   tasks: Task[];
   onRefresh: () => void;
   projects?: { id: string; name: string }[];
@@ -23,7 +25,7 @@ const COLUMNS = [
   { id: TaskStatus.COMPLETED, title: "Completed", color: "bg-emerald-500/5 border-emerald-500/10" },
 ];
 
-export default function TaskKanban({ tasks, onRefresh, projects = [] }: TaskKanbanProps) {
+export default function TaskKanban({ tasks, onRefresh, onPatch, projects = [] }: TaskKanbanProps) {
   // Setup pointer sensor for drag actions
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -43,12 +45,15 @@ export default function TaskKanban({ tasks, onRefresh, projects = [] }: TaskKanb
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === targetStatus) return;
 
-    // Trigger Server Action update
+    // The card lands in its new column immediately; the server confirms after.
+    onPatch?.(taskId, { status: targetStatus });
     try {
       await updateTask(taskId, { status: targetStatus });
       onRefresh();
     } catch (err) {
       console.error("Failed to update status on drag-end:", err);
+      onPatch?.(taskId, { status: task.status });
+      toast.error("Couldn't move the task. It's back where it was.");
     }
   };
 

@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getNotesAction, getFoldersAction, createNote, updateNote, deleteNote,
-  toggleNotePin, toggleNoteFavorite, createFolder, deleteFolder,
+  restoreNote, toggleNotePin, toggleNoteFavorite, createFolder, deleteFolder,
 } from "@/features/notes/actions";
+import { toast } from "@/stores/toast-store";
 import {
   FileText,
   FolderOpen,
@@ -227,16 +228,29 @@ export default function NotesPage() {
     }
   };
 
+  // Deletes are soft (deletedAt), so instead of asking permission first the
+  // note goes immediately and an Undo rides on the toast. Faster for the
+  // common case, and a change of heart still has a road back — which a
+  // confirmed hard delete never gave.
   const handleDeleteNote = async (noteId: string) => {
-    const ok = await confirm({
-      title: "Move this note to trash?",
-      body: "You can still find it in trash afterwards.",
-      confirmLabel: "Move to trash",
-    });
-    if (!ok) return;
-    await deleteNote(noteId);
+    const removed = notes.find((n) => n.id === noteId);
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
     if (selectedNote?.id === noteId) setSelectedNote(null);
-    reloadAll();
+
+    const res = await deleteNote(noteId);
+    if (!res.success) {
+      reloadAll();
+      toast.error(res.message || "Couldn't delete the note.");
+      return;
+    }
+    toast.success(`"${removed?.title || "Note"}" deleted.`, {
+      label: "Undo",
+      onClick: async () => {
+        const restored = await restoreNote(noteId);
+        if (restored.success) reloadAll();
+        else toast.error("Couldn't bring it back.");
+      },
+    });
   };
   const handlePinToggle = async (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();

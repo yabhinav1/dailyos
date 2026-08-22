@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Habit, HabitLog } from "@/lib/types";
 import { toDateKey } from "@/lib/utils";
+import { toast } from "@/stores/toast-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 function generateLast30Days(): string[] {
@@ -63,9 +64,31 @@ export default function HabitsPage() {
     reloadHabits();
   };
 
+  // Optimistic: the checkbox and heatmap cell flip before the server answers.
+  // Streak numbers still come from the server, so a quiet reload follows the
+  // confirmation; on failure the flip reverts and the user is told.
   const handleToggleLog = async (habitId: string, date: string) => {
-    await logHabit(habitId, date);
-    reloadHabits();
+    const previous = habits;
+    setHabits((prev) =>
+      prev.map((h) => {
+        if (h.id !== habitId) return h;
+        const key = toDateKey(date);
+        const had = h.logs.some((l: HabitLog) => toDateKey(l.date) === key);
+        return {
+          ...h,
+          logs: had
+            ? h.logs.filter((l: HabitLog) => toDateKey(l.date) !== key)
+            : [...h.logs, { date, completed: true } as unknown as HabitLog],
+        };
+      })
+    );
+    try {
+      await logHabit(habitId, date);
+      reloadHabits();
+    } catch {
+      setHabits(previous);
+      toast.error("Couldn't save that check-in. Nothing was changed.");
+    }
   };
 
   const handleDelete = async (habitId: string, name: string) => {

@@ -24,22 +24,30 @@ import TaskForm from "./task-form";
 import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/lib/types";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/stores/toast-store";
 
 interface TaskListProps {
   tasks: Task[];
   onRefresh: () => void;
+  onPatch?: (taskId: string, patch: Partial<Task>) => void;
   projects?: { id: string; name: string }[];
 }
 
-export default function TaskList({ tasks, onRefresh, projects = [] }: TaskListProps) {
+export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: TaskListProps) {
   const confirm = useConfirm();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const handleStatusToggle = async (task: Task) => {
     const nextStatus =
       task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
-    await updateTask(task.id, { status: nextStatus });
-    onRefresh();
+    onPatch?.(task.id, { status: nextStatus });
+    try {
+      await updateTask(task.id, { status: nextStatus });
+      onRefresh();
+    } catch {
+      onPatch?.(task.id, { status: task.status });
+      toast.error("Couldn't update the task. Nothing was changed.");
+    }
   };
   const handleFavoriteToggle = async (task: Task) => {
     await toggleTaskFavorite(task.id, !task.isFavorite);

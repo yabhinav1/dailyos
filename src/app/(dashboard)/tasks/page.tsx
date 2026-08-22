@@ -32,6 +32,12 @@ export default function TasksPage() {
   const [reloadToken, setReloadToken] = useState(0);
   const reloadTasks = useCallback(() => setReloadToken((n) => n + 1), []);
 
+  // Applied by children before their server call lands, so a status flip or a
+  // kanban drop paints immediately. The reload that follows confirms it.
+  const patchTask = useCallback((taskId: string, patch: Partial<Task>) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...patch } : t)));
+  }, []);
+
   // Fetch Tasks. A filter can change while a request is still in flight, so
   // stale responses are dropped rather than overwriting the newer result.
   useEffect(() => {
@@ -155,9 +161,9 @@ export default function TasksPage() {
               transition={{ duration: 0.15 }}
             >
               {view === "list" ? (
-                <TaskList tasks={tasks} onRefresh={reloadTasks} />
+                <TaskList tasks={tasks} onRefresh={reloadTasks} onPatch={patchTask} />
               ) : (
-                <TaskKanban tasks={tasks} onRefresh={reloadTasks} />
+                <TaskKanban tasks={tasks} onRefresh={reloadTasks} onPatch={patchTask} />
               )}
             </motion.div>
           </AnimatePresence>

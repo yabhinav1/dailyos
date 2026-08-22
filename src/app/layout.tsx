@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
+import Toaster from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -40,7 +41,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <TooltipProvider>
-              <ConfirmProvider>{children}</ConfirmProvider>
+              <ConfirmProvider>
+                {children}
+                <Toaster />
+              </ConfirmProvider>
             </TooltipProvider>
           </ThemeProvider>
         </SessionProvider>
