@@ -4,13 +4,13 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getNotesAction, getFoldersAction, createNote, updateNote, deleteNote,
   restoreNote, toggleNotePin, toggleNoteFavorite, createFolder, deleteFolder,
-  getNoteVersionAction, getNoteAction,
+  getNoteVersionAction, getNoteAction, restoreNoteRevisionAction,
 } from "@/features/notes/actions";
 import ShareDialog from "@/features/notes/components/share-dialog";
 import NotesFolderNav from "@/features/notes/components/notes-folder-nav";
 import NoteItem from "@/features/notes/components/note-item";
 import ExportMenu from "@/features/notes/components/export-menu";
-import RevisionHistoryDialog, { type NoteSnapshot } from "@/features/notes/components/revision-history-dialog";
+import RevisionHistoryDialog from "@/features/notes/components/revision-history-dialog";
 import { toast } from "@/stores/toast-store";
 import {
   FileText,
@@ -62,7 +62,6 @@ export default function NotesPage() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [snapshots, setSnapshots] = useState<(NoteSnapshot & { noteId: string })[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Editor state (local buffer while editing)
@@ -167,34 +166,6 @@ export default function NotesPage() {
     setIsShared(shared);
   };
 
-  // Revision history, per note and newest first: the version a note was
-  // opened at, then one per save. Saves within a minute of the last snapshot
-  // update it rather than add one, so a typing session doesn't fill the list.
-  const recordSnapshot = (
-    noteId: string,
-    patch: { title: string; content: string; doodleData: string | null },
-    seed = false
-  ) => {
-    const now = Date.now();
-    const snap: NoteSnapshot & { noteId: string } = {
-      noteId,
-      id: String(now),
-      time: new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      title: patch.title,
-      content: patch.content,
-      doodle: patch.doodleData,
-    };
-    setSnapshots((prev) => {
-      const mine = prev.filter((s) => s.noteId === noteId);
-      const others = prev.filter((s) => s.noteId !== noteId);
-      if (seed) return mine.length ? prev : [snap, ...prev];
-      const [latest, ...older] = mine;
-      // Never fold into the opening snapshot: it's the way back to the start.
-      const next = latest && older.length > 0 && now - Number(latest.id) < 60_000 ? [snap, ...older] : [snap, ...mine];
-      return [...next.slice(0, 20), ...others];
-    });
-  };
-
   // Auto-save after 1s of inactivity
   const triggerAutoSave = useCallback(
     (
@@ -217,7 +188,6 @@ export default function NotesPage() {
         if (res.success && res.data) {
           versionsRef.current.set(noteId, new Date(res.data.updatedAt).toISOString());
           dirtyRef.current = false;
-          recordSnapshot(noteId, patch);
         } else if ("conflict" in res && res.conflict && res.data) {
           setConflict({ noteId, latest: res.data });
         }
@@ -239,7 +209,6 @@ export default function NotesPage() {
     markShared(note.linkAccess !== "NONE" || note._count.shares > 0);
     setLastEditedBy(note.lastEditedBy);
     setConflict(null);
-    recordSnapshot(note.id, { title: note.title, content: note.content || "", doodleData: note.doodleData || null }, true);
   };
 
   // Loads a newer server version into the editor without counting as an edit.
@@ -686,14 +655,21 @@ export default function NotesPage() {
             </div>
             <RevisionHistoryDialog
               open={showHistoryDrawer}
-              snapshots={snapshots.filter((s) => s.noteId === selectedNote.id)}
+              noteId={selectedNote.id}
               onClose={() => setShowHistoryDrawer(false)}
-              onRestore={(snap) => {
-                setEditorTitle(snap.title);
-                setEditorContent(snap.content);
-                setEditorDoodle(snap.doodle);
+              onRestore={async (revisionId) => {
+                // A pending autosave would write over the restored version.
+                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+                const res = await restoreNoteRevisionAction(revisionId);
+                if (!res.success || !res.data) {
+                  toast.error(res.message || "Couldn't restore that version.");
+                  return;
+                }
+                applyRemote(selectedNote.id, res.data);
                 setShowHistoryDrawer(false);
-                triggerAutoSave(selectedNote.id, { ...currentPatch(), title: snap.title, content: snap.content, doodleData: snap.doodle });
+                toast.success("Version restored. The one it replaced is in history too.");
+                reloadAll();
               }}
             />
           </>

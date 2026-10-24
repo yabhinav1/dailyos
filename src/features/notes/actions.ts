@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getErrorMessage } from "@/lib/utils";
+import { keepRevisionBeforeSave } from "@/lib/note-revisions";
 
 const createNoteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -69,6 +70,12 @@ export async function updateNote(
 
     const validated = updateNoteSchema.parse(formData);
 
+    // A save that is about to be refused as a conflict changes nothing, so
+    // it keeps nothing either.
+    if (!baseUpdatedAt || existing.updatedAt.toISOString() === new Date(baseUpdatedAt).toISOString()) {
+      await keepRevisionBeforeSave(existing, validated);
+    }
+
     // Collaborators see who saved last; only worth a lookup on shared notes.
     const shared = existing.linkAccess !== "NONE" || (await prisma.noteShare.count({ where: { noteId } })) > 0;
     const lastEditedBy = shared
@@ -114,6 +121,52 @@ export async function getNoteVersionAction(noteId: string) {
 }
 
 /** The whole note, to load a collaborator's newer version into the editor. */
+/** Earlier versions of a note, newest first, without their (large) bodies. */
+export async function getNoteRevisionsAction(noteId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+    const revisions = await prisma.noteRevision.findMany({
+      where: { noteId, note: { userId } },
+      orderBy: { savedAt: "desc" },
+      select: { id: true, title: true, editedBy: true, savedAt: true },
+    });
+    return { success: true, data: revisions };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error), data: [] };
+  }
+}
+
+/**
+ * Puts an earlier version back. The current version is always kept first,
+ * whatever the ten-minute rule says, so a restore can itself be undone.
+ */
+export async function restoreNoteRevisionAction(revisionId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+    const revision = await prisma.noteRevision.findFirst({
+      where: { id: revisionId, note: { userId } },
+      include: { note: true },
+    });
+    if (!revision) throw new Error("Version not found.");
+    const restored = {
+      title: revision.title,
+      content: revision.content ?? "",
+      doodleData: revision.doodleData,
+      canvasData: revision.canvasData,
+    };
+    await keepRevisionBeforeSave(revision.note, restored, { force: true });
+    const me = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+    const note = await prisma.note.update({
+      where: { id: revision.noteId },
+      data: { ...restored, lastEditedBy: me?.name || me?.email || null },
+    });
+    revalidatePath("/notes");
+    return { success: true, data: note };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Couldn't restore that version") };
+  }
+}
+
 export async function getNoteAction(noteId: string) {
   try {
     const userId = await getUserIdOrThrow();

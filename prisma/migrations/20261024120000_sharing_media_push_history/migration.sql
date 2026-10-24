@@ -23,6 +23,7 @@ CREATE TABLE "NoteRevision" (
     "doodleData" TEXT,
     "canvasData" TEXT,
     "editedBy" TEXT,
+    "savedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "NoteRevision_pkey" PRIMARY KEY ("id")

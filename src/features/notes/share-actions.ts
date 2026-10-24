@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { assertInviteBudget } from "@/lib/invite-limit";
+import { keepRevisionBeforeSave } from "@/lib/note-revisions";
 import { createNotification } from "@/lib/notifications";
 import { sendNoteSharedEmail } from "@/lib/email";
 import { LINK_ACCESS, SHARE_ROLES, newShareToken, resolveNoteAccess, type LinkAccess } from "@/lib/note-access";
@@ -222,6 +223,10 @@ export async function saveSharedNoteAction(
     if (access.role === "VIEW") return { success: false as const, conflict: false as const, message: "You can only view this note." };
 
     const data = sharedSaveSchema.parse(patch);
+    const current = await prisma.note.findUniqueOrThrow({ where: { id: access.noteId } });
+    if (current.updatedAt.toISOString() === new Date(baseUpdatedAt).toISOString()) {
+      await keepRevisionBeforeSave(current, data);
+    }
     const result = await prisma.note.updateMany({
       where: { id: access.noteId, updatedAt: new Date(baseUpdatedAt) },
       data: { ...data, lastEditedBy: access.displayName },

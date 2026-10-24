@@ -350,7 +350,8 @@ model NoteRevision {
   doodleData String?  @db.Text
   canvasData String?  @db.Text
   editedBy   String?  // who made this version
-  createdAt  DateTime @default(now())
+  savedAt    DateTime // when this version was written
+  createdAt  DateTime @default(now()) // when it was kept as a revision
 
   note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
 

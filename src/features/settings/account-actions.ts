@@ -46,7 +46,7 @@ async function collectUserData(userId: string) {
       emailVerified: true,
       createdAt: true,
       settings: true,
-      notes: { include: { tags: true, shares: { select: { email: true, role: true, createdAt: true } } } },
+      notes: { include: { tags: true, revisions: true, shares: { select: { email: true, role: true, createdAt: true } } } },
       noteFolders: true,
       tasks: {
         include: {
