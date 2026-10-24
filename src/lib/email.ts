@@ -23,6 +23,25 @@ const transporter = hasSmtpConfig
   : null;
 
 /**
+ * Sends through the transporter, turning provider errors into a message a
+ * user can act on. The raw error (e.g. "535 Authentication Failed", which
+ * means the SMTP token was revoked or regenerated) goes to the server log
+ * with a fixed tag so it is easy to find.
+ */
+async function deliver(mail: Parameters<NonNullable<typeof transporter>["sendMail"]>[0]) {
+  try {
+    return await transporter!.sendMail(mail);
+  } catch (err) {
+    const e = err as { code?: string; responseCode?: number; message?: string };
+    console.error(`[email] send failed (${e.code ?? "?"} ${e.responseCode ?? ""}): ${e.message}`);
+    if (e.code === "EAUTH" || e.responseCode === 535) {
+      throw new Error("Email can't be sent right now (the mail service rejected our login). Please try again later.");
+    }
+    throw new Error("Email couldn't be sent right now. Please try again in a few minutes.");
+  }
+}
+
+/**
  * The From address must be on a domain verified in ZeptoMail, or the provider
  * rejects the message. Falls back to the configured sender domain.
  */
@@ -88,7 +107,7 @@ export async function sendDailyDigestEmail(
 
   const greeting = name?.trim() ? `Good morning, ${name.trim().split(/\s+/)[0]}` : "Good morning";
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: `Your day · ${day}`,
@@ -131,7 +150,7 @@ export async function sendSharedEmail(
   }
 
   const verb = role === "EDIT" ? "edit" : "view";
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: `${sharedBy} shared "${noteTitle}" with you`,
@@ -166,7 +185,7 @@ export async function sendOtpEmail(to: string, otp: string) {
     return;
   }
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Your DailyOS verification code",
@@ -189,7 +208,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     return;
   }
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Reset your DailyOS password",
@@ -220,7 +239,7 @@ export async function sendDataExportEmail(to: string, json: string, accountEmail
     return;
   }
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Your DailyOS data export",
@@ -241,7 +260,7 @@ export async function sendExportSentElsewhereEmail(to: string, sentTo: string) {
     return;
   }
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "A copy of your DailyOS data was sent to another address",
@@ -274,7 +293,7 @@ export async function sendAccountDeletionScheduledEmail(
     return;
   }
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Your DailyOS account is scheduled for deletion",
@@ -299,7 +318,7 @@ export async function sendAccountDeletionScheduledEmail(
 export async function sendAccountDeletionCancelledEmail(to: string) {
   if (!transporter) return;
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Your DailyOS account will not be deleted",
@@ -329,7 +348,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
        </td>
      </tr>`;
 
-  await transporter.sendMail({
+  await deliver({
     from: fromAddress(),
     to,
     subject: "Welcome to DailyOS",
