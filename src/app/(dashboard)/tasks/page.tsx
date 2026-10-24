@@ -11,6 +11,7 @@ import TaskFilters from "@/features/tasks/components/task-filters";
 import TaskList from "@/features/tasks/components/task-list";
 import TaskKanban from "@/features/tasks/components/task-kanban";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import TaskForm from "@/features/tasks/components/task-form";
 import { SkeletonList } from "@/components/ui/skeleton";
 import type { Task } from "@/lib/types";
@@ -23,8 +24,14 @@ export default function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Filters State
-  const [search, setSearch] = useState("");
+  // Filters State. /tasks?q=… (from the command palette) pre-fills search.
+  const queryParam = useSearchParams().get("q") ?? "";
+  const [search, setSearch] = useState(queryParam);
+  const [seenQueryParam, setSeenQueryParam] = useState(queryParam);
+  if (queryParam !== seenQueryParam) {
+    setSeenQueryParam(queryParam);
+    setSearch(queryParam);
+  }
   const [status, setStatus] = useState<TaskStatus | "ALL">("ALL");
   const [priority, setPriority] = useState<Priority | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "createdAt">("createdAt");

@@ -33,6 +33,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { Loader } from "@/components/ui/loader";
 import type { Note, NoteFolder } from "@/lib/types";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -134,6 +135,25 @@ export default function NotesPage() {
   const [reloadToken, setReloadToken] = useState(0);
   const reloadAll = useCallback(() => setReloadToken((n) => n + 1), []);
 
+  // /notes?note=<id> (from search) opens that note once the list has it. A
+  // new id while already on this page triggers a reload to pick it up.
+  const requestedNoteId = useSearchParams().get("note");
+  const pendingNoteIdRef = useRef<string | null>(null);
+  const [seenNoteParam, setSeenNoteParam] = useState<string | null>(null);
+  if (requestedNoteId !== seenNoteParam) {
+    setSeenNoteParam(requestedNoteId);
+    if (requestedNoteId) {
+      setSelectedFolderId(undefined);
+      setSearch("");
+      setReloadToken((n) => n + 1);
+    }
+  }
+  useEffect(() => {
+    pendingNoteIdRef.current = requestedNoteId;
+  }, [requestedNoteId]);
+  // The loader runs from an effect, so it reaches the latest handler via a ref.
+  const handleSelectNoteRef = useRef<(note: Note) => void>(() => {});
+
   // Search text and folder both change while requests are in flight, so a
   // superseded response is discarded instead of clobbering the newer one.
   useEffect(() => {
@@ -145,7 +165,16 @@ export default function NotesPage() {
         getFoldersAction(),
       ]);
       if (cancelled) return;
-      if (notesRes.success && notesRes.data) setNotes(notesRes.data);
+      if (notesRes.success && notesRes.data) {
+        setNotes(notesRes.data);
+        // /notes?note=<id> (from search) opens that note once it has loaded.
+        const wanted = pendingNoteIdRef.current;
+        const match = wanted ? notesRes.data.find((n) => n.id === wanted) : undefined;
+        if (match) {
+          pendingNoteIdRef.current = null;
+          handleSelectNoteRef.current(match);
+        }
+      }
       if (foldersRes.success && foldersRes.data) setFolders(foldersRes.data);
       setLoading(false);
     })();
@@ -183,6 +212,9 @@ export default function NotesPage() {
     setEditorCanvas(note.canvasData || null);
     setViewMode("write");
   };
+  useEffect(() => {
+    handleSelectNoteRef.current = handleSelectNote;
+  });
 
   // Each handler sends the whole note, with only its own field replaced, so a
   // save started from one editor mode can never blank out another's work.
