@@ -1,8 +1,36 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
-// Baseline hardening for every response. No CSP yet: Tiptap, the doodle
-// canvas and Spotify artwork need a policy worked out and tested on its own.
+const isDev = process.env.NODE_ENV !== "production";
+
+// Report-only for now: violations are logged in the browser console, nothing
+// is blocked. Watch the console on the live site, then rename the header to
+// Content-Security-Policy to enforce it.
+//
+// - script/style 'unsafe-inline': Next's inline bootstrap scripts (no nonce
+//   setup) and Tiptap/framer-motion inline styles.
+// - img/media https:: notes embed images from anywhere; Spotify artwork,
+//   Google/GitHub avatars and dicebear avatars come from several hosts.
+// - connect-src https:: the developer API tester calls arbitrary URLs.
+// - form-action: Chrome applies it to the redirect after the sign-in form
+//   posts, so the OAuth providers must be listed.
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  `connect-src 'self' https:${isDev ? " ws: http://localhost:*" : ""}`,
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self' https://accounts.google.com https://github.com",
+].join("; ");
+
+// Baseline hardening for every response.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -10,12 +38,24 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   // Microphone stays allowed for our own origin: voice notes in the rich editor.
   { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=(self)" },
+  { key: "Content-Security-Policy-Report-Only", value: csp },
 ];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // The service worker must never be served from a cache, or users get
+        // stuck on an old version (Next PWA guide).
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
+      },
+    ];
   },
   turbopack: {
     // A stray package-lock.json in the user's home directory made Next infer
@@ -30,6 +70,10 @@ const nextConfig: NextConfig = {
       // still lives under `experimental.serverActions`.
       bodySizeLimit: "50mb",
     },
+    // A navigation or Server Action made while the connection is down waits
+    // and retries when it returns, instead of throwing. Also powers the
+    // useOffline() banner. See docs/01-app/02-guides/offline-support.md.
+    useOffline: true,
   },
 };
 

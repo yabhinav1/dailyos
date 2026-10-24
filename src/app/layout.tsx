@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import Toaster from "@/components/ui/toaster";
+import OfflineBanner from "@/components/layout/offline-banner";
+import ServiceWorkerRegistration from "@/components/providers/service-worker";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -44,6 +46,8 @@ export default function RootLayout({
               <ConfirmProvider>
                 {children}
                 <Toaster />
+                <OfflineBanner />
+                <ServiceWorkerRegistration />
               </ConfirmProvider>
             </TooltipProvider>
           </ThemeProvider>
