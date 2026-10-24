@@ -9,21 +9,34 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getErrorMessage } from "@/lib/utils";
 import type { Task } from "@/lib/types";
+import { RECURRENCES, type Recurrence } from "@/lib/dates";
+import TagInput from "./tag-input";
+import { useTaskOptions } from "./use-task-options";
+
+const RECURRENCE_LABELS: Record<Recurrence, string> = {
+  DAILY: "Every day",
+  WEEKDAYS: "Every weekday",
+  WEEKLY: "Every week",
+  MONTHLY: "Every month",
+  YEARLY: "Every year",
+};
 
 interface TaskFormProps {
   initialData?: Partial<Task>;
+  /** Prefills for a new task, e.g. a due date when created from the calendar. */
+  defaults?: { dueDate?: string; goalId?: string };
   onSuccess: () => void;
   onCancel: () => void;
-  projects?: { id: string; name: string }[];
 }
 
 export default function TaskForm({
   initialData,
+  defaults,
   onSuccess,
   onCancel,
-  projects = [],
 }: TaskFormProps) {
-  const isEdit = !!initialData;
+  const isEdit = !!initialData?.id;
+  const { projects, goals, tags: tagSuggestions } = useTaskOptions();
 
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(initialData?.description || "");
@@ -37,12 +50,17 @@ export default function TaskForm({
     return date.toISOString().split("T")[0];
   };
 
-  const [dueDate, setDueDate] = useState(formatInputDate(initialData?.dueDate));
+  const [dueDate, setDueDate] = useState(formatInputDate(initialData?.dueDate) || defaults?.dueDate || "");
   const [dueTime, setDueTime] = useState(initialData?.dueTime || "");
   const [estimatedTime, setEstimatedTime] = useState<string>(
     initialData?.estimatedTime ? initialData.estimatedTime.toString() : ""
   );
   const [projectId, setProjectId] = useState(initialData?.projectId || "");
+  const [goalId, setGoalId] = useState(initialData?.goalId || defaults?.goalId || "");
+  const [recurrence, setRecurrence] = useState<Recurrence | "">(
+    (RECURRENCES as readonly string[]).includes(initialData?.recurrence ?? "") ? (initialData?.recurrence as Recurrence) : ""
+  );
+  const [tags, setTags] = useState<string[]>(initialData?.tags?.map((t) => t.tag.name) ?? []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +84,9 @@ export default function TaskForm({
       dueTime: dueTime || null,
       estimatedTime: estimatedTime ? parseInt(estimatedTime, 10) : null,
       projectId: projectId || null,
+      goalId: goalId || null,
+      recurrence: recurrence || null,
+      tags,
     };
 
     try {
@@ -208,6 +229,64 @@ export default function TaskForm({
             disabled={loading}
           />
         </div>
+      </div>
+
+      {/* Repeat + Goal */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <Label htmlFor="recurrence" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
+            Repeat
+          </Label>
+          <select
+            id="recurrence"
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value as Recurrence | "")}
+            className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white focus:border-zinc-700 focus:outline-none"
+            disabled={loading}
+          >
+            <option value="">Doesn&apos;t repeat</option>
+            {RECURRENCES.map((r) => (
+              <option key={r} value={r}>
+                {RECURRENCE_LABELS[r]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="goal" className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">
+            Goal
+          </Label>
+          <select
+            id="goal"
+            value={goalId}
+            onChange={(e) => setGoalId(e.target.value)}
+            className="w-full h-9 px-3 rounded-lg border border-zinc-800 bg-[#1f1f1f] text-xs text-white focus:border-zinc-700 focus:outline-none"
+            disabled={loading}
+          >
+            <option value="">No goal</option>
+            {/* Keep a completed goal selectable on tasks already linked to it. */}
+            {initialData?.goal && !goals.some((g) => g.id === initialData.goal?.id) && (
+              <option value={initialData.goal.id}>{initialData.goal.title}</option>
+            )}
+            {goals.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {recurrence && (
+        <p className="-mt-2 text-[11px] text-zinc-400">
+          Completing this task creates the next one automatically.
+        </p>
+      )}
+
+      {/* Tags */}
+      <div className="space-y-1">
+        <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Tags</Label>
+        <TagInput value={tags} onChange={setTags} suggestions={tagSuggestions} disabled={loading} />
       </div>
 
       {/* Project Workspace Selector */}

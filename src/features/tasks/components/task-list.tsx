@@ -12,6 +12,7 @@ import {
   Trash,
   Edit,
   AlertCircle,
+  Repeat,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,8 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import TaskForm from "./task-form";
+import TaskDetailsDialog from "./task-details-dialog";
+import { formatDay, isPastDue, localDateKey } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/lib/types";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -30,10 +31,9 @@ interface TaskListProps {
   tasks: Task[];
   onRefresh: () => void;
   onPatch?: (taskId: string, patch: Partial<Task>) => void;
-  projects?: { id: string; name: string }[];
 }
 
-export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: TaskListProps) {
+export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
   const confirm = useConfirm();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -49,6 +49,7 @@ export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: T
       toast.error("Couldn't update the task. Nothing was changed.");
     }
   };
+  const todayKey = localDateKey();
   const handleFavoriteToggle = async (task: Task) => {
     await toggleTaskFavorite(task.id, !task.isFavorite);
     onRefresh();
@@ -106,10 +107,7 @@ export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: T
           <tbody className="divide-y divide-zinc-900/60">
             {tasks.map((task) => {
               const isCompleted = task.status === TaskStatus.COMPLETED;
-              const isOverdue =
-                task.dueDate &&
-                new Date(task.dueDate) < new Date() &&
-                !isCompleted;
+              const isOverdue = isPastDue(task.dueDate, todayKey) && !isCompleted;
 
               return (
                 <tr
@@ -146,6 +144,17 @@ export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: T
                           {task.description}
                         </span>
                       )}
+                      {(task.tags.length > 0 || task.recurrence || task.goal) && (
+                        <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          {task.recurrence && (
+                            <Repeat className="h-3 w-3 text-zinc-400" aria-label={`Repeats ${task.recurrence.toLowerCase()}`} />
+                          )}
+                          {task.goal && <span className="text-emerald-400/90">◎ {task.goal.title}</span>}
+                          {task.tags.map(({ tag }) => (
+                            <span key={tag.id} className="text-zinc-300 bg-zinc-800/70 px-1.5 py-0.5 rounded">#{tag.name}</span>
+                          ))}
+                        </span>
+                      )}
                     </div>
                   </td>
 
@@ -175,10 +184,7 @@ export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: T
                         ) : (
                           <Calendar className="h-3 w-3" />
                         )}
-                        {new Date(task.dueDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {formatDay(task.dueDate)}
                       </span>
                     ) : (
                       <span className="text-zinc-700">-</span>
@@ -229,23 +235,7 @@ export default function TaskList({ tasks, onRefresh, onPatch, projects = [] }: T
         </table>
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md bg-[#171717] border border-zinc-800 p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-white">Edit Task Details</DialogTitle>
-          </DialogHeader>
-          <TaskForm
-            initialData={selectedTask ?? undefined}
-            projects={projects}
-            onSuccess={() => {
-              setShowEditDialog(false);
-              onRefresh();
-            }}
-            onCancel={() => setShowEditDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <TaskDetailsDialog task={selectedTask} open={showEditDialog} onOpenChange={setShowEditDialog} onChanged={onRefresh} />
     </div>
   );
 }

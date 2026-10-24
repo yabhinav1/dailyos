@@ -53,14 +53,40 @@ export async function deleteGoal(goalId: string) {
   return { success: true };
 }
 
+/** Open goals, for the goal picker in the task form. */
+export async function getGoalOptionsAction() {
+  try {
+    const userId = await getUserId();
+    const goals = await prisma.goal.findMany({
+      where: { userId, isCompleted: false },
+      select: { id: true, title: true },
+      orderBy: { title: "asc" },
+    });
+    return { success: true, data: goals };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
+  }
+}
+
 export async function getGoalsAction() {
   try {
     const userId = await getUserId();
     const goals = await prisma.goal.findMany({
       where: { userId },
       orderBy: [{ isCompleted: "asc" }, { createdAt: "desc" }],
+      include: {
+        tasks: { where: { deletedAt: null }, select: { status: true } },
+      },
     });
-    return { success: true, data: goals };
+    // A goal with linked tasks gets its progress from them (see
+    // syncGoalProgress); the counts let the card say so instead of offering
+    // a slider that the next task change would overwrite.
+    const data = goals.map(({ tasks, ...goal }) => ({
+      ...goal,
+      linkedTasks: tasks.length,
+      linkedTasksDone: tasks.filter((t) => t.status === "COMPLETED").length,
+    }));
+    return { success: true, data };
   } catch (error: unknown) {
     return { success: false, message: getErrorMessage(error) };
   }

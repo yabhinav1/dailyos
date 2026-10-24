@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getGoalsAction, createGoal, updateGoalProgress, deleteGoal } from "@/features/goals/actions";
-import { Target, Plus, Trash2 } from "lucide-react";
+import { Target, Plus, Trash2, Link2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,6 +190,12 @@ export default function GoalsPage() {
 }
 function GoalCard({ goal, onProgressChange, onDelete }: { goal: Goal; onProgressChange: (id: string, p: number) => void; onDelete: (id: string, t: string) => void }) {
   const [localProgress, setLocalProgress] = useState(goal.progress);
+  // Follow the server when progress changes underneath (linked tasks).
+  const [serverProgress, setServerProgress] = useState(goal.progress);
+  if (serverProgress !== goal.progress) {
+    setServerProgress(goal.progress);
+    setLocalProgress(goal.progress);
+  }
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value);
@@ -225,9 +231,16 @@ function GoalCard({ goal, onProgressChange, onDelete }: { goal: Goal; onProgress
               localProgress >= 100 ? "bg-emerald-500" : localProgress > 50 ? "bg-blue-500" : "bg-amber-500"
             }`} style={{ width: `${localProgress}%` }} />
           </div>
-          <input type="range" min="0" max="100" value={localProgress}
-            onChange={handleSliderChange} onMouseUp={handleSliderRelease} onTouchEnd={handleSliderRelease}
-            className="w-full h-1 bg-transparent appearance-none cursor-pointer accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow" />
+          {goal.linkedTasks > 0 ? (
+            <p className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+              <Link2 className="h-3 w-3" />
+              {goal.linkedTasksDone} of {goal.linkedTasks} linked task{goal.linkedTasks === 1 ? "" : "s"} done · updates automatically
+            </p>
+          ) : (
+            <input type="range" min="0" max="100" value={localProgress} aria-label={`Progress for ${goal.title}`}
+              onChange={handleSliderChange} onMouseUp={handleSliderRelease} onTouchEnd={handleSliderRelease} onKeyUp={handleSliderRelease}
+              className="w-full h-1 bg-transparent appearance-none cursor-pointer accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow" />
+          )}
         </div>
 
         {goal.targetDate && (

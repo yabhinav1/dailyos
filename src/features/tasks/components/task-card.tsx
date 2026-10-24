@@ -12,6 +12,8 @@ import {
   Trash,
   Edit,
   AlertCircle,
+  Repeat,
+  Target,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,18 +23,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import TaskForm from "./task-form";
+import TaskDetailsDialog from "./task-details-dialog";
 import type { Task } from "@/lib/types";
+import { formatDay, isPastDue, localDateKey } from "@/lib/dates";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface TaskCardProps {
   task: Task;
   onRefresh: () => void;
-  projects?: { id: string; name: string }[];
 }
 
-export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardProps) {
+export default function TaskCard({ task, onRefresh }: TaskCardProps) {
   const confirm = useConfirm();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [favorite, setFavorite] = useState(task.isFavorite);
@@ -77,7 +78,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
   };
 
   // Determine if task is overdue
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== TaskStatus.COMPLETED;
+  const isOverdue = isPastDue(task.dueDate, localDateKey()) && task.status !== TaskStatus.COMPLETED;
 
   const totalSubtasks = task.subtasks?.length || 0;
   const completedSubtasks = task.subtasks?.filter((s) => s.isCompleted).length || 0;
@@ -155,6 +156,28 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
               </span>
             )}
 
+            {/* Linked goal */}
+            {task.goal && (
+              <span className="flex items-center gap-1 text-emerald-400/90" title={`Goal: ${task.goal.title}`}>
+                <Target className="h-3 w-3" />
+                <span className="max-w-[90px] truncate">{task.goal.title}</span>
+              </span>
+            )}
+
+            {/* Repeats */}
+            {task.recurrence && (
+              <span className="flex items-center text-zinc-400" title={`Repeats ${task.recurrence.toLowerCase()}`}>
+                <Repeat className="h-3 w-3" />
+              </span>
+            )}
+
+            {/* Tags */}
+            {task.tags.map(({ tag }) => (
+              <span key={tag.id} className="text-zinc-300 bg-zinc-800/70 px-1.5 py-0.5 rounded">
+                #{tag.name}
+              </span>
+            ))}
+
             {/* Subtask count */}
             {totalSubtasks > 0 && (
               <span className="flex items-center gap-1 text-zinc-400">
@@ -175,10 +198,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
                 ) : (
                   <Calendar className="h-3 w-3 text-zinc-400" />
                 )}
-                {new Date(task.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatDay(task.dueDate)}
               </span>
             )}
 
@@ -193,23 +213,7 @@ export default function TaskCard({ task, onRefresh, projects = [] }: TaskCardPro
         </CardContent>
       </Card>
 
-      {/* Edit Task Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md bg-[#171717] border border-zinc-800 p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-white">Edit Task Details</DialogTitle>
-          </DialogHeader>
-          <TaskForm
-            initialData={task}
-            projects={projects}
-            onSuccess={() => {
-              setShowEditDialog(false);
-              onRefresh();
-            }}
-            onCancel={() => setShowEditDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <TaskDetailsDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} onChanged={onRefresh} />
     </>
   );
 }

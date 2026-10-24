@@ -209,6 +209,26 @@ export function nextDueAfterCompletion(dueKey: DateKey | null, rule: Recurrence,
   return next;
 }
 
+// ---------------------------------------------------------------------------
+// Display
+// ---------------------------------------------------------------------------
+
+/**
+ * "Oct 24" for a stored whole-day date. Formatting in UTC keeps the day the
+ * user picked; local formatting showed the day before anywhere west of UTC.
+ */
+export function formatDay(
+  date: Date | string,
+  opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
+): string {
+  return new Date(date).toLocaleDateString("en-US", { ...opts, timeZone: "UTC" });
+}
+
+/** A whole-day due date is overdue only once that day is over for the user. */
+export function isPastDue(dueDate: Date | string | null | undefined, todayKey: DateKey): boolean {
+  return !!dueDate && utcDateToKey(dueDate) < todayKey;
+}
+
 /**
  * Start days of a recurring series that fall within [fromKey, toKey].
  * Monthly/yearly occurrences step from the series start so day-of-month

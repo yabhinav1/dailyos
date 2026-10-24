@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Priority, TaskStatus } from "@prisma/client";
-import { getTasksAction } from "@/features/tasks/actions";
+import { getTasksAction, getTagsAction } from "@/features/tasks/actions";
 import { CheckSquare, LayoutGrid, List, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ import type { TaskFilters as TaskFilterValues } from "@/features/tasks/queries";
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [view, setView] = useState<"list" | "kanban">("list");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
@@ -28,6 +29,8 @@ export default function TasksPage() {
   const [priority, setPriority] = useState<Priority | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "createdAt">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [tag, setTag] = useState("");
+  const [tagNames, setTagNames] = useState<string[]>([]);
 
   const [reloadToken, setReloadToken] = useState(0);
   const reloadTasks = useCallback(() => setReloadToken((n) => n + 1), []);
@@ -48,6 +51,7 @@ export default function TasksPage() {
         search: search || undefined,
         status: status === "ALL" ? undefined : status,
         priority: priority === "ALL" ? undefined : priority,
+        tag: tag || undefined,
         sortBy,
         sortOrder,
       };
@@ -58,11 +62,23 @@ export default function TasksPage() {
         setTasks(res.data);
       }
       setLoading(false);
+      setHasLoaded(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [search, status, priority, sortBy, sortOrder, reloadToken]);
+  }, [search, status, priority, tag, sortBy, sortOrder, reloadToken]);
+
+  // Tags can be created from any task form, so refresh the list with the tasks.
+  useEffect(() => {
+    let cancelled = false;
+    getTagsAction().then((res) => {
+      if (!cancelled && res.success && res.data) setTagNames(res.data.map((t) => t.name));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   // The TaskStatus enum has no "DONE" member — this compared against a value
   // that can never occur, so the progress bar was permanently stuck at 0%.
@@ -145,11 +161,16 @@ export default function TasksPage() {
         setSortBy={setSortBy}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
+        tag={tag}
+        setTag={setTag}
+        tags={tagNames}
       />
 
       {/* Render list/kanban content */}
       <div className="pt-2">
-        {loading ? (
+        {/* Skeleton only before the first result: a background refresh
+            replacing the list would unmount an open task dialog. */}
+        {loading && !hasLoaded ? (
           <SkeletonList rows={6} />
         ) : (
           <AnimatePresence mode="wait">

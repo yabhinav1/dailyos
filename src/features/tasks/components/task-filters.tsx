@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Priority, TaskStatus } from "@prisma/client";
-import { Search, X, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Search, X, SlidersHorizontal, ArrowUpDown, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,9 @@ interface TaskFiltersProps {
   setSortBy: (val: "dueDate" | "priority" | "createdAt") => void;
   sortOrder: "asc" | "desc";
   setSortOrder: (val: "asc" | "desc") => void;
+  tag: string;
+  setTag: (val: string) => void;
+  tags: string[];
 }
 
 export default function TaskFilters({
@@ -40,13 +43,17 @@ export default function TaskFilters({
   setSortBy,
   sortOrder,
   setSortOrder,
+  tag,
+  setTag,
+  tags,
 }: TaskFiltersProps) {
-  const hasActiveFilters = search !== "" || status !== "ALL" || priority !== "ALL";
+  const hasActiveFilters = search !== "" || status !== "ALL" || priority !== "ALL" || tag !== "";
 
   const clearFilters = () => {
     setSearch("");
     setStatus("ALL");
     setPriority("ALL");
+    setTag("");
   };
 
   return (
@@ -129,6 +136,37 @@ export default function TaskFilters({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Tag Filter */}
+        {tags.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex h-8 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 text-xs text-zinc-200 hover:border-zinc-700 hover:text-white transition-colors cursor-pointer focus:outline-none">
+              <Hash className="h-3.5 w-3.5" />
+              <span>Tag: {tag || "All"}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#171717] border border-zinc-850 text-zinc-300 text-xs max-h-72 overflow-y-auto">
+              <DropdownMenuLabel className="text-zinc-400 font-bold uppercase tracking-wider text-[11px]">Filter Tag</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-zinc-850" />
+              <DropdownMenuCheckboxItem
+                checked={tag === ""}
+                onCheckedChange={() => setTag("")}
+                className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer"
+              >
+                All tags
+              </DropdownMenuCheckboxItem>
+              {tags.map((t) => (
+                <DropdownMenuCheckboxItem
+                  key={t}
+                  checked={tag === t}
+                  onCheckedChange={() => setTag(t)}
+                  className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer"
+                >
+                  #{t}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Sorting Dropdown */}
         <DropdownMenu>

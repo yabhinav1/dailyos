@@ -8,6 +8,7 @@ export interface TaskFilters {
   projectId?: string;
   categoryId?: string;
   isFavorite?: boolean;
+  tag?: string;
   search?: string;
   sortBy?: "dueDate" | "priority" | "createdAt";
   sortOrder?: "asc" | "desc";
@@ -49,6 +50,10 @@ export async function getTasks(filters: TaskFilters = {}) {
     whereClause.isFavorite = filters.isFavorite;
   }
 
+  if (filters.tag) {
+    whereClause.tags = { some: { tag: { name: filters.tag } } };
+  }
+
   if (filters.search) {
     whereClause.OR = [
       { title: { contains: filters.search, mode: "insensitive" } },
@@ -68,6 +73,7 @@ export async function getTasks(filters: TaskFilters = {}) {
       checklists: true,
       category: true,
       project: true,
+      goal: { select: { id: true, title: true } },
       tags: {
         include: {
           tag: true,

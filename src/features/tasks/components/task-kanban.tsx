@@ -14,7 +14,6 @@ interface TaskKanbanProps {
   onPatch?: (taskId: string, patch: Partial<Task>) => void;
   tasks: Task[];
   onRefresh: () => void;
-  projects?: { id: string; name: string }[];
 }
 
 const COLUMNS = [
@@ -25,7 +24,7 @@ const COLUMNS = [
   { id: TaskStatus.COMPLETED, title: "Completed", color: "bg-emerald-500/5 border-emerald-500/10" },
 ];
 
-export default function TaskKanban({ tasks, onRefresh, onPatch, projects = [] }: TaskKanbanProps) {
+export default function TaskKanban({ tasks, onRefresh, onPatch }: TaskKanbanProps) {
   // Setup pointer sensor for drag actions
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -71,7 +70,7 @@ export default function TaskKanban({ tasks, onRefresh, onPatch, projects = [] }:
             <div className="space-y-3">
               {tasksByColumn[col.id].map((task) => (
                 <DraggableWrapper key={task.id} id={task.id}>
-                  <TaskCard task={task} onRefresh={onRefresh} projects={projects} />
+                  <TaskCard task={task} onRefresh={onRefresh} />
                 </DraggableWrapper>
               ))}
             </div>
