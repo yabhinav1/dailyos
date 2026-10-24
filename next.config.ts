@@ -3,8 +3,9 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Report-only for now: violations are logged in the browser console, nothing
-// is blocked. Watch the console on the live site, then rename the header to
+// Report-only for now: nothing is blocked, and browsers post any violation
+// to /api/csp-report, which logs it as a JSON line with kind "csp-violation".
+// Once the Vercel logs show none for a week of real use, rename the header to
 // Content-Security-Policy to enforce it.
 //
 // - script/style 'unsafe-inline': Next's inline bootstrap scripts (no nonce
@@ -28,6 +29,10 @@ const csp = [
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "form-action 'self' https://accounts.google.com https://github.com",
+  // report-uri rather than report-to: Firefox only supports this one, and
+  // Chrome ignores it when report-to is present but then batches and delays
+  // report-to deliveries.
+  "report-uri /api/csp-report",
 ].join("; ");
 
 // Baseline hardening for every response.
