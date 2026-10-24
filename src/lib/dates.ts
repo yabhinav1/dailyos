@@ -44,6 +44,36 @@ export function dateKeyInZone(date: Date, tz: string = DEFAULT_TIMEZONE): DateKe
   }).format(date);
 }
 
+/** Minutes `tz` is ahead of UTC at `instant` (330 for India). */
+function zoneOffsetMinutes(instant: Date, tz: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(instant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  return Math.round((asUtc - instant.getTime()) / 60000);
+}
+
+/**
+ * The instant a day begins in `tz` — for querying timestamps (events, study
+ * sessions) that belong to a user's calendar day. Checked twice so a DST
+ * change near midnight still lands on the right hour.
+ */
+export function zonedDayStart(key: DateKey, tz: string = DEFAULT_TIMEZONE): Date {
+  const zone = isValidTimezone(tz) ? tz : DEFAULT_TIMEZONE;
+  const guess = keyToUtcDate(key).getTime();
+  let instant = guess - zoneOffsetMinutes(new Date(guess), zone) * 60000;
+  instant = guess - zoneOffsetMinutes(new Date(instant), zone) * 60000;
+  return new Date(instant);
+}
+
 /** The calendar day in the browser's own zone. */
 export function localDateKey(date: Date = new Date()): DateKey {
   const y = date.getFullYear();

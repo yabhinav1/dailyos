@@ -10,7 +10,7 @@ import type { getProjects, getProjectById } from "@/features/projects/queries";
 import type { getNotesAction, getFoldersAction } from "@/features/notes/actions";
 import type { getHabitsAction } from "@/features/habits/actions";
 import type { getGoalsAction } from "@/features/goals/actions";
-import type { getEventsAction } from "@/features/calendar/actions";
+import type { getCalendarAction } from "@/features/calendar/actions";
 import type { getStudyDataAction } from "@/features/study/actions";
 import type { getCodingProjects, getSnippets } from "@/features/developer/actions";
 import type { getNotifications } from "@/features/notifications/actions";
@@ -42,7 +42,9 @@ export type Habit = Item<Result<typeof getHabitsAction>>;
 export type HabitLog = Habit extends { logs: readonly (infer L)[] } ? L : never;
 
 export type Goal = Item<Result<typeof getGoalsAction>>;
-export type CalendarEvent = Item<Result<typeof getEventsAction>>;
+export type CalendarData = Result<typeof getCalendarAction>;
+export type CalendarEvent = Item<CalendarData["events"]>;
+export type CalendarTask = Item<CalendarData["tasks"]>;
 
 export type StudyData = Result<typeof getStudyDataAction>;
 export type StudySubject = Item<StudyData["subjects"]>;

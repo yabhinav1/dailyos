@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import {
   dateKeyInZone,
+  zonedDayStart,
   addMonths,
   startOfWeek,
   computeStreaks,
@@ -20,6 +21,13 @@ const evening = new Date("2026-10-23T20:00:00Z");
 assert.equal(dateKeyInZone(evening, "Asia/Kolkata"), "2026-10-24");
 assert.equal(dateKeyInZone(evening, "America/New_York"), "2026-10-23");
 assert.equal(dateKeyInZone(evening, "Not/AZone"), "2026-10-23", "bad zone falls back to UTC");
+
+// A day in India starts at 18:30 UTC the evening before.
+assert.equal(zonedDayStart("2026-10-24", "Asia/Kolkata").toISOString(), "2026-10-23T18:30:00.000Z");
+assert.equal(zonedDayStart("2026-10-24", "UTC").toISOString(), "2026-10-24T00:00:00.000Z");
+// New York, either side of the November DST change.
+assert.equal(zonedDayStart("2026-10-24", "America/New_York").toISOString(), "2026-10-24T04:00:00.000Z");
+assert.equal(zonedDayStart("2026-11-02", "America/New_York").toISOString(), "2026-11-02T05:00:00.000Z");
 
 // --- Calendar arithmetic ----------------------------------------------------
 
