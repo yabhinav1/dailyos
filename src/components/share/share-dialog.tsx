@@ -204,7 +204,7 @@ export default function ShareDialog({ kind, itemKey, title, api, open, onOpenCha
               </div>
               {settings.shares.map((s) => (
                 <div key={s.id} className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate text-zinc-200">{s.email}</span>
+                  <span className="min-w-0 truncate text-zinc-200" title={s.email}>{s.email}</span>
                   <div className="flex items-center gap-1 shrink-0">
                     <select
                       value={s.role}
