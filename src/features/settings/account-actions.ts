@@ -56,7 +56,7 @@ async function collectUserData(userId: string) {
           tags: { select: { tag: { select: { name: true } } } },
         },
       },
-      projects: { include: { milestones: true } },
+      projects: { include: { milestones: true, shares: { select: { email: true, role: true, createdAt: true } } } },
       categories: true,
       tags: true,
       habits: { include: { logs: true } },

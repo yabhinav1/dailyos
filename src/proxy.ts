@@ -44,9 +44,10 @@ function hasSessionCookie(request: NextRequest) {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Shared note links decide access themselves: "anyone with the link" must
-  // work signed out, and restricted links send people to sign in there.
-  if (PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/s/")) {
+  // Shared note (/s/) and project (/p/) links decide access themselves:
+  // "anyone with the link" must work signed out, and restricted links send
+  // people to sign in there.
+  if (PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/s/") || pathname.startsWith("/p/")) {
     return NextResponse.next();
   }
 

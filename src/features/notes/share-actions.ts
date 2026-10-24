@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/utils";
 import { assertInviteBudget } from "@/lib/invite-limit";
 import { keepRevisionBeforeSave } from "@/lib/note-revisions";
 import { createNotification } from "@/lib/notifications";
-import { sendNoteSharedEmail } from "@/lib/email";
+import { sendSharedEmail } from "@/lib/email";
 import { LINK_ACCESS, SHARE_ROLES, newShareToken, resolveNoteAccess, type LinkAccess } from "@/lib/note-access";
 
 async function getUserIdOrThrow() {
@@ -77,14 +77,18 @@ export async function inviteToNoteAction(noteId: string, email: string, role: "V
     const owner = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
     if (owner?.email.toLowerCase() === input.email) throw new Error("That's your own address — you already own this note.");
 
-    const count = await prisma.noteShare.count({ where: { noteId } });
-    if (count >= 50) throw new Error("A note can be shared with at most 50 people.");
-    await assertInviteBudget(userId);
+    // Only a new person counts towards the limits: changing someone's role
+    // sends nothing (and hitting a full note shouldn't stop that either).
+    const existing = await prisma.noteShare.findUnique({ where: { noteId_email: { noteId, email: input.email } } });
+    if (!existing) {
+      const count = await prisma.noteShare.count({ where: { noteId } });
+      if (count >= 50) throw new Error("A note can be shared with at most 50 people.");
+      await assertInviteBudget(userId);
+    }
 
     const token = note.shareToken ?? newShareToken();
     if (!note.shareToken) await prisma.note.update({ where: { id: noteId }, data: { shareToken: token } });
 
-    const existing = await prisma.noteShare.findUnique({ where: { noteId_email: { noteId, email: input.email } } });
     const share = await prisma.noteShare.upsert({
       where: { noteId_email: { noteId, email: input.email } },
       update: { role: input.role },
@@ -101,7 +105,7 @@ export async function inviteToNoteAction(noteId: string, email: string, role: "V
         await createNotification(invitee.id, "Note shared with you", `${sharedBy} shared "${title}"`, "INFO");
       }
       try {
-        await sendNoteSharedEmail(input.email, sharedBy, title, input.role, linkFor(token));
+        await sendSharedEmail(input.email, sharedBy, title, input.role, linkFor(token));
       } catch (err) {
         // The share stands even if the email bounces; the owner can copy the link.
         console.error("[share] invite email failed:", err);

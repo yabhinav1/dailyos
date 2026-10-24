@@ -22,7 +22,21 @@ import {
   X,
   Upload,
   AlertCircle,
+  Share2,
+  ExternalLink,
+  Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import ShareDialog from "@/components/share/share-dialog";
+import SharedProjects from "@/features/projects/components/shared-projects";
+import {
+  getProjectShareSettingsAction,
+  inviteToProjectAction,
+  removeProjectShareAction,
+  resetProjectShareLinkAction,
+  setProjectLinkAccessAction,
+} from "@/features/projects/share-actions";
+import { toast } from "@/stores/toast-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -302,6 +316,19 @@ export default function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [filesProject, setFilesProject] = useState<Project | null>(null);
+  const [shareProject, setShareProject] = useState<Project | null>(null);
+  const router = useRouter();
+
+  // The project page lives at its share link, which exists once sharing has
+  // been opened; this creates it if needed (sharing itself stays off).
+  const openProject = async (projectId: string) => {
+    const res = await getProjectShareSettingsAction(projectId);
+    if (!res.success || !res.data) {
+      toast.error(res.message || "Couldn't open the project.");
+      return;
+    }
+    router.push(new URL(res.data.link).pathname);
+  };
 
   const [reloadToken, setReloadToken] = useState(0);
   const reloadProjects = useCallback(() => setReloadToken((n) => n + 1), []);
@@ -420,16 +447,38 @@ export default function ProjectsPage() {
                         ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                         : <Circle className="h-5 w-5" />}
                     </button>
-                    <h3 className={`text-sm font-semibold text-zinc-100 truncate ${project.isCompleted ? "line-through text-zinc-400" : ""}`}>
+                    <button
+                      type="button"
+                      onClick={() => openProject(project.id)}
+                      className={`text-left text-sm font-semibold text-zinc-100 truncate hover:underline ${project.isCompleted ? "line-through text-zinc-400" : ""}`}
+                    >
                       {project.name}
-                    </h3>
+                    </button>
+                    {(project.linkAccess !== "NONE" || project._count.shares > 0) && (
+                      <Users className="h-3.5 w-3.5 shrink-0 text-blue-400" aria-label="Shared" />
+                    )}
                   </div>
 
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 p-1 transition-opacity focus:outline-none cursor-pointer">
+                    <DropdownMenuTrigger
+                      aria-label={`Actions for ${project.name}`}
+                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100 text-zinc-400 hover:text-zinc-200 p-1 transition-opacity focus:outline-none cursor-pointer"
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-300 text-xs">
+                      <DropdownMenuItem
+                        onClick={() => openProject(project.id)}
+                        className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> Open
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setShareProject(project)}
+                        className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer flex items-center gap-2"
+                      >
+                        <Share2 className="h-3.5 w-3.5" /> Share
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setFilesProject(project)}
                         className="hover:bg-zinc-900 focus:bg-zinc-900 focus:text-white cursor-pointer flex items-center gap-2"
@@ -483,6 +532,25 @@ export default function ProjectsPage() {
 
       <CreateProjectDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={reloadProjects} />
       <ProjectFilesDialog project={filesProject} onClose={() => setFilesProject(null)} />
+      {shareProject && (
+        <ShareDialog
+          kind="project"
+          itemKey={shareProject.id}
+          title={shareProject.name}
+          open
+          onOpenChange={(open) => !open && setShareProject(null)}
+          onSharingChange={reloadProjects}
+          api={{
+            load: () => getProjectShareSettingsAction(shareProject.id),
+            setLinkAccess: (access) => setProjectLinkAccessAction(shareProject.id, access),
+            invite: (email, role) => inviteToProjectAction(shareProject.id, email, role),
+            remove: (shareId) => removeProjectShareAction(shareId),
+            reset: () => resetProjectShareLinkAction(shareProject.id),
+          }}
+        />
+      )}
+
+      <SharedProjects />
     </div>
   );
 }

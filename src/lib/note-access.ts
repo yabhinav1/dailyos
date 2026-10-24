@@ -37,6 +37,44 @@ export async function resolveNoteAccess(token: string): Promise<NoteAccess> {
   });
   if (!note) return { status: "not-found" };
 
+  const access = await resolveRole(note, (email) =>
+    prisma.noteShare.findUnique({ where: { noteId_email: { noteId: note.id, email } }, select: { role: true } })
+  );
+  return access.status === "ok" ? { ...access, noteId: note.id } : access;
+}
+
+export type ProjectAccess =
+  | { status: "ok"; role: NoteRole; projectId: string; userId: string | null; displayName: string }
+  | { status: "not-found" }
+  | { status: "sign-in" }
+  | { status: "no-access"; email: string };
+
+/** Same rules as resolveNoteAccess, for a project's /p/<token> link. */
+export async function resolveProjectAccess(token: string): Promise<ProjectAccess> {
+  if (!token || token.length < 20) return { status: "not-found" };
+
+  const project = await prisma.project.findFirst({
+    where: { shareToken: token, deletedAt: null },
+    select: { id: true, userId: true, linkAccess: true },
+  });
+  if (!project) return { status: "not-found" };
+
+  const access = await resolveRole(project, (email) =>
+    prisma.projectShare.findUnique({ where: { projectId_email: { projectId: project.id, email } }, select: { role: true } })
+  );
+  return access.status === "ok" ? { ...access, projectId: project.id } : access;
+}
+
+type ResolvedRole =
+  | { status: "ok"; role: NoteRole; userId: string | null; displayName: string }
+  | { status: "sign-in" }
+  | { status: "no-access"; email: string };
+
+/** The caller's role on a shared item: owner, invitee, or anyone with the link. */
+async function resolveRole(
+  item: { userId: string; linkAccess: string },
+  findShare: (email: string) => Promise<{ role: string } | null>
+): Promise<ResolvedRole> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
   // From the database, not the session: the token keeps the address the
@@ -48,18 +86,15 @@ export async function resolveNoteAccess(token: string): Promise<NoteAccess> {
   const displayName = user?.name || user?.email || "Anonymous";
 
   let role: NoteRole | null = null;
-  if (userId && userId === note.userId) role = "OWNER";
+  if (userId && userId === item.userId) role = "OWNER";
   if (email && role !== "OWNER") {
-    const share = await prisma.noteShare.findUnique({
-      where: { noteId_email: { noteId: note.id, email } },
-      select: { role: true },
-    });
+    const share = await findShare(email);
     if (share) role = best(role, share.role === "EDIT" ? "EDIT" : "VIEW");
   }
-  if (note.linkAccess === "EDIT") role = best(role, "EDIT");
-  if (note.linkAccess === "VIEW") role = best(role, "VIEW");
+  if (item.linkAccess === "EDIT") role = best(role, "EDIT");
+  if (item.linkAccess === "VIEW") role = best(role, "VIEW");
 
-  if (role) return { status: "ok", role, noteId: note.id, userId, displayName };
+  if (role) return { status: "ok", role, userId, displayName };
   if (!userId) return { status: "sign-in" };
   return { status: "no-access", email: email ?? "" };
 }

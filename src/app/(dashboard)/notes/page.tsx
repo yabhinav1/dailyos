@@ -6,7 +6,14 @@ import {
   restoreNote, toggleNotePin, toggleNoteFavorite, createFolder, deleteFolder,
   getNoteVersionAction, getNoteAction, restoreNoteRevisionAction,
 } from "@/features/notes/actions";
-import ShareDialog from "@/features/notes/components/share-dialog";
+import ShareDialog from "@/components/share/share-dialog";
+import {
+  getShareSettingsAction,
+  inviteToNoteAction,
+  removeNoteShareAction,
+  resetShareLinkAction,
+  setLinkAccessAction,
+} from "@/features/notes/share-actions";
 import NotesFolderNav from "@/features/notes/components/notes-folder-nav";
 import NoteItem from "@/features/notes/components/note-item";
 import ExportMenu from "@/features/notes/components/export-menu";
@@ -585,8 +592,16 @@ export default function NotesPage() {
             )}
 
             <ShareDialog
-              noteId={selectedNote.id}
-              noteTitle={editorTitle}
+              kind="note"
+              itemKey={selectedNote.id}
+              title={editorTitle}
+              api={{
+                load: () => getShareSettingsAction(selectedNote.id),
+                setLinkAccess: (access) => setLinkAccessAction(selectedNote.id, access),
+                invite: (email, role) => inviteToNoteAction(selectedNote.id, email, role),
+                remove: (shareId) => removeNoteShareAction(shareId),
+                reset: () => resetShareLinkAction(selectedNote.id),
+              }}
               open={shareOpen}
               onOpenChange={setShareOpen}
               onSharingChange={(shared) => {

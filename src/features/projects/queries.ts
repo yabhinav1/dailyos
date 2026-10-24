@@ -27,6 +27,7 @@ export async function getProjects() {
           status: true,
         },
       },
+      _count: { select: { shares: true } },
     },
     orderBy: {
       createdAt: "desc",

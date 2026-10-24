@@ -6,32 +6,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toast } from "@/stores/toast-store";
-import {
-  getShareSettingsAction,
-  inviteToNoteAction,
-  removeNoteShareAction,
-  resetShareLinkAction,
-  setLinkAccessAction,
-} from "@/features/notes/share-actions";
 
-type Settings = NonNullable<Awaited<ReturnType<typeof getShareSettingsAction>>["data"]>;
 type Role = "VIEW" | "EDIT";
-type LinkAccess = Settings["linkAccess"];
+type LinkAccess = "NONE" | "VIEW" | "EDIT";
+type Share = { id: string; email: string; role: string };
+type Settings = { link: string; linkAccess: LinkAccess; shares: Share[] };
+
+/** The server operations behind the dialog, for whatever is being shared. */
+export type ShareApi = {
+  load: () => Promise<{ success: boolean; data?: Settings; message?: string }>;
+  setLinkAccess: (access: LinkAccess) => Promise<unknown>;
+  invite: (email: string, role: Role) => Promise<{ success: boolean; data?: Share; message?: string }>;
+  remove: (shareId: string) => Promise<unknown>;
+  reset: () => Promise<{ success: boolean; data?: { link: string } }>;
+};
 
 const selectClass =
   "h-8 rounded-lg border border-zinc-800 bg-[#1f1f1f] px-2 text-xs text-white focus:border-zinc-700 focus:outline-none";
 
 interface ShareDialogProps {
-  noteId: string;
-  noteTitle: string;
+  /** What the link opens: "note" or "project", for the wording. */
+  kind: "note" | "project";
+  /** Changes when the dialog should load a different item. */
+  itemKey: string;
+  title: string;
+  api: ShareApi;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Reports whether anyone besides the owner can now reach the note. */
   onSharingChange?: (shared: boolean) => void;
 }
 
-/** Google Docs-style sharing: people by email, plus general link access. */
-export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onSharingChange }: ShareDialogProps) {
+/** Google Docs-style sharing for a note or project: people by email, plus
+ * general link access. */
+export default function ShareDialog({ kind, itemKey, title, api, open, onOpenChange, onSharingChange }: ShareDialogProps) {
   const confirm = useConfirm();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [email, setEmail] = useState("");
@@ -51,7 +59,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     if (!open) return;
     let cancelled = false;
     (async () => {
-      const res = await getShareSettingsAction(noteId);
+      const res = await api.load();
       if (cancelled) return;
       if (res.success && res.data) setSettings(res.data);
       else toast.error(res.message || "Couldn't load sharing settings.");
@@ -59,7 +67,9 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     return () => {
       cancelled = true;
     };
-  }, [open, noteId]);
+    // api is rebuilt every render; itemKey says when it points somewhere new.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, itemKey]);
 
   // The page is told only once the server has the change: it refreshes on
   // the news, and a refresh racing the write would read the old value back.
@@ -70,7 +80,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     e.preventDefault();
     if (!settings || !email.trim()) return;
     setBusy(true);
-    const res = await inviteToNoteAction(noteId, email, role);
+    const res = await api.invite(email, role);
     setBusy(false);
     if (!res.success || !res.data) {
       toast.error(res.message || "Couldn't share the note.");
@@ -91,7 +101,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
 
   const changeRole = async (shareEmail: string, next: Role) => {
     if (!settings) return;
-    const res = await inviteToNoteAction(noteId, shareEmail, next);
+    const res = await api.invite(shareEmail, next);
     if (!res.success || !res.data) return toast.error(res.message || "Couldn't change access.");
     const share = res.data;
     update({ ...settings, shares: settings.shares.map((s) => (s.id === share.id ? share : s)) });
@@ -103,7 +113,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     const next = { ...settings, shares: settings.shares.filter((s) => s.id !== shareId) };
     update(next);
     try {
-      await removeNoteShareAction(shareId);
+      await api.remove(shareId);
       confirmed(next);
     } catch {
       update(previous);
@@ -117,7 +127,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     const updated = { ...settings, linkAccess: next };
     update(updated);
     try {
-      await setLinkAccessAction(noteId, next);
+      await api.setLinkAccess(next);
       confirmed(updated);
     } catch {
       update(previous);
@@ -145,7 +155,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
       destructive: true,
     });
     if (!ok) return;
-    const res = await resetShareLinkAction(noteId);
+    const res = await api.reset();
     if (res.success && res.data) {
       update({ ...settings, link: res.data.link });
       toast.success("New link created. The old one no longer works.");
@@ -158,7 +168,7 @@ export default function ShareDialog({ noteId, noteTitle, open, onOpenChange, onS
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-[#171717] border border-zinc-800 p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-sm font-bold text-white truncate">Share &ldquo;{noteTitle || "Untitled note"}&rdquo;</DialogTitle>
+          <DialogTitle className="text-sm font-bold text-white truncate">Share &ldquo;{title || `Untitled ${kind}`}&rdquo;</DialogTitle>
         </DialogHeader>
 
         {!settings ? (
