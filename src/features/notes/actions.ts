@@ -92,8 +92,8 @@ export async function deleteNote(noteId: string) {
 }
 
 /**
- * Undoes a soft delete. Exists for the Undo button on the deletion toast —
- * there is no trash page, so this is the only road back.
+ * Undoes a soft delete. Used by the Undo button on the deletion toast and by
+ * the Trash page.
  */
 export async function restoreNote(noteId: string) {
   try {
@@ -111,6 +111,25 @@ export async function restoreNote(noteId: string) {
     return { success: true };
   } catch (error: unknown) {
     return { success: false, message: getErrorMessage(error, "Failed to restore note") };
+  }
+}
+
+/** Permanently deletes a note that is already in the trash. */
+export async function hardDeleteNote(noteId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+
+    const existing = await prisma.note.findFirst({
+      where: { id: noteId, userId, deletedAt: { not: null } },
+    });
+    if (!existing) throw new Error("Note not found in trash or access denied.");
+
+    await prisma.note.delete({ where: { id: noteId } });
+
+    revalidatePath("/notes");
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "Failed to delete note") };
   }
 }
 

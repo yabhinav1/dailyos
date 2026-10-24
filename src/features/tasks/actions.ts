@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { Priority, TaskStatus } from "@prisma/client";
 import { getTasks as queryGetTasks, type TaskFilters } from "./queries";
 import { getErrorMessage } from "@/lib/utils";
+import { hardDeleteTrashed } from "@/lib/trash-purge";
 
 // Zod schemas for input validation
 const createTaskSchema = z.object({
@@ -139,21 +140,20 @@ export async function restoreTask(taskId: string) {
   return { success: true };
 }
 
-// Hard delete from trash
+// Hard delete from trash. Only a task already in the trash qualifies, and
+// files attached only to it are removed from GridFS along with their rows.
 export async function hardDeleteTask(taskId: string) {
   const userId = await getUserIdOrThrow();
 
   const existing = await prisma.task.findFirst({
-    where: { id: taskId, userId },
+    where: { id: taskId, userId, deletedAt: { not: null } },
   });
 
   if (!existing) {
-    throw new Error("Task not found or access denied.");
+    throw new Error("Task not found in trash or access denied.");
   }
 
-  await prisma.task.delete({
-    where: { id: taskId },
-  });
+  await hardDeleteTrashed({ tasks: { id: taskId, userId } });
 
   revalidatePath("/tasks");
   revalidatePath("/notes");

@@ -25,6 +25,7 @@ import {
   Shield,
   Target,
   Terminal,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ export default function Sidebar() {
     { name: "Habits", href: "/habits", icon: Activity },
     { name: "Goals", href: "/goals", icon: Target },
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
+    { name: "Trash", href: "/trash", icon: Trash2 },
     ...(session?.user?.role === "ADMIN" ? [{ name: "Admin · Music", href: "/admin/music", icon: Shield }] : []),
   ];
 

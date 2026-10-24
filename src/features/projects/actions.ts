@@ -10,6 +10,7 @@ import {
   getActiveProjectsList as queryGetActiveProjectsList
 } from "./queries";
 import { uploadFileToMongo, deleteFileFromMongo } from "@/lib/mongo-storage";
+import { hardDeleteTrashed } from "@/lib/trash-purge";
 import { getErrorMessage } from "@/lib/utils";
 
 // Hard ceiling per file so a single upload can't exhaust a serverless
@@ -129,6 +130,50 @@ export async function deleteProject(projectId: string) {
   });
 
   revalidatePath("/projects");
+  revalidatePath("/notes");
+  return { success: true };
+}
+
+// Restore soft delete
+export async function restoreProject(projectId: string) {
+  const userId = await getUserIdOrThrow();
+
+  const existing = await prisma.project.findFirst({
+    where: { id: projectId, userId },
+  });
+
+  if (!existing) {
+    throw new Error("Project workspace not found or access denied.");
+  }
+
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { deletedAt: null },
+  });
+
+  revalidatePath("/projects");
+  revalidatePath("/notes");
+  return { success: true };
+}
+
+// Hard delete from trash. Milestones cascade and tasks are unlinked
+// (projectId SetNull), per the schema; files attached only to this project
+// are removed from GridFS along with their rows.
+export async function hardDeleteProject(projectId: string) {
+  const userId = await getUserIdOrThrow();
+
+  const existing = await prisma.project.findFirst({
+    where: { id: projectId, userId, deletedAt: { not: null } },
+  });
+
+  if (!existing) {
+    throw new Error("Project workspace not found in trash or access denied.");
+  }
+
+  await hardDeleteTrashed({ projects: { id: projectId, userId } });
+
+  revalidatePath("/projects");
+  revalidatePath("/tasks");
   revalidatePath("/notes");
   return { success: true };
 }

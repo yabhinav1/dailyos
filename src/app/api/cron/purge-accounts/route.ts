@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { purgeAccount } from "@/lib/account-purge";
+import { purgeExpiredTrash, TRASH_RETENTION_DAYS } from "@/lib/trash-purge";
 
 // GridFS needs Node APIs, and this must never be prerendered or cached.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Deletes accounts whose grace period has run out.
+ * Deletes accounts whose grace period has run out, then permanently removes
+ * notes, tasks and projects that have sat in the trash longer than
+ * TRASH_RETENTION_DAYS. Both share this one daily cron (Vercel Hobby).
  *
  * Purging also happens on first access after the deadline, which covers anyone
  * who comes back. This covers everyone who doesn't: without it, an account
@@ -48,5 +51,18 @@ export async function GET(request: Request) {
   }
 
   console.log(`[cron/purge-accounts] due=${due.length} purged=${purged} files=${files}`);
-  return Response.json({ due: due.length, purged, filesDeleted: files });
+
+  // Kept apart from the loop above: a trash failure must not mask the account
+  // purges that already went through, and vice versa.
+  let trash = null;
+  try {
+    trash = await purgeExpiredTrash();
+    console.log(
+      `[cron/purge-accounts] trash>${TRASH_RETENTION_DAYS}d notes=${trash.notes} tasks=${trash.tasks} projects=${trash.projects} files=${trash.filesDeleted}`
+    );
+  } catch (err) {
+    console.error("[cron/purge-accounts] failed to purge expired trash:", err);
+  }
+
+  return Response.json({ due: due.length, purged, filesDeleted: files, trash });
 }

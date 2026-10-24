@@ -120,3 +120,33 @@ export async function getActiveProjectsList() {
     },
   });
 }
+
+export async function getDeletedProjects() {
+  const userId = await getUserIdOrThrow();
+
+  return prisma.project.findMany({
+    where: {
+      userId,
+      deletedAt: {
+        not: null,
+      },
+    },
+    orderBy: {
+      deletedAt: "desc",
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      deletedAt: true,
+      _count: {
+        select: {
+          // Live tasks are unlinked, not deleted, when the project goes.
+          tasks: { where: { deletedAt: null } },
+          // Attached to the project alone, so deleted along with it.
+          resources: { where: { taskId: null } },
+        },
+      },
+    },
+  });
+}

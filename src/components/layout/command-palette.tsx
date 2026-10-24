@@ -17,6 +17,7 @@ import {
   Settings,
   Target,
   Terminal,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ export default function CommandPalette() {
     { name: "Go to Habits", href: "/habits", icon: Activity, category: "Navigation" },
     { name: "Go to Goals", href: "/goals", icon: Target, category: "Navigation" },
     { name: "Go to Analytics", href: "/analytics", icon: BarChart2, category: "Navigation" },
+    { name: "Go to Trash", href: "/trash", icon: Trash2, category: "Navigation" },
     { name: "Go to Settings", href: "/settings", icon: Settings, category: "Navigation" },
   ];
 

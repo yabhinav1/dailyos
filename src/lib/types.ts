@@ -16,6 +16,7 @@ import type { getCodingProjects, getSnippets } from "@/features/developer/action
 import type { getNotifications } from "@/features/notifications/actions";
 import type { getResourcesForProject } from "@/features/projects/actions";
 import type { getAnalyticsData } from "@/features/analytics/actions";
+import type { getTrashAction } from "@/features/trash/actions";
 
 /** Unwraps `{ success, data }` action results down to the element type. */
 type DataOf<T> = T extends { data?: infer D } ? NonNullable<D> : never;
@@ -55,3 +56,8 @@ export type Notification = Item<Result<typeof getNotifications>>;
 export type AnalyticsData = Result<typeof getAnalyticsData>;
 export type HabitStat = Item<AnalyticsData["habitStats"]>;
 export type StudyStat = Item<AnalyticsData["studyStats"]>;
+
+export type TrashData = Result<typeof getTrashAction>;
+export type TrashedNote = Item<TrashData["notes"]>;
+export type TrashedTask = Item<TrashData["tasks"]>;
+export type TrashedProject = Item<TrashData["projects"]>;
