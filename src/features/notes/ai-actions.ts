@@ -31,10 +31,49 @@ async function requireUser() {
 }
 
 /**
- * Calls the OpenAI chat API. Returns null when no key is configured so callers
+ * Asks the configured model: Claude when ANTHROPIC_API_KEY is set, else
+ * OpenAI when OPENAI_API_KEY is. Returns null when neither is, so callers
  * can decide whether a local fallback is honest for that operation.
  */
 async function chat(system: string, user: string, json = false): Promise<string | null> {
+  if (process.env.ANTHROPIC_API_KEY) return claude(system, user, json);
+  return openai(system, user, json);
+}
+
+/** Claude via the Messages API. ANTHROPIC_MODEL overrides the default model. */
+async function claude(system: string, user: string, json: boolean): Promise<string | null> {
+  const base = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/$/, "");
+  const res = await fetch(`${base}/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
+      max_tokens: 2048,
+      system: json ? `${system}\nRespond with the JSON object only, no prose and no code fences.` : system,
+      messages: [{ role: "user", content: user.slice(0, MAX_INPUT_CHARS) }],
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Claude request failed (${res.status} ${res.statusText})`);
+  }
+
+  const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const text = data.content?.filter((b) => b.type === "text").map((b) => b.text ?? "").join("") ?? "";
+  if (!text) return null;
+  if (!json) return text;
+  // Tolerate a stray code fence or sentence around the object.
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  return start >= 0 && end > start ? text.slice(start, end + 1) : text;
+}
+
+async function openai(system: string, user: string, json: boolean): Promise<string | null> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
 
@@ -151,7 +190,13 @@ export async function aiExtractTasksAction(
     );
 
     if (reply) {
-      const parsed = extractedSchema.safeParse(JSON.parse(reply));
+      let raw: unknown = null;
+      try {
+        raw = JSON.parse(reply);
+      } catch {
+        // Falls through to the friendly error below.
+      }
+      const parsed = extractedSchema.safeParse(raw);
       if (!parsed.success) return { success: false, error: "The AI reply couldn't be read. Try again." };
       return { success: true, usedAi: true, tasks: parsed.data.tasks.map((t) => ({ ...t, suggested: true })) };
     }
