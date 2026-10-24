@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { deleteFileFromMongo } from "@/lib/mongo-storage";
+import { deleteNoteMedia } from "@/lib/note-media";
 
 /** How long a soft-deleted note, task or project stays restorable. */
 export const TRASH_RETENTION_DAYS = 30;
@@ -42,7 +43,14 @@ const TRASHED = { deletedAt: { not: null } } as const;
  * blob goes before its row: the row holds the only pointer to the bytes.
  */
 export async function hardDeleteTrashed(selection: TrashSelection): Promise<TrashPurgeResult> {
-  const [tasks, projects] = await Promise.all([
+  const [notes, tasks, projects] = await Promise.all([
+    selection.notes
+      ? prisma.note.findMany({
+          where: { AND: [selection.notes, TRASHED] },
+          select: { id: true },
+          take: MAX_PER_RUN,
+        })
+      : [],
     selection.tasks
       ? prisma.task.findMany({
           where: { AND: [selection.tasks, TRASHED] },
@@ -58,6 +66,7 @@ export async function hardDeleteTrashed(selection: TrashSelection): Promise<Tras
         })
       : [],
   ]);
+  const noteIds = notes.map((n) => n.id);
   const taskIds = tasks.map((t) => t.id);
   const projectIds = projects.map((p) => p.id);
 
@@ -91,13 +100,15 @@ export async function hardDeleteTrashed(selection: TrashSelection): Promise<Tras
     }
   }
 
+  // Images and recordings in the notes: their bytes, like resources', must
+  // go while something still points at them.
+  if (noteIds.length > 0) filesDeleted += await deleteNoteMedia({ noteId: { in: noteIds } });
+
   const [, deletedTasks, deletedProjects, deletedNotes] = await prisma.$transaction([
     prisma.resource.deleteMany({ where: orphanedResources }),
     prisma.task.deleteMany({ where: { id: { in: taskIds }, ...TRASHED } }),
     prisma.project.deleteMany({ where: { id: { in: projectIds }, ...TRASHED } }),
-    prisma.note.deleteMany({
-      where: selection.notes ? { AND: [selection.notes, TRASHED] } : { id: { in: [] } },
-    }),
+    prisma.note.deleteMany({ where: { id: { in: noteIds }, ...TRASHED } }),
   ]);
 
   return {

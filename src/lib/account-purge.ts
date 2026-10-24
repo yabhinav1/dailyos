@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { deleteFileFromMongo } from "@/lib/mongo-storage";
+import { deleteNoteMedia } from "@/lib/note-media";
 
 /**
  * Permanently removes an account and everything belonging to it.
@@ -34,6 +35,8 @@ export async function purgeAccount(userId: string): Promise<{ filesDeleted: numb
       console.error(`[purge] failed to delete file ${file.fileId}:`, err);
     }
   }
+
+  filesDeleted += await deleteNoteMedia({ userId });
 
   await prisma.user.delete({ where: { id: userId } });
 

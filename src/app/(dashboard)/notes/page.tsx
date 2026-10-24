@@ -613,7 +613,7 @@ export default function NotesPage() {
                   className={viewMode === "write" ? "" : "flex h-full w-full"}
                 >
                   {viewMode === "write" ? (
-                    <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." />
+                    <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." mediaTarget={{ noteId: selectedNote.id }} />
                   ) : viewMode === "canvas" ? (
                     <FreeformCanvas value={editorCanvas} onChange={handleCanvasChange} className="h-full" />
                   ) : (

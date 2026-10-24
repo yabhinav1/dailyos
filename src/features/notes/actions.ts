@@ -7,6 +7,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getErrorMessage } from "@/lib/utils";
 import { keepRevisionBeforeSave } from "@/lib/note-revisions";
+import { hardDeleteTrashed } from "@/lib/trash-purge";
 
 const createNoteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -230,7 +231,7 @@ export async function hardDeleteNote(noteId: string) {
     });
     if (!existing) throw new Error("Note not found in trash or access denied.");
 
-    await prisma.note.delete({ where: { id: noteId } });
+    await hardDeleteTrashed({ notes: { id: noteId, userId } });
 
     revalidatePath("/notes");
     return { success: true };

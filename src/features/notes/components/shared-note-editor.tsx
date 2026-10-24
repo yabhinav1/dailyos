@@ -218,6 +218,7 @@ export default function SharedNoteEditor({
           content={content}
           onChange={onContent}
           editable={canEdit}
+          mediaTarget={{ shareToken: token }}
           aiTools={signedIn}
           placeholder={canEdit ? "Start writing…" : ""}
         />

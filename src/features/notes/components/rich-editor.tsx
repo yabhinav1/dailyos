@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
@@ -38,6 +38,11 @@ import { aiSummarizeAction, aiExtractTasksAction, aiTranslateAction, type Extrac
 import ExtractTasksDialog from "./extract-tasks-dialog";
 import ImageCropModal from "./image-crop-modal";
 import ToolbarButton from "./toolbar-button";
+import { uploadMedia, type MediaTarget } from "./upload-media";
+import { toast } from "@/stores/toast-store";
+
+/** Recordings stop here so they stay under the 4MB upload limit. */
+const MAX_RECORDING_MS = 4 * 60 * 1000;
 import { localDateKey } from "@/lib/dates";
 
 interface RichEditorProps {
@@ -48,6 +53,8 @@ interface RichEditorProps {
   editable?: boolean;
   /** The AI menu needs a signed-in user; hidden for anonymous editors. */
   aiTools?: boolean;
+  /** Where pasted images and voice notes are stored. */
+  mediaTarget?: MediaTarget;
 }
 
 export default function RichEditor({
@@ -56,6 +63,7 @@ export default function RichEditor({
   placeholder = "Start writing...",
   editable = true,
   aiTools = true,
+  mediaTarget = {},
 }: RichEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -72,6 +80,7 @@ export default function RichEditor({
   const [showAiMenu, setShowAiMenu] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -83,28 +92,33 @@ export default function RichEditor({
           audioChunksRef.current.push(event.data);
         }
       };
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
+        if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
+        setIsRecording(false);
         const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || "audio/webm" });
-        // Stored inline as a data URL. A blob: URL only lives as long as the
-        // tab, so every recording used to vanish on reload.
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (!editor || typeof reader.result !== "string") return;
-          editor
-            .chain()
-            .focus()
-            .insertContent([
-              { type: "paragraph", content: [{ type: "text", marks: [{ type: "bold" }], text: "🎙️ Voice note" }] },
-              { type: "audio", attrs: { src: reader.result } },
-              { type: "paragraph" },
-            ])
-            .run();
-        };
-        reader.readAsDataURL(audioBlob);
+        // Uploaded to file storage; a blob: URL only lives as long as the tab.
+        let src: string;
+        try {
+          src = await uploadMedia(audioBlob, "voice-note.webm", mediaTarget);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Couldn't save the recording.");
+          return;
+        }
+        insertAfterSelection([
+          { type: "paragraph", content: [{ type: "text", marks: [{ type: "bold" }], text: "🎙️ Voice note" }] },
+          { type: "audio", attrs: { src } },
+          { type: "paragraph" },
+        ]);
       };
       mediaRecorder.start();
       setIsRecording(true);
+      recordingTimerRef.current = setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+          toast.success("Recording stopped at the 4 minute limit.");
+        }
+      }, MAX_RECORDING_MS);
     } catch {
       alert("Microphone permission is required to record voice notes.");
     }
@@ -300,16 +314,25 @@ export default function RichEditor({
     },
   });
 
-  const insertImageFile = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Please choose an image under 10MB.");
+  // Media goes after whatever is selected, never over it: a just-inserted
+  // image stays selected, so the next recording used to replace it. The
+  // trailing paragraph leaves the cursor below, ready to keep typing.
+  const insertAfterSelection = (content: JSONContent[]) => {
+    if (!editor) return;
+    editor.chain().focus().insertContentAt(editor.state.selection.to, content).run();
+  };
+
+  const insertImageFile = async (file: File) => {
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Please choose an image under 25MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      editor?.chain().focus().setImage({ src: reader.result as string }).run();
-    };
-    reader.readAsDataURL(file);
+    try {
+      const src = await uploadMedia(file, file.name || "image", mediaTarget);
+      insertAfterSelection([{ type: "image", attrs: { src } }, { type: "paragraph" }]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't add the image.");
+    }
   };
 
   const handleImageButtonClick = () => fileInputRef.current?.click();

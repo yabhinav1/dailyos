@@ -3,10 +3,10 @@ import { Node, mergeAttributes } from "@tiptap/react";
 /**
  * Voice notes. StarterKit has no audio node, so an inserted <audio> was
  * dropped by the schema the moment it went in: recordings never reached the
- * saved note. Only data:audio and https sources are accepted, since a shared
- * note's content can come from someone else.
+ * saved note. Only our own media URLs, data:audio and https sources are
+ * accepted, since a shared note's content can come from someone else.
  */
-const SAFE_SRC = /^(data:audio\/[\w.+-]+(;codecs=[\w.,-]+)?;base64,|https:\/\/)/i;
+const SAFE_SRC = /^(data:audio\/[\w.+-]+(;codecs=[\w.,-]+)?;base64,|https:\/\/|\/api\/media\/[\w-]{22}$)/i;
 
 export const AudioNode = Node.create({
   name: "audio",
