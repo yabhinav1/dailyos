@@ -43,3 +43,6 @@ yarn-error.log*
 # prisma
 /prisma/*.db
 /prisma/*.db-journal
+
+# browser test screenshots
+/e2e/.artifacts/

@@ -1,0 +1,108 @@
+name: Browser tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Throwaway services for the app under test. Nothing here touches
+    # production, and every credential below exists only for this job.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: dev
+          POSTGRES_DB: dailyos
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      mongo:
+        image: mongo:7.0.14
+        ports: ["27017:27017"]
+      mailpit:
+        image: axllent/mailpit:v1.21
+        ports: ["1025:1025", "8025:8025"]
+
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://postgres:dev@localhost:5432/dailyos
+      E2E_DATABASE_URL: postgresql://postgres:dev@localhost:5432/dailyos
+      AUTH_SECRET: ci-only-auth-secret-not-used-anywhere-else-0123
+      AUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      E2E_BASE_URL: http://localhost:3100
+      E2E_MAIL_API: http://localhost:8025/api/v1
+      CRON_SECRET: ci-cron
+      SCHEDULER_SECRET: ci-scheduler
+      MONGODB_URI: mongodb://localhost:27017/dailyos
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ci
+      SMTP_PASSWORD: ci
+      SMTP_FROM: DailyOS <noreply@example.test>
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Apply migrations to a fresh database
+        run: npx prisma migrate deploy
+
+      # A schema change without a matching migration would deploy code that
+      # expects columns production never gets.
+      - name: Check migrations match the schema
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+      # Fresh keys per run; the public half has to exist at build time.
+      - name: Generate push keys for this run
+        run: |
+          node -e '
+            const k = require("web-push").generateVAPIDKeys();
+            require("fs").appendFileSync(process.env.GITHUB_ENV,
+              `NEXT_PUBLIC_VAPID_PUBLIC_KEY=${k.publicKey}\nVAPID_PRIVATE_KEY=${k.privateKey}\n`);'
+
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Build
+        run: npx next build
+
+      - name: Start the app
+        run: |
+          npx next start -p 3100 > app.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100/login && exit 0; sleep 1; done
+          cat app.log; exit 1
+
+      - name: Run browser tests
+        run: node e2e/run.mjs
+
+      - name: Keep screenshots and server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failures
+          path: |
+            e2e/.artifacts/
+            app.log
+          retention-days: 7

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test scripts/test-otp.mjs scripts/test-freeform-blocks.mjs scripts/test-avatar-data-url.mjs scripts/test-dates.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:e2e": "node e2e/run.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -64,6 +65,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^16.3.2",
+    "playwright-core": "^1.64.0",
     "prisma": "^7.9.1",
     "shadcn": "^4.22.1",
     "tailwindcss": "^4",
