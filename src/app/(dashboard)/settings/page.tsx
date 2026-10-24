@@ -14,27 +14,17 @@ import {
   changePassword,
   unlinkAccount,
 } from "@/features/settings/actions";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Save,
-  User,
   Shuffle,
   Upload,
-  Mail,
   Lock,
   Link2,
   Unlink,
   KeyRound,
-  CheckCircle2,
-  XCircle,
-  Eye,
-  EyeOff,
-  Download,
-  Trash2,
   X,
-  SlidersHorizontal,
-  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,108 +33,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  requestDataExport,
-  requestAccountDeletion,
-} from "@/features/settings/account-actions";
 import { getErrorMessage } from "@/lib/utils";
-
-const SETTINGS_TABS = [
-  { key: "profile", label: "Profile", icon: User },
-  { key: "account", label: "Account", icon: Mail },
-  { key: "security", label: "Security", icon: Lock },
-  { key: "preferences", label: "Preferences", icon: SlidersHorizontal },
-  { key: "data", label: "Data", icon: Database },
-] as const;
-
-type SettingsTab = (typeof SETTINGS_TABS)[number]["key"];
-
-/** Renders its children only while its section is the selected one. */
-function SettingsSection({
-  active,
-  name,
-  children,
-}: {
-  active: SettingsTab;
-  name: SettingsTab;
-  children: React.ReactNode;
-}) {
-  if (active !== name) return null;
-  return <>{children}</>;
-}
-
-type Banner = { type: "success" | "error"; text: string } | null;
-
-function InlineBanner({ banner, onDismiss }: { banner: Banner; onDismiss: () => void }) {
-  if (!banner) return null;
-  const isSuccess = banner.type === "success";
-  return (
-    <div
-      className={`flex items-start gap-2 p-3 text-xs rounded-lg border ${
-        isSuccess
-          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-          : "text-red-400 bg-red-500/10 border-red-500/20"
-      }`}
-    >
-      {isSuccess ? <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" /> : <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />}
-      <span className="flex-1">{banner.text}</span>
-      <button onClick={onDismiss} className="text-[11px] opacity-70 hover:opacity-100">
-        Dismiss
-      </button>
-    </div>
-  );
-}
-
-function PasswordInput({
-  value,
-  onChange,
-  placeholder,
-  disabled,
-  minLength,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  minLength?: number;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  return (
-    <div className="relative">
-      <Input
-        type={showPassword ? "text" : "password"}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        minLength={minLength}
-        className="bg-zinc-900/50 border-zinc-800 text-white text-xs h-9 pr-9 focus-visible:ring-1 focus-visible:ring-blue-500/40"
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-300 hover:text-zinc-200 transition-colors p-0.5 rounded focus:outline-none"
-        tabIndex={-1}
-        aria-label={showPassword ? "Hide password" : "Show password"}
-      >
-        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-      </button>
-    </div>
-  );
-}
-
-function GithubMark({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M12 .5C5.73.5.75 5.48.75 11.75c0 5.02 3.26 9.28 7.78 10.78.57.1.78-.25.78-.55v-1.94c-3.16.69-3.83-1.36-3.83-1.36-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.74 2.66 1.24 3.31.95.1-.73.4-1.24.72-1.53-2.52-.29-5.17-1.26-5.17-5.6 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.16a10.9 10.9 0 0 1 2.86-.39c.97 0 1.94.13 2.86.39 2.18-1.47 3.14-1.16 3.14-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.8 1.17 3.04 0 4.35-2.65 5.31-5.18 5.59.41.35.77 1.04.77 2.11v3.13c0 .3.21.66.79.55A11.26 11.26 0 0 0 23.25 11.75C23.25 5.48 18.27.5 12 .5Z" />
-    </svg>
-  );
-}
-
-const PROVIDER_LABEL: Record<string, string> = {
-  github: "GitHub",
-  credentials: "Email & Password",
-};
+import {
+  GithubMark,
+  InlineBanner,
+  PasswordInput,
+  PROVIDER_LABEL,
+  SETTINGS_TABS,
+  SettingsSection,
+  type Banner,
+  type SettingsTab,
+} from "@/features/settings/components/settings-ui";
+import DataSettings from "@/features/settings/components/data-settings";
 
 export default function SettingsPage() {
   const { update: updateSession } = useSession();
@@ -160,10 +60,6 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
-  const [exportEmail, setExportEmail] = useState("");
-  const [exporting, setExporting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -209,41 +105,6 @@ export default function SettingsPage() {
 
   const showBanner = (type: "success" | "error", text: string) => setBanner({ type, text });
 
-  const handleRequestExport = async () => {
-    setExporting(true);
-    try {
-      const res = await requestDataExport(exportEmail);
-      if (res.success) {
-        setExportEmail("");
-        showBanner("success", res.message || "Export sent.");
-      } else {
-        showBanner("error", res.message || "Couldn't send the export.");
-      }
-    } catch (err: unknown) {
-      showBanner("error", getErrorMessage(err, "Couldn't send the export."));
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleRequestDeletion = async () => {
-    setDeleting(true);
-    try {
-      const res = await requestAccountDeletion();
-      if (res.success && res.deletesAt) {
-        // Signing out is part of deleting: staying in a workspace you just
-        // asked to have erased makes no sense, and signing back in is what
-        // surfaces the cancel prompt.
-        await signOut({ callbackUrl: "/login?deletion=scheduled" });
-        return;
-      }
-      showBanner("error", res.message || "Couldn't schedule the deletion.");
-    } catch (err: unknown) {
-      showBanner("error", getErrorMessage(err, "Couldn't schedule the deletion."));
-    } finally {
-      setDeleting(false);
-    }
-  };
 
 
 
@@ -766,100 +627,7 @@ export default function SettingsPage() {
           </SettingsSection>
 
           <SettingsSection active={activeTab} name="data">
-          <Card className="rounded-none bg-transparent p-0 ring-0">
-            <CardContent className="space-y-6 p-0">
-              {/* ---- Email a copy of everything ---- */}
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Request your data</h3>
-                  <p className="mt-1 text-xs text-zinc-300">
-                    We&apos;ll email a complete JSON copy of your notes, tasks,
-                    habits, goals, events, projects and study records.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="export-email" className="text-xs text-zinc-300">
-                    Send to
-                  </Label>
-                  <Input
-                    id="export-email"
-                    type="email"
-                    value={exportEmail}
-                    onChange={(e) => setExportEmail(e.target.value)}
-                    placeholder={profile.email || "your registered email"}
-                    className="h-9 text-xs"
-                  />
-                  <p className="text-[11px] text-zinc-400">
-                    Leave blank to use {profile.email || "your registered email"}.
-                    Sending it elsewhere also notifies your registered address.
-                  </p>
-                </div>
-
-                <Button
-                  size="sm"
-                  onClick={handleRequestExport}
-                  disabled={exporting}
-                  className="gap-1.5 text-xs font-semibold"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {exporting ? "Sending…" : "Email my data"}
-                </Button>
-              </div>
-
-              <div className="border-t border-zinc-850" />
-
-              {/* ---- Danger zone ---- */}
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-red-400">Delete account</h3>
-                  <p className="mt-1 text-xs text-zinc-300">
-                    Your account is scheduled for deletion and permanently
-                    removed 24 hours later. Sign in any time before then to stop
-                    it — you&apos;ll be asked as soon as you arrive.
-                  </p>
-                </div>
-
-                {confirmDelete ? (
-                  <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-                    <p className="text-xs text-zinc-200">
-                      Schedule this account for deletion? You&apos;ll be signed
-                      out, emailed a copy of your data, and everything goes
-                      after 24 hours unless you sign back in and cancel.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleRequestDeletion}
-                        disabled={deleting}
-                        className="bg-red-600 text-xs font-semibold text-white hover:bg-red-500"
-                      >
-                        {deleting ? "Scheduling…" : "Yes, delete my account"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setConfirmDelete(false)}
-                        disabled={deleting}
-                        className="border-zinc-800 text-xs font-semibold"
-                      >
-                        Keep it
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setConfirmDelete(true)}
-                    className="border-red-500/40 text-xs font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete my account
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            <DataSettings email={profile.email} showBanner={showBanner} />
           </SettingsSection>
         </div>
       )}

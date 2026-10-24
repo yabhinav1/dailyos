@@ -7,17 +7,18 @@ import {
   getNoteVersionAction, getNoteAction,
 } from "@/features/notes/actions";
 import ShareDialog from "@/features/notes/components/share-dialog";
-import SharedWithMe from "@/features/notes/components/shared-with-me";
+import NotesFolderNav from "@/features/notes/components/notes-folder-nav";
+import NoteItem from "@/features/notes/components/note-item";
+import ExportMenu from "@/features/notes/components/export-menu";
+import RevisionHistoryDialog, { type NoteSnapshot } from "@/features/notes/components/revision-history-dialog";
 import { toast } from "@/stores/toast-store";
 import {
   FileText,
-  FolderOpen,
   Plus,
   Search,
   Pin,
   Star,
   Trash2,
-  FolderPlus,
   X,
   PenTool,
   Type,
@@ -28,9 +29,7 @@ import {
   LayoutGrid,
   Maximize2,
   Minimize2,
-  Download,
   History,
-  Hash,
   Share2,
   Users,
 } from "lucide-react";
@@ -58,16 +57,12 @@ export default function NotesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
   const [panelHidden, setPanelHidden] = useState(false);
-  const [foldersCollapsed, setFoldersCollapsed] = useState(false);
   const [notesListCollapsed, setNotesListCollapsed] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [snapshots, setSnapshots] = useState<Array<{ id: string; time: string; title: string; content: string; doodle: string | null }>>([]);
+  const [snapshots, setSnapshots] = useState<(NoteSnapshot & { noteId: string })[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Editor state (local buffer while editing)
@@ -92,40 +87,6 @@ export default function NotesPage() {
   const wordCount = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
   const charCount = cleanText.length;
   const readTimeMins = Math.max(1, Math.ceil(wordCount / 200));
-  const handleExportNote = (format: "md" | "html" | "txt" | "pdf") => {
-    if (!selectedNote) return;
-    const cleanTitle = editorTitle || "Untitled Note";
-    if (format === "pdf") {
-      window.print();
-      setShowExportMenu(false);
-      return;
-    }
-    let fileContent = "";
-    let mimeType = "text/plain";
-    let ext = "txt";
-    if (format === "md") {
-      fileContent = `# ${cleanTitle}\n\n${cleanText}`;
-      mimeType = "text/markdown";
-      ext = "md";
-    } else if (format === "html") {
-      fileContent = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${cleanTitle}</title><style>body{font-family:sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#e4e4e7;background:#0d0d0d;}</style></head><body><h1>${cleanTitle}</h1>${editorContent}</body></html>`;
-      mimeType = "text/html";
-      ext = "html";
-    } else {
-      fileContent = `${cleanTitle}\n\n${cleanText}`;
-      mimeType = "text/plain";
-      ext = "txt";
-    }
-    const blob = new Blob([fileContent], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${cleanTitle.toLowerCase().replace(/\s+/g, "_")}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setShowExportMenu(false);
-  };
-
   // Esc key listener to exit fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -206,6 +167,34 @@ export default function NotesPage() {
     setIsShared(shared);
   };
 
+  // Revision history, per note and newest first: the version a note was
+  // opened at, then one per save. Saves within a minute of the last snapshot
+  // update it rather than add one, so a typing session doesn't fill the list.
+  const recordSnapshot = (
+    noteId: string,
+    patch: { title: string; content: string; doodleData: string | null },
+    seed = false
+  ) => {
+    const now = Date.now();
+    const snap: NoteSnapshot & { noteId: string } = {
+      noteId,
+      id: String(now),
+      time: new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      title: patch.title,
+      content: patch.content,
+      doodle: patch.doodleData,
+    };
+    setSnapshots((prev) => {
+      const mine = prev.filter((s) => s.noteId === noteId);
+      const others = prev.filter((s) => s.noteId !== noteId);
+      if (seed) return mine.length ? prev : [snap, ...prev];
+      const [latest, ...older] = mine;
+      // Never fold into the opening snapshot: it's the way back to the start.
+      const next = latest && older.length > 0 && now - Number(latest.id) < 60_000 ? [snap, ...older] : [snap, ...mine];
+      return [...next.slice(0, 20), ...others];
+    });
+  };
+
   // Auto-save after 1s of inactivity
   const triggerAutoSave = useCallback(
     (
@@ -228,6 +217,7 @@ export default function NotesPage() {
         if (res.success && res.data) {
           versionsRef.current.set(noteId, new Date(res.data.updatedAt).toISOString());
           dirtyRef.current = false;
+          recordSnapshot(noteId, patch);
         } else if ("conflict" in res && res.conflict && res.data) {
           setConflict({ noteId, latest: res.data });
         }
@@ -236,6 +226,7 @@ export default function NotesPage() {
     },
     [reloadAll]
   );
+
   const handleSelectNote = (note: Note) => {
     setSelectedNote(note);
     setEditorTitle(note.title);
@@ -248,6 +239,7 @@ export default function NotesPage() {
     markShared(note.linkAccess !== "NONE" || note._count.shares > 0);
     setLastEditedBy(note.lastEditedBy);
     setConflict(null);
+    recordSnapshot(note.id, { title: note.title, content: note.content || "", doodleData: note.doodleData || null }, true);
   };
 
   // Loads a newer server version into the editor without counting as an edit.
@@ -385,17 +377,15 @@ export default function NotesPage() {
     reloadAll();
   };
 
-  const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+  const handleCreateFolder = async (name: string) => {
     setError(null);
-    const res = await createFolder({ name: newFolderName.trim() });
+    const res = await createFolder({ name });
     if (!res.success) {
       setError(res.message || "Couldn't create the folder. Please try again.");
-      return;
+      return false;
     }
-    setNewFolderName("");
-    setShowNewFolder(false);
     reloadAll();
+    return true;
   };
 
   const handleDeleteFolder = async (folderId: string, name: string) => {
@@ -463,111 +453,16 @@ export default function NotesPage() {
         )}
         {/* Folder & Hashtag Sidebar */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-2 space-y-0.5">
-            <button
-              onClick={() => { setSelectedFolderId(undefined); setSelectedTag(null); }}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
-                selectedFolderId === undefined && !selectedTag ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/60 hover:text-zinc-200"
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5" /> All Notes
-            </button>
-            <button
-              onClick={() => setSelectedFolderId(null)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
-                selectedFolderId === null ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/60 hover:text-zinc-200"
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5 text-zinc-400" /> Uncategorized
-            </button>
-            <SharedWithMe />
-            {/* Smart Hashtags */}
-            {allTags.length > 0 && (
-              <div className="pt-2 pb-1">
-                <div className="px-2.5 mb-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-                  <Hash className="h-3 w-3" /> Hashtags
-                </div>
-                <div className="flex flex-wrap gap-1 px-2">
-                  {allTags.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                      className={`px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors ${
-                        selectedTag === tag
-                          ? "bg-zinc-100 text-zinc-950 font-bold"
-                          : "bg-zinc-900/80 text-zinc-300 hover:text-zinc-200 border border-zinc-800"
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-2">
-              <div className="flex items-center justify-between px-2.5 mb-1">
-                <button
-                  onClick={() => setFoldersCollapsed((v) => !v)}
-                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-200 transition-colors"
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${foldersCollapsed ? "-rotate-90" : ""}`} />
-                  Folders
-                </button>
-                <button
-                  onClick={() => setShowNewFolder(!showNewFolder)}
-                  className="text-zinc-400 hover:text-zinc-200 transition-colors"
-                >
-                  <FolderPlus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Collapses upward (grid-rows trick keeps the height animation smooth) */}
-              <div
-                className={`grid transition-all duration-200 ease-in-out ${
-                  foldersCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  {showNewFolder && (
-                    <div className="flex items-center gap-1 px-1 mb-1">
-                      <Input
-                        autoFocus
-                        placeholder="Folder name"
-                        value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setShowNewFolder(false); }}
-                        className="h-7 text-xs bg-zinc-900 border-zinc-800 text-white placeholder-zinc-400"
-                      />
-                      <button onClick={handleCreateFolder} aria-label="Create folder" className="text-indigo-400 hover:text-indigo-300 p-1">
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-
-                  {folders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      onClick={() => setSelectedFolderId(folder.id)}
-                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
-                        selectedFolderId === folder.id ? "bg-zinc-900 text-white" : "text-zinc-300 hover:bg-zinc-900/50 hover:text-zinc-200"
-                      }`}
-                    >
-                      <FolderOpen className="h-3.5 w-3.5 shrink-0" />
-                      <span className="flex-1 truncate">{folder.name}</span>
-                      <span className="text-[11px] text-zinc-400">{folder._count?.notes}</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-400 transition"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <NotesFolderNav
+            selectedFolderId={selectedFolderId}
+            onSelectFolder={setSelectedFolderId}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+            allTags={allTags}
+            folders={folders}
+            onCreateFolder={handleCreateFolder}
+            onDeleteFolder={handleDeleteFolder}
+          />
 
           {/* Note List */}
           <div className="border-t border-zinc-200 dark:border-zinc-900 mt-2 pt-2 px-2 space-y-0.5">
@@ -600,12 +495,12 @@ export default function NotesPage() {
                     {pinnedNotes.length > 0 && (
                       <>
                         <div className="px-1.5 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">📌 Pinned</div>
-                        {pinnedNotes.map((note) => <NoteItem key={note.id} note={note} selected={selectedNote?.id === note.id} onSelect={handleSelectNote} onPin={handlePinToggle} onFavorite={handleFavoriteToggle} onDelete={handleDeleteNote} />)}
+                        {pinnedNotes.map((note) => <NoteItem key={note.id} note={note} selected={selectedNote?.id === note.id} onSelect={handleSelectNote} onPin={handlePinToggle} onDelete={handleDeleteNote} />)}
                         <div className="my-1 border-t border-zinc-200 dark:border-zinc-900" />
                       </>
                     )}
                     {unpinnedNotes.map((note) => (
-                      <NoteItem key={note.id} note={note} selected={selectedNote?.id === note.id} onSelect={handleSelectNote} onPin={handlePinToggle} onFavorite={handleFavoriteToggle} onDelete={handleDeleteNote} />
+                      <NoteItem key={note.id} note={note} selected={selectedNote?.id === note.id} onSelect={handleSelectNote} onPin={handlePinToggle} onDelete={handleDeleteNote} />
                     ))}
                   </>
                 )}
@@ -688,48 +583,7 @@ export default function NotesPage() {
                 {isShared ? <Users className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{isShared ? "Shared" : "Share"}</span>
               </button>
-              {/* Export Dropdown */}
-              <div className="relative shrink-0">
-                <button
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  title="Export Note"
-                  className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Export</span>
-                </button>
-                {showExportMenu && (
-                  <div className="absolute right-0 top-8 z-50 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl space-y-1 text-xs animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-2 py-1 text-[11px] uppercase font-bold text-zinc-400 tracking-wider border-b border-zinc-900 mb-1">
-                      Export Note As
-                    </div>
-                    <button
-                      onClick={() => handleExportNote("md")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
-                    >
-                      📄 Markdown (.md)
-                    </button>
-                    <button
-                      onClick={() => handleExportNote("html")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
-                    >
-                      🌐 HTML Document (.html)
-                    </button>
-                    <button
-                      onClick={() => handleExportNote("txt")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs"
-                    >
-                      📝 Plain Text (.txt)
-                    </button>
-                    <button
-                      onClick={() => handleExportNote("pdf")}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-zinc-900 text-zinc-200 hover:text-white transition-colors text-xs border-t border-zinc-900 mt-1 pt-1"
-                    >
-                      🖨️ Print / Save to PDF
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ExportMenu title={editorTitle} html={editorContent} />
 
               {/* Fullscreen Button */}
               <button
@@ -812,21 +666,7 @@ export default function NotesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    // Record current snapshot if none exists
-                    if (snapshots.length === 0 && selectedNote) {
-                      setSnapshots([
-                        {
-                          id: Date.now().toString(),
-                          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                          title: editorTitle,
-                          content: editorContent,
-                          doodle: editorDoodle,
-                        },
-                      ]);
-                    }
-                    setShowHistoryDrawer(!showHistoryDrawer);
-                  }}
+                  onClick={() => setShowHistoryDrawer(true)}
                   title="View Note Revision History"
                   className="flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
                 >
@@ -844,47 +684,18 @@ export default function NotesPage() {
                 </button>
               </div>
             </div>
-            {/* Revision History Drawer Modal */}
-            {showHistoryDrawer && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-[#171717] border border-zinc-800 rounded-xl p-5 max-w-md w-full space-y-3 shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <History className="h-4 w-4 text-zinc-300" /> Revision History
-                    </h3>
-                    <button onClick={() => setShowHistoryDrawer(false)} className="text-zinc-300 hover:text-white p-1">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {snapshots.length === 0 ? (
-                      <p className="text-xs text-zinc-400 py-4 text-center">No previous revisions recorded yet. Make edits to create auto-snapshots.</p>
-                    ) : (
-                      snapshots.map((snap, idx) => (
-                        <div key={snap.id} className="p-3 rounded-lg border border-zinc-800 bg-zinc-950 flex items-center justify-between">
-                          <div>
-                            <div className="text-xs font-semibold text-zinc-200">{snap.title || "Untitled Note"}</div>
-                            <div className="text-[11px] text-zinc-400">Snapshot #{idx + 1} • {snap.time}</div>
-                          </div>
-                          <Button
-                            size="xs"
-                            onClick={() => {
-                              setEditorTitle(snap.title);
-                              setEditorContent(snap.content);
-                              setEditorDoodle(snap.doodle);
-                              setShowHistoryDrawer(false);
-                            }}
-                            className="text-[11px] h-6 px-2"
-                          >
-                            Restore
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            <RevisionHistoryDialog
+              open={showHistoryDrawer}
+              snapshots={snapshots.filter((s) => s.noteId === selectedNote.id)}
+              onClose={() => setShowHistoryDrawer(false)}
+              onRestore={(snap) => {
+                setEditorTitle(snap.title);
+                setEditorContent(snap.content);
+                setEditorDoodle(snap.doodle);
+                setShowHistoryDrawer(false);
+                triggerAutoSave(selectedNote.id, { ...currentPatch(), title: snap.title, content: snap.content, doodleData: snap.doodle });
+              }}
+            />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center relative">
@@ -910,63 +721,3 @@ export default function NotesPage() {
   );
 }
 
-// ─── Note Sidebar Item ───────────────────────────────
-function NoteItem({ note, selected, onSelect, onPin, onDelete }: {
-  note: Note;
-  selected: boolean;
-  onSelect: (note: Note) => void;
-  onPin: (note: Note, e: React.MouseEvent) => void;
-  onFavorite: (note: Note, e: React.MouseEvent) => void;
-  onDelete: (noteId: string) => void;
-}) {
-  const preview = note.content
-    ? note.content.replace(/<[^>]+>/g, "").slice(0, 60)
-    : "No content";
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-      className={`group relative rounded-lg transition-colors ${
-        selected ? "bg-zinc-800 text-white" : "hover:bg-zinc-900/60 text-zinc-300 hover:text-zinc-200"
-      }`}
-    >
-      {/* The row itself is the button; the per-note actions sit alongside it
-          rather than nested inside, which a button may not contain. */}
-      <button
-        type="button"
-        onClick={() => onSelect(note)}
-        aria-current={selected ? "true" : undefined}
-        className="w-full rounded-lg px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500"
-      >
-        <span className="mb-0.5 block max-w-[120px] truncate pr-12 text-xs font-semibold">
-          {note.title}
-        </span>
-        <span className="block truncate text-[11px] text-zinc-400">{preview}</span>
-      </button>
-      <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        <button
-          type="button"
-          onClick={(e) => onPin(note, e)}
-          aria-label={note.isPinned ? `Unpin ${note.title}` : `Pin ${note.title}`}
-          className={`rounded p-0.5 hover:text-white focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${
-            note.isPinned ? "text-amber-400" : "text-zinc-400"
-          }`}
-        >
-          <Pin className="h-2.5 w-2.5" />
-        </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
-          aria-label={`Delete ${note.title}`}
-          className="rounded p-0.5 text-zinc-400 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
