@@ -13,6 +13,7 @@ type NoteState = {
   canvasData: string | null;
   lastEditedBy: string | null;
   updatedAt: Date;
+  createdAt: Date;
 };
 
 type Patch = { title?: string; content?: string; doodleData?: string | null; canvasData?: string | null };
@@ -30,13 +31,19 @@ export async function keepRevisionBeforeSave(note: NoteState, patch: Patch, { fo
     (patch.doodleData !== undefined && patch.doodleData !== note.doodleData) ||
     (patch.canvasData !== undefined && patch.canvasData !== note.canvasData);
   if (!changes) return;
+  // An empty note (typically one just created) isn't worth going back to.
+  const empty = !(note.content ?? "").replace(/<[^>]*>/g, "").trim() && !note.doodleData && !note.canvasData;
+  if (empty) return;
 
   const latest = await prisma.noteRevision.findFirst({
     where: { noteId: note.id },
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });
-  if (!force && latest && Date.now() - latest.createdAt.getTime() < MIN_GAP_MS) return;
+  // Measured from the last kept version, or from the note's creation if it
+  // has none, so writing a brand-new note doesn't produce versions of itself.
+  const since = latest?.createdAt ?? note.createdAt;
+  if (!force && Date.now() - since.getTime() < MIN_GAP_MS) return;
 
   await prisma.noteRevision.create({
     data: {
