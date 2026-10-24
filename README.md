@@ -3,7 +3,7 @@
 **A personal productivity OS — [dailyos.dpdns.org](https://dailyos.dpdns.org)**
 
 Notes, tasks, projects, calendar, habits, goals, study tracking, analytics, a
-focus timer, a doodle canvas and a developer log. Eleven modules over **34
+focus timer, a doodle canvas and a developer log. Twelve modules over **35
 Prisma models in one schema**, so a task can come out of a note and a habit can
 roll into a goal without an integration sitting between them.
 
@@ -14,23 +14,37 @@ roll into a goal without an integration sitting between them.
 
 ## What's in it
 
-- **Notes** — folders, search, tags, pinning, full-screen editing and revision
-  snapshots. Three editing modes share one note: rich text, a sketch pad, and a
-  freeform canvas where you double-click anywhere to drop a text block and drag
-  it where you want it.
-- **Tasks** — list and kanban views, filters, priorities, due dates.
+- **Today** — the signed-in home: tasks due and overdue, habits to tick,
+  today's events, focus minutes and the goals closest to their deadline.
+- **Notes** — folders, search, #hashtags, pinning, full-screen editing,
+  voice notes and per-session revision history. Three editing modes share one
+  note: rich text, a sketch pad, and a freeform canvas where you double-click
+  anywhere to drop a text block. "Turn into Tasks" pulls action items out of a
+  note for review.
+- **Sharing** — Google Docs-style: invite people by email as viewers or
+  editors, or open the link to anyone. Edits sync between open copies within a
+  few seconds, and simultaneous edits ask before overwriting.
+- **Tasks** — list and kanban views, filters, tags, priorities, due dates,
+  subtasks, comments, and repeats (daily, weekdays, weekly, monthly, yearly).
 - **Projects** — per-project workspaces with file attachments.
-- **Habits & goals** — streaks and logs that feed the analytics page.
+- **Habits & goals** — daily, weekly or monthly habits with streaks counted in
+  your own time zone; goals that track their linked tasks automatically.
 - **Study** — subjects, topics, sessions, and a pomodoro timer with a custom
   alarm sound.
-- **Calendar** — month view over events and deadlines.
-- **Developer mode** — code snippets with syntax highlighting and an HTTP
-  request playground.
+- **Calendar** — month and week views over events and task due dates,
+  repeating events, and an .ics export for Google Calendar, Outlook or Apple.
+- **Developer mode** — coding projects with an issue tracker and release log,
+  code snippets with syntax highlighting, and an HTTP request playground.
+- **Reminders** — a morning email and notification with what's due, overdue
+  and on the calendar.
+- **Trash** — deleted notes, tasks and projects stay restorable for 30 days.
 - **Music player** — uploaded tracks over GridFS plus Spotify search, with
   Lavalink node management behind an admin role.
 - **Guest mode** — notes and doodles that live in `localStorage` until you sign
   in, then migrate into the account.
-- **Command palette** — `Cmd`/`Ctrl + K` to move between pages.
+- **Command palette** — `Cmd`/`Ctrl + K` searches everything and jumps
+  between pages.
+- **Offline** — installable; saves made offline go through on reconnect.
 
 Accounts can request a full JSON export by email, to their own address or
 another one, and can schedule deletion with a 24-hour window to change their
@@ -71,12 +85,15 @@ fine with neither of them configured.
 
 ### Checks
 
-No test runner. Three scripts cover the logic where being wrong is expensive:
+No test framework; `npm test` runs the scripts that cover the logic where
+being wrong is expensive, and CI (`.github/workflows/ci.yml`) runs them with
+the type-check, lint and a build on every push:
 
 ```bash
 node scripts/test-otp.mjs              # code generation and comparison
 node scripts/test-freeform-blocks.mjs  # canvas serialisation
 node scripts/test-avatar-data-url.mjs  # avatar data-URL parsing
+node scripts/test-dates.mjs            # time zones, streaks, recurrence
 ```
 
 ## Deploying
@@ -85,9 +102,13 @@ Import to Vercel, set the variables from `.env.example`, deploy.
 
 Two that are easy to miss:
 
-- **`CRON_SECRET`** — `vercel.json` schedules `/api/cron/purge-accounts` daily
-  to remove accounts past their deletion deadline. Without this the route
-  refuses to run rather than running unauthenticated, so nothing is purged.
+- **`CRON_SECRET`** — `vercel.json` schedules two daily jobs:
+  `/api/cron/purge-accounts` (accounts past their deletion deadline, and trash
+  older than 30 days) and `/api/cron/reminders` (the morning digest). Without
+  the secret both refuse to run rather than running unauthenticated.
+- **Schema changes** — the build does not migrate the database. After pulling
+  a schema change, run `npx prisma db push` against production (it reads
+  `DIRECT_URL`) before the new code goes live.
 - **`sslmode=verify-full`** in `DATABASE_URL` — Neon hands you `sslmode=require`
   when you copy a connection string, and `pg` v9 will reinterpret that with
   weaker guarantees. Neon presents a publicly trusted certificate, so
@@ -99,6 +120,11 @@ Data loading sits inside the effect that needs it, with a cancelled flag
 guarding every `setState` after the await, and a reload token instead of a
 callable fetcher. That is what stops a slow response landing after a newer one
 on the pages where filters change mid-request.
+
+Dates that mean a whole day (due dates, habit check-ins) are stored as UTC
+midnight of that day and compared as `YYYY-MM-DD` keys in the user's own zone
+(`src/lib/dates.ts`); the server runs in UTC, so `new Date()` there is the
+wrong day for half the planet for part of every day.
 
 Auth is layered on purpose. `proxy.ts` does an optimistic session-cookie check
 to keep prefetches off the database, and the `(dashboard)` layout resolves the
