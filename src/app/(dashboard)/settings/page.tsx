@@ -751,7 +751,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between border-t border-zinc-900 pt-4">
                   <div className="space-y-0.5">
                     <Label className="text-xs text-zinc-200">Reminders</Label>
-                    <p className="text-[11px] text-zinc-400">Enable automated email alerts for upcoming items</p>
+                    <p className="text-[11px] text-zinc-400">A morning email and notification with what&apos;s due, overdue and on your calendar</p>
                   </div>
                   <input
                     type="checkbox"

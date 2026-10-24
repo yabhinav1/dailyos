@@ -30,16 +30,90 @@ function fromAddress() {
   return process.env.SMTP_FROM || "DailyOS <noreply@dailyos.dpdns.org>";
 }
 
-function wrap(title: string, body: string) {
+function wrap(title: string, body: string, footer = "If you didn't request this, you can safely ignore this email.") {
   return `
   <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f4f5;padding:32px 16px;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:14px;padding:32px;border:1px solid #e4e4e7;">
       <div style="font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a;">DailyOS</div>
       <h1 style="margin:12px 0 16px;font-size:20px;line-height:1.3;color:#18181b;">${title}</h1>
       ${body}
-      <p style="margin-top:28px;font-size:12px;color:#a1a1aa;">If you didn't request this, you can safely ignore this email.</p>
+      <p style="margin-top:28px;font-size:12px;color:#a1a1aa;">${footer}</p>
     </div>
   </div>`;
+}
+
+/** For user-written text (task and event titles) placed into email HTML. */
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+export type DigestItem = { title: string; when: string | null };
+
+/** The morning reminder: what's due, what's overdue, and today's events. */
+export async function sendDailyDigestEmail(
+  to: string,
+  name: string | null,
+  dayKey: string,
+  digest: { overdue: DigestItem[]; dueToday: DigestItem[]; events: DigestItem[] }
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const day = new Date(`${dayKey}T00:00:00Z`).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — daily digest for ${to} not sent`);
+    return;
+  }
+
+  const section = (heading: string, items: DigestItem[], color = "#18181b") =>
+    items.length === 0
+      ? ""
+      : `<p style="margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};">${heading}</p>
+         <ul style="margin:0;padding-left:18px;font-size:14px;color:#3f3f46;">
+           ${items
+             .map(
+               (i) =>
+                 `<li style="margin:3px 0;">${escapeHtml(i.title)}${
+                   i.when ? ` <span style="color:#a1a1aa;">· ${escapeHtml(i.when)}</span>` : ""
+                 }</li>`
+             )
+             .join("")}
+         </ul>`;
+
+  const textSection = (heading: string, items: DigestItem[]) =>
+    items.length ? [heading, ...items.map((i) => `- ${i.title}${i.when ? ` (${i.when})` : ""}`), ""] : [];
+
+  const greeting = name?.trim() ? `Good morning, ${name.trim().split(/\s+/)[0]}` : "Good morning";
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: `Your day · ${day}`,
+    text: [
+      `${greeting}. Here's ${day}:`,
+      "",
+      ...textSection("Due today", digest.dueToday),
+      ...textSection("Overdue", digest.overdue),
+      ...textSection("Events", digest.events),
+      `Open DailyOS: ${appUrl}/today`,
+      "",
+      "Turn these emails off in Settings > Preferences > Reminders.",
+    ].join("\n"),
+    html: wrap(
+      escapeHtml(greeting),
+      `<p style="margin:0;font-size:14px;color:#3f3f46;">Here's ${day}.</p>
+       ${section("Due today", digest.dueToday)}
+       ${section("Overdue", digest.overdue, "#dc2626")}
+       ${section("Events", digest.events)}
+       <p style="margin:22px 0 0;">
+         <a href="${appUrl}/today" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:10px 18px;border-radius:8px;">Open Today</a>
+       </p>`,
+      "You get this because reminders are on. Turn them off in Settings › Preferences › Reminders."
+    ),
+  });
 }
 
 /** Verifies the SMTP connection and credentials. Useful for a health check. */
