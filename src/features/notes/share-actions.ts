@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/utils";
+import { assertInviteBudget } from "@/lib/invite-limit";
 import { createNotification } from "@/lib/notifications";
 import { sendNoteSharedEmail } from "@/lib/email";
 import { LINK_ACCESS, SHARE_ROLES, newShareToken, resolveNoteAccess, type LinkAccess } from "@/lib/note-access";
@@ -77,6 +78,7 @@ export async function inviteToNoteAction(noteId: string, email: string, role: "V
 
     const count = await prisma.noteShare.count({ where: { noteId } });
     if (count >= 50) throw new Error("A note can be shared with at most 50 people.");
+    await assertInviteBudget(userId);
 
     const token = note.shareToken ?? newShareToken();
     if (!note.shareToken) await prisma.note.update({ where: { id: noteId }, data: { shareToken: token } });

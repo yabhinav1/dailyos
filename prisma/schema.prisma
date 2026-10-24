@@ -55,6 +55,8 @@ model User {
   notifications Notification[]
   settings      UserSettings?
   activities    ActivityHistory[]
+  media         NoteMedia[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -206,6 +208,10 @@ model Project {
   description String?     @db.Text
   deadline    DateTime?
   isCompleted Boolean     @default(false)
+  // Sharing works as for notes: ProjectShare rows for invited people, and
+  // linkAccess (NONE | VIEW | EDIT) for anyone holding /p/<shareToken>.
+  shareToken  String?
+  linkAccess  String      @default("NONE")
   deletedAt   DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -214,9 +220,26 @@ model Project {
   tasks       Task[]
   milestones  Milestone[]
   resources   Resource[]
+  shares      ProjectShare[]
 
   @@index([userId])
   @@index([userId, deletedAt])
+  @@index([shareToken])
+}
+
+/// A person a project is shared with, by email so it works before they sign up.
+model ProjectShare {
+  id        String   @id @default(cuid())
+  projectId String
+  email     String   // lowercased
+  role      String   @default("VIEW") // VIEW | EDIT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, email])
+  @@index([email])
 }
 
 model Milestone {
@@ -307,12 +330,65 @@ model Note {
   folder     NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   tags       NoteTag[]
   shares     NoteShare[]
+  revisions  NoteRevision[]
+  media      NoteMedia[]
 
   @@index([userId])
   @@index([userId, deletedAt])
   @@index([userId, isPinned])
   @@index([userId, isFavorite])
   @@index([shareToken])
+}
+
+/// An earlier version of a note, kept when a save changes it after a pause
+/// (see src/lib/note-revisions.ts). Capped per note.
+model NoteRevision {
+  id         String   @id @default(cuid())
+  noteId     String
+  title      String
+  content    String?  @db.Text
+  doodleData String?  @db.Text
+  canvasData String?  @db.Text
+  editedBy   String?  // who made this version
+  createdAt  DateTime @default(now())
+
+  note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId, createdAt])
+}
+
+/// An image or voice recording inserted into a note. The bytes live in GridFS;
+/// the id is random and long enough to serve as the access key, so a shared
+/// note's media opens for everyone who can open the note.
+model NoteMedia {
+  id         String   @id // 128-bit random, URL-safe
+  userId     String
+  noteId     String?
+  mongoIndex Int
+  fileId     String
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note       Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([noteId])
+}
+
+/// A browser's Web Push subscription, for phone/desktop reminder notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// A person a note is shared with, by email so it works before they sign up.
