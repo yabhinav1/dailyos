@@ -14,6 +14,18 @@ import {
   authPrimaryButtonClass,
 } from "@/components/auth/auth-ui";
 
+const OAUTH_ERRORS: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "That email already has a DailyOS account set up another way. Sign in the way you did before, then connect GitHub or Google in Settings › Security.",
+  OAuthSignin: "Couldn't start that sign-in. Please try again.",
+  OAuthCallbackError: "The sign-in didn't complete. If you cancelled, that's fine. Otherwise, please try again.",
+  OAuthCallback: "The sign-in didn't complete. If you cancelled, that's fine. Otherwise, please try again.",
+  AccessDenied: "Sign-in was cancelled or not allowed.",
+  Verification: "That sign-in link has expired. Please try again.",
+  Configuration: "Sign-in isn't working on our side right now. Please try email and password, or try again later.",
+  Default: "Sign-in didn't work. Please try again, or use email and password.",
+};
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="py-10 text-center text-xs text-zinc-400">Loading...</div>}>
@@ -29,6 +41,8 @@ function LoginForm() {
   // Set when someone has just scheduled their account for deletion and been
   // signed out, so the page explains why they are suddenly here.
   const deletionScheduled = searchParams.get("deletion") === "scheduled";
+  // Auth.js sends failed Google/GitHub sign-ins back here with ?error=.
+  const oauthError = OAUTH_ERRORS[searchParams.get("error") ?? ""] ?? (searchParams.get("error") ? OAUTH_ERRORS.Default : null);
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -75,6 +89,8 @@ function LoginForm() {
           </p>
         </AuthAlert>
       )}
+
+      {oauthError && <AuthAlert tone="error">{oauthError}</AuthAlert>}
 
       <OAuthButtons callbackUrl={callbackUrl} disabled={loading} />
 

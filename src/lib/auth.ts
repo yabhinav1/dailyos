@@ -65,6 +65,25 @@ const nextAuth = NextAuth({
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
+      // The stock lookup falls back to any address on the GitHub account,
+      // verified or not. This one only accepts an address GitHub has
+      // verified (the primary one first), which makes linking to an existing
+      // account by email as safe as it is for Google. Without linking,
+      // someone who signed up another way and then clicks "GitHub" got
+      // OAuthAccountNotLinked and no way in.
+      userinfo: {
+        url: "https://api.github.com/user",
+        async request({ tokens }: { tokens: { access_token?: string } }) {
+          const headers = { Authorization: `Bearer ${tokens.access_token}`, "User-Agent": "dailyos" };
+          const profile = await fetch("https://api.github.com/user", { headers }).then((r) => r.json());
+          const res = await fetch("https://api.github.com/user/emails", { headers });
+          const emails: { email: string; primary: boolean; verified: boolean }[] = res.ok ? await res.json() : [];
+          const verified = emails.filter((e) => e.verified);
+          profile.email = (verified.find((e) => e.primary) ?? verified[0])?.email ?? null;
+          return profile;
+        },
+      },
+      allowDangerousEmailAccountLinking: true,
     }),
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,

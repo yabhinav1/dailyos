@@ -19,6 +19,22 @@ type State =
   | { kind: "off" }
   | { kind: "on"; endpoint: string };
 
+/**
+ * Chrome-family browsers report a blocked push service as the bare
+ * "Registration failed - push service error". The usual cause is Brave, which
+ * ships with Google's push service switched off.
+ */
+function explainPushError(err: unknown) {
+  const message = err instanceof Error ? err.message : "";
+  if (/push service error|registration failed/i.test(message)) {
+    const isBrave = typeof navigator !== "undefined" && "brave" in navigator;
+    return isBrave
+      ? "Brave blocks notifications by default. Open brave://settings/privacy, turn on \"Use Google services for push messaging\", restart Brave, then try again."
+      : "Your browser's push service refused the request. Check that notifications aren't blocked for this site, or try Chrome, Edge or Firefox.";
+  }
+  return message || "Couldn't turn on notifications.";
+}
+
 /** The VAPID key arrives base64url-encoded; subscribe() wants raw bytes. */
 function keyBytes(base64url: string) {
   const padded = (base64url + "=".repeat((4 - (base64url.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
@@ -90,7 +106,7 @@ export default function PushSettings() {
       setState({ kind: "on", endpoint: sub.endpoint });
       toast.success("Notifications are on for this device.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't turn on notifications.");
+      toast.error(explainPushError(err));
     } finally {
       setBusy(false);
     }
