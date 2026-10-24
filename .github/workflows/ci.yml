@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch or PR makes the older run moot.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Deliberately no DATABASE_URL or other secrets: the Prisma client is
+    # created on first use, so type-checking, linting and `next build` must
+    # all succeed without a database. A step that starts needing one is a
+    # regression worth failing on.
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # .npmrc sets legacy-peer-deps=true already; the flag is repeated so the
+      # install does not silently change behaviour if that file is edited.
+      # postinstall runs `prisma generate`, which the type-check needs.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check scripts
+        run: npm test
+
+      - name: Build
+        run: npx next build
