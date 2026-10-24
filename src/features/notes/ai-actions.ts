@@ -223,6 +223,55 @@ export async function aiExtractTasksAction(
   }
 }
 
+// Azure Translator's codes for the languages the editor offers.
+const AZURE_CODES: Record<string, string> = {
+  English: "en",
+  Spanish: "es",
+  French: "fr",
+  German: "de",
+  Japanese: "ja",
+  Chinese: "zh-Hans",
+  Hindi: "hi",
+  Arabic: "ar",
+  Russian: "ru",
+  Portuguese: "pt",
+  Italian: "it",
+  Korean: "ko",
+};
+
+/**
+ * Azure AI Translator (v3). Translates the note's HTML as HTML, so
+ * formatting survives. Returns null when AZURE_TRANSLATOR_KEY isn't set.
+ */
+async function azureTranslate(html: string, targetLanguage: string): Promise<string | null> {
+  const key = process.env.AZURE_TRANSLATOR_KEY;
+  if (!key) return null;
+  const to = AZURE_CODES[targetLanguage] ?? "en";
+
+  const res = await fetch(
+    `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${to}&textType=html`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": key,
+        // Required for regional resources (anything but "global").
+        ...(process.env.AZURE_TRANSLATOR_REGION && { "Ocp-Apim-Subscription-Region": process.env.AZURE_TRANSLATOR_REGION }),
+      },
+      body: JSON.stringify([{ Text: html.slice(0, MAX_INPUT_CHARS) }]),
+      signal: AbortSignal.timeout(30_000),
+    }
+  );
+
+  if (res.status === 403 || res.status === 429) {
+    throw new Error("The free translation allowance is used up for now. Try again later.");
+  }
+  if (!res.ok) throw new Error(`Translation failed (${res.status} ${res.statusText})`);
+
+  const data = (await res.json()) as { translations?: { text: string }[] }[];
+  return data[0]?.translations?.[0]?.text ?? null;
+}
+
 export async function aiTranslateAction(
   text: string,
   targetLanguage: string
@@ -231,17 +280,20 @@ export async function aiTranslateAction(
     await requireUser();
     if (!text || !text.trim()) return { success: false, error: "No text provided" };
 
-    const translated = await chat(
-      `Translate the following text accurately into ${language(targetLanguage)}. Preserve HTML markup if present.`,
-      text
-    );
+    // Azure first: its free tier covers 2M characters a month.
+    const translated =
+      (await azureTranslate(text, language(targetLanguage))) ??
+      (await chat(
+        `Translate the following text accurately into ${language(targetLanguage)}. Preserve HTML markup if present.`,
+        text
+      ));
     if (translated) return { success: true, translated };
 
     // There is no honest local fallback for translation — returning the
     // original text under a "Translation" heading would be silently wrong.
     return {
       success: false,
-      error: "Translation needs an AI provider. Set OPENAI_API_KEY to enable it.",
+      error: "Translation isn't set up on this server.",
     };
   } catch (error: unknown) {
     return { success: false, error: errorMessage(error) };
