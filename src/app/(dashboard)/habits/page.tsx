@@ -11,20 +11,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import type { Habit, HabitLog } from "@/lib/types";
 import { toDateKey } from "@/lib/utils";
+import { addDays, localDateKey } from "@/lib/dates";
 import { toast } from "@/stores/toast-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
-function generateLast30Days(): string[] {
-  const days: string[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toISOString().split("T")[0]);
-  }
-  return days;
+// Day keys are in the browser's zone: toISOString() gave UTC days, so for
+// anyone ahead of UTC "today" was still yesterday until UTC midnight.
+function last30Days(todayKey: string): string[] {
+  return Array.from({ length: 30 }, (_, i) => addDays(todayKey, i - 29));
 }
-
-const DAYS_30 = generateLast30Days();
 
 export default function HabitsPage() {
   const confirm = useConfirm();
@@ -43,7 +38,7 @@ export default function HabitsPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const res = await getHabitsAction();
+      const res = await getHabitsAction(localDateKey());
       if (cancelled) return;
       if (res.success && res.data) setHabits(res.data);
       setLoading(false);
@@ -83,7 +78,7 @@ export default function HabitsPage() {
       })
     );
     try {
-      await logHabit(habitId, date);
+      await logHabit(habitId, date, localDateKey());
       reloadHabits();
     } catch {
       setHabits(previous);
@@ -103,7 +98,8 @@ export default function HabitsPage() {
     reloadHabits();
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateKey();
+  const days30 = last30Days(today);
   const todayCompletedCount = habits.filter((h) =>
     h.logs.some((l: HabitLog) => toDateKey(l.date) === today && l.completed)
   ).length;
@@ -133,7 +129,7 @@ export default function HabitsPage() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Total Habits", value: habits.length, color: "text-zinc-200" },
-            { label: "Best Streak", value: `${Math.max(...habits.map((h) => h.maxStreak), 0)}d`, color: "text-amber-400" },
+            { label: "Best Streak", value: Math.max(...habits.map((h) => h.maxStreak), 0), color: "text-amber-400" },
             { label: "Today Done", value: `${todayCompletedCount}/${habits.length}`, color: "text-emerald-400" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl border border-zinc-850 bg-[#171717]/50 p-4 text-center">
@@ -191,7 +187,9 @@ export default function HabitsPage() {
                           <Flame className="h-3.5 w-3.5" />
                           {habit.streak}
                         </div>
-                        <div className="text-[11px] text-zinc-400">streak</div>
+                        <div className="text-[11px] text-zinc-400">
+                          {habit.frequency === "WEEKLY" ? "wk streak" : habit.frequency === "MONTHLY" ? "mo streak" : "streak"}
+                        </div>
                       </div>
                       <button
                         onClick={() => handleDelete(habit.id, habit.name)}
@@ -204,7 +202,7 @@ export default function HabitsPage() {
 
                   {/* 30-Day Grid */}
                   <div className="flex gap-[2px] flex-wrap">
-                    {DAYS_30.map((day) => {
+                    {days30.map((day) => {
                       const done = completedDates.has(day);
                       const isToday = day === today;
                       return (

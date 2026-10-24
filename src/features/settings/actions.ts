@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { getErrorMessage } from "@/lib/utils";
 import { generateOtp, otpMatches, MAX_OTP_ATTEMPTS } from "@/lib/otp";
+import { isValidTimezone } from "@/lib/dates";
 
 async function getUserId() {
   const session = await auth();
@@ -94,6 +95,22 @@ export async function updateUserSettings(theme: string, remindersEnabled: boolea
     create: { userId, theme, remindersEnabled },
   });
   revalidatePath("/settings");
+  return { success: true };
+}
+
+/**
+ * Records the browser's IANA zone so server-side "today" (streaks, reminder
+ * digests) matches the user's calendar. Called by TimezoneSync on load when
+ * the browser's zone differs from the saved one.
+ */
+export async function updateTimezone(timezone: string) {
+  const userId = await getUserId();
+  if (!isValidTimezone(timezone)) throw new Error("Unknown time zone.");
+  await prisma.userSettings.upsert({
+    where: { userId },
+    update: { timezone },
+    create: { userId, timezone },
+  });
   return { success: true };
 }
 

@@ -129,6 +129,10 @@ model Task {
   estimatedTime Int?         // in minutes
   actualTime    Int          @default(0) // in minutes
   isFavorite    Boolean      @default(false)
+  // DAILY | WEEKDAYS | WEEKLY | MONTHLY | YEARLY. Completing a recurring task
+  // creates the next occurrence (see src/lib/recurrence.ts).
+  recurrence    String?
+  goalId        String?      // Completed linked tasks drive the goal's progress
   deletedAt     DateTime?    // For trash system
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -136,6 +140,7 @@ model Task {
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   category      Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  goal          Goal?        @relation(fields: [goalId], references: [id], onDelete: SetNull)
   
   subtasks      Subtask[]
   checklists    ChecklistItem[]
@@ -148,6 +153,7 @@ model Task {
   @@index([userId, priority])
   @@index([userId, dueDate])
   @@index([userId, deletedAt])
+  @@index([goalId])
 }
 
 model Subtask {
@@ -370,6 +376,7 @@ model Goal {
   updatedAt   DateTime  @updatedAt
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
 
   @@index([userId])
 }
@@ -387,6 +394,8 @@ model CalendarEvent {
   endDate     DateTime
   isAllDay    Boolean   @default(false)
   color       String?
+  recurrence  String?   // Same values as Task.recurrence; expanded per view
+  recurrenceUntil DateTime? // Last day an occurrence may start on, if any
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -567,6 +576,8 @@ model UserSettings {
   pwaInstalled   Boolean  @default(false)
   onboardedAt    DateTime? // Set once the welcome walkthrough has been seen
   remindersEnabled Boolean @default(true)
+  timezone       String?  // IANA zone from the browser, e.g. "Asia/Kolkata"
+  lastDigestOn   String?  // YYYY-MM-DD (user's zone) of the last reminder digest
   updatedAt      DateTime @updatedAt
 
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)

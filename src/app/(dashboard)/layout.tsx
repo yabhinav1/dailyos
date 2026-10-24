@@ -11,6 +11,7 @@ import GuestNotesImporter from "@/components/notes/guest-notes-importer";
 import MusicPlayerWidget from "@/components/music/music-player-widget";
 
 import MobileNavBar from "@/components/layout/mobile-nav-bar";
+import TimezoneSync from "@/components/account/timezone-sync";
 
 // The authoritative auth check for every dashboard route. proxy.ts only does
 // an optimistic cookie check, which a forged or expired cookie would pass —
@@ -31,7 +32,7 @@ export default async function DashboardLayout({
     where: { id: session.user.id },
     select: {
       deletionScheduledAt: true,
-      settings: { select: { onboardedAt: true } },
+      settings: { select: { onboardedAt: true, timezone: true } },
     },
   });
 
@@ -65,6 +66,9 @@ export default async function DashboardLayout({
 
       {/* One-time migration of any guest-mode notes saved on this device */}
       <GuestNotesImporter />
+
+      {/* Keeps the saved time zone in step with this browser */}
+      <TimezoneSync saved={account?.settings?.timezone ?? null} />
 
       {/* Floating music player — hovers over every dashboard page */}
       <MusicPlayerWidget />

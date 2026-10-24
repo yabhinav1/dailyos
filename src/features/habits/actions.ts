@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getErrorMessage } from "@/lib/utils";
+import { addDays, computeStreaks, isDateKey, keyToUtcDate, utcDateToKey, type HabitFrequency } from "@/lib/dates";
+import { getUserToday } from "@/lib/user-time";
 
 const habitSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -16,6 +18,10 @@ async function getUserId() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   return session.user.id;
+}
+
+function asFrequency(value: string): HabitFrequency {
+  return value === "WEEKLY" || value === "MONTHLY" ? value : "DAILY";
 }
 
 export async function createHabit(data: z.infer<typeof habitSchema>) {
@@ -35,105 +41,88 @@ export async function deleteHabit(habitId: string) {
   return { success: true };
 }
 
-export async function logHabit(habitId: string, date: string) {
+/**
+ * Toggles a check-in. `date` is a YYYY-MM-DD day in the user's own zone, and
+ * `today` is the browser's idea of today, used to judge the current streak.
+ */
+export async function logHabit(habitId: string, date: string, today?: string) {
   const userId = await getUserId();
   const habit = await prisma.habit.findFirst({ where: { id: habitId, userId } });
   if (!habit) throw new Error("Habit not found.");
+  if (!isDateKey(date)) throw new Error("Invalid date.");
 
-  const dateObj = new Date(date);
+  const dateObj = keyToUtcDate(date);
 
-  // Check if already logged
   const existing = await prisma.habitLog.findUnique({
     where: { habitId_date: { habitId, date: dateObj } },
   });
 
   if (existing) {
-    // Toggle off — remove log
     await prisma.habitLog.delete({ where: { id: existing.id } });
-    // Recalculate streak
-    await recalculateStreak(habitId);
   } else {
-    // Add log
     await prisma.habitLog.create({ data: { habitId, date: dateObj, completed: true } });
-    // Recalculate streak
-    await recalculateStreak(habitId);
   }
 
+  await recalculateStreak(habitId, asFrequency(habit.frequency), await getUserToday(userId, today));
+
   revalidatePath("/habits");
+  revalidatePath("/today");
   return { success: true };
 }
 
-async function recalculateStreak(habitId: string) {
+async function loadLogKeys(habitIds: string[]) {
   const logs = await prisma.habitLog.findMany({
-    where: { habitId, completed: true },
-    orderBy: { date: "desc" },
+    where: { habitId: { in: habitIds }, completed: true },
+    select: { habitId: true, date: true },
   });
-
-  let streak = 0;
-  let maxStreak = 0;
-  let currentStreak = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Calculate current streak (consecutive days from today backward)
-  for (let i = 0; i < logs.length; i++) {
-    const logDate = new Date(logs[i].date);
-    logDate.setHours(0, 0, 0, 0);
-    const expectedDate = new Date(today);
-    expectedDate.setDate(today.getDate() - i);
-
-    if (logDate.getTime() === expectedDate.getTime()) {
-      currentStreak++;
-    } else {
-      break;
-    }
+  const byHabit = new Map<string, string[]>();
+  for (const log of logs) {
+    const keys = byHabit.get(log.habitId) ?? [];
+    keys.push(utcDateToKey(log.date));
+    byHabit.set(log.habitId, keys);
   }
-  streak = currentStreak;
+  return byHabit;
+}
 
-  // Calculate max streak
-  let tempStreak = 0;
-  for (let i = 0; i < logs.length; i++) {
-    if (i === 0) {
-      tempStreak = 1;
-    } else {
-      const curr = new Date(logs[i].date);
-      const prev = new Date(logs[i - 1].date);
-      const diffDays = Math.round((prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
-        tempStreak++;
-      } else {
-        tempStreak = 1;
-      }
-    }
-    maxStreak = Math.max(maxStreak, tempStreak);
-  }
-
+async function recalculateStreak(habitId: string, frequency: HabitFrequency, todayKey: string) {
+  const keys = (await loadLogKeys([habitId])).get(habitId) ?? [];
+  const { streak, maxStreak } = computeStreaks(keys, frequency, todayKey);
   await prisma.habit.update({
     where: { id: habitId },
     data: { streak, maxStreak },
   });
 }
 
-export async function getHabitsAction() {
+/**
+ * Habits with the last 30 days of logs for the grid. Streaks are worked out
+ * here against the user's today rather than read from the stored columns,
+ * which only change on a check-in and so would keep showing a broken streak
+ * as alive.
+ */
+export async function getHabitsAction(today?: string) {
   try {
     const userId = await getUserId();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 29);
+    const todayKey = await getUserToday(userId, today);
+    const windowStart = keyToUtcDate(addDays(todayKey, -29));
 
     const habits = await prisma.habit.findMany({
       where: { userId },
       include: {
         logs: {
-          where: { date: { gte: thirtyDaysAgo } },
+          where: { date: { gte: windowStart } },
           orderBy: { date: "asc" },
         },
       },
       orderBy: { createdAt: "asc" },
     });
 
-    return { success: true, data: habits };
+    const logKeys = await loadLogKeys(habits.map((h) => h.id));
+    const data = habits.map((h) => ({
+      ...h,
+      ...computeStreaks(logKeys.get(h.id) ?? [], asFrequency(h.frequency), todayKey),
+    }));
+
+    return { success: true, data, today: todayKey };
   } catch (error: unknown) {
     return { success: false, message: getErrorMessage(error) };
   }
