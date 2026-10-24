@@ -99,8 +99,8 @@ node scripts/test-avatar-data-url.mjs  # avatar data-URL parsing
 node scripts/test-dates.mjs            # time zones, streaks, recurrence
 ```
 
-`npm run test:e2e` drives the real app in Chromium through 16 scenarios
-(sharing, media, reminders, offline and the rest); `.github/workflows/e2e.yml`
+`npm run test:e2e` drives the real app in Chromium through 17 scenarios
+(sharing, media, reminders, offline, phone layout and the rest); `.github/workflows/e2e.yml`
 runs them on every push against throwaway Postgres, MongoDB and Mailpit. See
 `e2e/README.md` to run them locally.
 
