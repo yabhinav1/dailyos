@@ -139,7 +139,7 @@ function Subtasks({
               aria-label={`Delete subtask "${s.title}"`}
               onClick={() => run(() => deleteSubtask(s.id), "Couldn't delete the subtask.")}
               disabled={busy}
-              className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400"
+              className="opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -219,7 +219,7 @@ function Comments({
                   type="button"
                   aria-label="Delete comment"
                   onClick={() => remove(c.id)}
-                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400 shrink-0"
+                  className="opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400 shrink-0"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>

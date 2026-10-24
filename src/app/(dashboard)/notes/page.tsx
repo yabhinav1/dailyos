@@ -32,6 +32,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
+  ChevronLeft,
   AlertCircle,
   LayoutGrid,
   Maximize2,
@@ -383,11 +384,13 @@ export default function NotesPage() {
   const unpinnedNotes = tagFilteredNotes.filter((n) => !n.isPinned);
 
   return (
-    <div className="flex h-[calc(100vh-120px)] gap-0 -mx-6 -mt-6 overflow-hidden">
+    // Phones show one pane at a time: the list, or the open note (with a
+    // back button). From md up the two sit side by side.
+    <div className="flex h-[calc(100dvh-140px-env(safe-area-inset-bottom))] md:h-[calc(100vh-120px)] gap-0 -mx-4 sm:-mx-8 -mt-6 overflow-hidden">
       {/* ── LEFT SIDEBAR: Folders + Notes List ── */}
       <div
-        className={`flex flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
-          panelHidden ? "w-0 border-r-0 opacity-0 pointer-events-none" : "w-64 opacity-100"
+        className={`${selectedNote ? "hidden md:flex" : "flex"} w-full flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+          panelHidden ? "md:w-0 md:border-r-0 md:opacity-0 md:pointer-events-none" : "md:w-64 md:opacity-100"
         }`}
       >
         {/* Sidebar Header with Hide/Collapse Toggle */}
@@ -398,7 +401,7 @@ export default function NotesPage() {
           <button
             onClick={() => setPanelHidden(true)}
             title="Hide notes sidebar"
-            className="p-1 rounded text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-1 text-[11px]"
+            className="p-1 rounded text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors hidden md:flex items-center gap-1 text-[11px]"
           >
             <PanelLeftClose className="h-3.5 w-3.5" />
             <span>Hide</span>
@@ -498,18 +501,25 @@ export default function NotesPage() {
         className={
           isFullScreen
             ? "fixed inset-0 z-[80] flex flex-col bg-[#0d0d0d] p-6 overflow-hidden animate-in fade-in duration-200"
-            : "flex-1 flex flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden"
+            : `${selectedNote ? "flex" : "hidden md:flex"} flex-1 min-w-0 flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden`
         }
       >
         {selectedNote ? (
           <>
             {/* Title Bar */}
-            <div className="flex items-center gap-3 px-6 pt-5 pb-3 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
+            <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 px-3 md:px-6 pt-3 md:pt-5 pb-3 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
+              {/* Phones: back to the list (the list and note don't fit side by side). */}
+              <button
+                onClick={() => setSelectedNote(null)}
+                className="md:hidden flex items-center gap-1 text-xs font-medium text-zinc-300 hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" /> Notes
+              </button>
               {!isFullScreen && (
                 <button
                   onClick={() => setPanelHidden((v) => !v)}
                   title={panelHidden ? "Show notes list" : "Hide notes list"}
-                  className="text-zinc-400 hover:text-white transition-colors shrink-0"
+                  className="hidden md:block text-zinc-400 hover:text-white transition-colors shrink-0"
                 >
                   {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
                 </button>
@@ -518,32 +528,35 @@ export default function NotesPage() {
                 value={editorTitle}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Untitled Note"
-                className="text-xl font-bold text-zinc-900 dark:text-white border-0 bg-transparent p-0 focus:ring-0 focus:outline-none placeholder-zinc-400 h-auto shadow-none"
+                className="order-last md:order-none basis-full md:basis-auto text-xl font-bold text-zinc-900 dark:text-white border-0 bg-transparent p-0 focus:ring-0 focus:outline-none placeholder-zinc-400 h-auto shadow-none"
               />
-              <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-0.5 shrink-0">
+              <div className="ml-auto md:ml-0 flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-0.5 shrink-0">
                 <button
                   onClick={() => setViewMode("write")}
+                  aria-label="Write"
                   className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                     viewMode === "write" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
-                  <Type className="h-3 w-3" /> Write
+                  <Type className="h-3.5 w-3.5 sm:h-3 sm:w-3" /> <span className="hidden sm:inline">Write</span>
                 </button>
                 <button
                   onClick={() => setViewMode("doodle")}
+                  aria-label="Doodle"
                   className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                     viewMode === "doodle" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
-                  <PenTool className="h-3 w-3" /> Doodle
+                  <PenTool className="h-3.5 w-3.5 sm:h-3 sm:w-3" /> <span className="hidden sm:inline">Doodle</span>
                 </button>
                 <button
                   onClick={() => setViewMode("canvas")}
+                  aria-label="Canvas"
                   className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                     viewMode === "canvas" ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
-                  <LayoutGrid className="h-3 w-3" /> Canvas
+                  <LayoutGrid className="h-3.5 w-3.5 sm:h-3 sm:w-3" /> <span className="hidden sm:inline">Canvas</span>
                 </button>
               </div>
               {/* Share */}
@@ -565,13 +578,13 @@ export default function NotesPage() {
               <button
                 onClick={() => setIsFullScreen(!isFullScreen)}
                 title={isFullScreen ? "Exit Fullscreen (Esc)" : "Fullscreen View"}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors shrink-0"
+                className="hidden md:flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors shrink-0"
               >
                 {isFullScreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{isFullScreen ? "Exit Fullscreen" : "Fullscreen"}</span>
               </button>
 
-              <span className={`text-[11px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-400 opacity-60"}`}>
+              <span className={`hidden md:inline text-[11px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-400 opacity-60"}`}>
                 {saving ? "Saving..." : isShared && lastEditedBy ? `Saved · last edit by ${lastEditedBy}` : "Auto-saved"}
               </span>
             </div>
@@ -614,8 +627,8 @@ export default function NotesPage() {
             <div
               className={
                 viewMode === "write"
-                  ? "flex-1 overflow-y-auto px-6 py-4"
-                  : "flex-1 min-h-0 overflow-hidden px-6 py-4 flex"
+                  ? "flex-1 overflow-y-auto px-3 md:px-6 py-3 md:py-4"
+                  : "flex-1 min-h-0 overflow-hidden px-3 md:px-6 py-3 md:py-4 flex"
               }
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -638,15 +651,16 @@ export default function NotesPage() {
               </AnimatePresence>
             </div>
             {/* Footer Meta & Smart Stats HUD */}
-            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
-              <div className="flex items-center gap-3">
-                <span>Updated {new Date(selectedNote.updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+            <div className="px-3 md:px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between gap-2 text-[11px] text-zinc-400 shrink-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="md:hidden">{saving ? "Saving…" : "Saved"}</span>
+                <span className="hidden md:inline">Updated {new Date(selectedNote.updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="text-zinc-700">•</span>
                 <span className="font-mono text-zinc-300">{wordCount} words</span>
-                <span className="text-zinc-700">•</span>
-                <span className="font-mono text-zinc-300">{charCount} chars</span>
-                <span className="text-zinc-700">•</span>
-                <span className="text-zinc-300">{readTimeMins} min read</span>
+                <span className="hidden md:inline text-zinc-700">•</span>
+                <span className="hidden md:inline font-mono text-zinc-300">{charCount} chars</span>
+                <span className="hidden md:inline text-zinc-700">•</span>
+                <span className="hidden md:inline text-zinc-300">{readTimeMins} min read</span>
               </div>
               <div className="flex items-center gap-2">
                 <button

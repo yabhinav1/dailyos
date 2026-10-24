@@ -46,7 +46,7 @@ export default async function DashboardLayout({
       <Sidebar />
 
       {/* Main content pane */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pb-12 md:pb-0">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         {/* Top bar header */}
         <Header />
 

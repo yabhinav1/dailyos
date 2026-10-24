@@ -96,12 +96,13 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
         <table className="w-full border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-zinc-850 bg-zinc-950/50 text-[11px] uppercase font-bold tracking-wider text-zinc-400">
-              <th className="py-3 px-4 w-10"></th>
+              <th className="py-3 pl-3 pr-1 md:px-4 w-10"><span className="sr-only">Done</span></th>
               <th className="py-3 px-2">Task</th>
-              <th className="py-3 px-4 w-28">Status</th>
-              <th className="py-3 px-4 w-28">Priority</th>
-              <th className="py-3 px-4 w-32">Due Date</th>
-              <th className="py-3 px-4 w-16"></th>
+              {/* On phones these three show as a line under the title instead. */}
+              <th className="hidden md:table-cell py-3 px-4 w-28">Status</th>
+              <th className="hidden md:table-cell py-3 px-4 w-28">Priority</th>
+              <th className="hidden md:table-cell py-3 px-4 w-32">Due Date</th>
+              <th className="py-3 px-2 md:px-4 w-16"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-900/60">
@@ -115,10 +116,11 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                   className="group hover:bg-zinc-950/40 transition-colors"
                 >
                   {/* Complete Checkbox */}
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3 pl-3 pr-1 md:px-4 text-center">
                     <button
                       onClick={() => handleStatusToggle(task)}
-                      className="text-zinc-400 hover:text-blue-500 transition-colors"
+                      aria-label={isCompleted ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
+                      className="p-1 -m-1 text-zinc-400 hover:text-blue-500 transition-colors"
                     >
                       {isCompleted ? (
                         <CheckCircle2 className="h-4.5 w-4.5 text-blue-500" />
@@ -130,7 +132,7 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
 
                   {/* Task details */}
                   <td className="py-3 px-2">
-                    <div className="flex flex-col gap-1 pr-4">
+                    <div className="flex flex-col gap-1 md:pr-4">
                       <span
                         onClick={() => openEditDialog(task)}
                         className={`font-semibold cursor-pointer text-zinc-200 hover:text-white transition-colors ${
@@ -144,6 +146,18 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                           {task.description}
                         </span>
                       )}
+                      <span className="flex md:hidden flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="font-bold text-zinc-300 bg-zinc-900 border border-zinc-850 px-1.5 py-0.5 rounded-full uppercase text-[10px]">
+                          {task.status.replace("_", " ")}
+                        </span>
+                        <span className={`font-semibold uppercase text-[10px] px-1.5 py-0.5 rounded-full border ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                        {task.dueDate && (
+                          <span className={`flex items-center gap-1 ${isOverdue ? "text-red-400" : "text-zinc-400"}`}>
+                            {isOverdue ? <AlertCircle className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                            {formatDay(task.dueDate)}
+                          </span>
+                        )}
+                      </span>
                       {(task.tags.length > 0 || task.recurrence || task.goal) && (
                         <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
                           {task.recurrence && (
@@ -159,14 +173,14 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                   </td>
 
                   {/* Status Badge */}
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="hidden md:table-cell py-3 px-4 whitespace-nowrap">
                     <span className="text-[11px] font-bold text-zinc-300 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded-full uppercase">
                       {task.status.replace("_", " ")}
                     </span>
                   </td>
 
                   {/* Priority Badge */}
-                  <td className="py-3 px-4">
+                  <td className="hidden md:table-cell py-3 px-4">
                     <Badge
                       variant="outline"
                       className={`text-[11px] font-semibold uppercase ${getPriorityColor(task.priority)}`}
@@ -176,7 +190,7 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                   </td>
 
                   {/* Due date */}
-                  <td className="py-3 px-4 whitespace-nowrap text-zinc-400">
+                  <td className="hidden md:table-cell py-3 px-4 whitespace-nowrap text-zinc-400">
                     {task.dueDate ? (
                       <span className={`flex items-center gap-1 text-[11px] ${isOverdue ? "text-red-400" : ""}`}>
                         {isOverdue ? (
@@ -192,10 +206,11 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                   </td>
 
                   {/* Menu actions */}
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="py-3 px-2 md:px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5 opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleFavoriteToggle(task)}
+                        aria-label={task.isFavorite ? "Unfavorite" : "Favorite"}
                         className="text-zinc-400 hover:text-amber-500 p-1"
                       >
                         <Star
@@ -206,7 +221,7 @@ export default function TaskList({ tasks, onRefresh, onPatch }: TaskListProps) {
                       </button>
 
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="text-zinc-400 hover:text-zinc-200 focus:outline-none p-1 cursor-pointer">
+                        <DropdownMenuTrigger aria-label={`Actions for ${task.title}`} className="text-zinc-400 hover:text-zinc-200 focus:outline-none p-1 cursor-pointer">
                           <MoreHorizontal className="h-3.5 w-3.5" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-[#171717] border border-zinc-800 text-zinc-300 text-xs">

@@ -141,7 +141,7 @@ export default function NotesFolderNav({
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id, folder.name); }}
                   aria-label={`Delete folder ${folder.name}`}
-                  className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-400 transition"
+                  className="opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 text-zinc-400 hover:text-red-400 transition"
                 >
                   <X className="h-3 w-3" />
                 </button>

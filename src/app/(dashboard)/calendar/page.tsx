@@ -223,7 +223,7 @@ export default function CalendarPage() {
         <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
           <CalendarDays className="h-5.5 w-5.5 text-cyan-400" /> Calendar
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-lg border border-zinc-850 bg-zinc-950 p-0.5 text-xs">
             {(["month", "week"] as const).map((v) => (
               <button
@@ -247,7 +247,7 @@ export default function CalendarPage() {
             title="Download your events and dated tasks as an .ics file for Google Calendar, Outlook or Apple Calendar"
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-300 hover:text-white hover:border-zinc-700"
           >
-            <Download className="h-3.5 w-3.5" /> Export
+            <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span>
           </a>
           <Button size="sm" onClick={() => openNew(view === "month" && anchor.slice(0, 7) !== todayKey.slice(0, 7) ? monthStart : todayKey)}
             className="h-8 text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-semibold">
@@ -274,12 +274,13 @@ export default function CalendarPage() {
 
       {/* Grid */}
       <div className="border border-zinc-850 rounded-xl overflow-hidden bg-[#171717]/30">
-        <div className="grid grid-cols-7 border-b border-zinc-900">
+        {/* Week view on phones is a list of days, so no column headers there. */}
+        <div className={`${view === "week" ? "hidden sm:grid" : "grid"} grid-cols-7 border-b border-zinc-900`}>
           {(view === "month" ? DAY_LABELS : weekDays.map((d) => `${DAY_LABELS[weekday(d)]} ${Number(d.slice(8))}`)).map((d) => (
             <div key={d} className="p-2 text-center text-[11px] font-bold uppercase tracking-wider text-zinc-400">{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7">
+        <div className={`grid ${view === "week" ? "grid-cols-1 sm:grid-cols-7" : "grid-cols-7"}`}>
           {(view === "month" ? monthDays : weekDays).map((day, i) =>
             day === null ? (
               <div key={`empty-${i}`} className="min-h-[80px] border-b border-r border-zinc-900/50 bg-zinc-950/30" />
@@ -320,7 +321,7 @@ export default function CalendarPage() {
                   </p>
                 </button>
                 <button onClick={() => handleDelete(ev.eventId, ev.title, !!ev.recurrence)} aria-label={`Delete ${ev.title}`}
-                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400 transition-all p-1">
+                  className="opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 focus:opacity-100 text-zinc-400 hover:text-red-400 transition-all p-1">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -451,7 +452,7 @@ function DayCell({
         }
       }}
       aria-label={`${day}${items ? `, ${items} item${items === 1 ? "" : "s"}` : ""}. Add event`}
-      className={`${tall ? "min-h-[320px]" : "min-h-[80px]"} w-full border-b border-r border-zinc-900/50 p-1.5 text-left transition-colors hover:bg-zinc-900/30 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500 ${
+      className={`${tall ? "min-h-[64px] sm:min-h-[320px]" : "min-h-[80px]"} w-full border-b border-r border-zinc-900/50 p-1.5 text-left transition-colors hover:bg-zinc-900/30 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500 ${
         isToday ? "bg-blue-950/20" : ""
       }`}
     >
@@ -460,7 +461,24 @@ function DayCell({
       }`}>
         {Number(day.slice(8))}
       </span>
-      <div className="mt-0.5 space-y-0.5">
+      {tall && (
+        <span className="ml-1.5 text-xs font-semibold text-zinc-400 sm:hidden">
+          {new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}
+        </span>
+      )}
+      {/* Phones, month view: a dot per item; the names don't fit in a cell
+          that narrow, and the list under the grid has them. */}
+      {!tall && items > 0 && (
+        <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden" aria-hidden>
+          {events.slice(0, 6).map((ev) => (
+            <span key={ev.key} className="h-1.5 w-1.5 rounded-full" style={{ background: ev.color || "#3b82f6" }} />
+          ))}
+          {tasks.slice(0, Math.max(0, 6 - events.length)).map((t) => (
+            <span key={t.id} className={`h-1.5 w-1.5 rounded-full border ${t.status === "COMPLETED" ? "border-zinc-600" : "border-zinc-300"}`} />
+          ))}
+        </div>
+      )}
+      <div className={`mt-0.5 space-y-0.5 ${tall ? "" : "hidden sm:block"}`}>
         {events.slice(0, limit).map((ev) => (
           <button
             key={ev.key}

@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useLocalNotes, type LocalNote } from "@/lib/local-notes";
-import { FileText, Plus, Pin, Trash2, PenTool, Type, LogIn, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { FileText, Plus, Pin, Trash2, PenTool, Type, LogIn, PanelLeftClose, PanelLeftOpen, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
@@ -15,6 +15,8 @@ export default function GuestNotesPage() {
   const confirm = useConfirm();
   const { notes, loaded, storageError, createNote, updateNote, deleteNote, togglePin } = useLocalNotes();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Phones show one pane at a time; this says which (the note by default).
+  const [showListOnPhone, setShowListOnPhone] = useState(false);
   const [editorTitle, setEditorTitle] = useState("");
   const [editorContent, setEditorContent] = useState("");
   const [editorDoodle, setEditorDoodle] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function GuestNotesPage() {
 
   function handleSelectNote(note: LocalNote) {
     setSelectedId(note.id);
+    setShowListOnPhone(false);
     setEditorTitle(note.title);
     setEditorContent(note.content || "");
     setEditorDoodle(note.doodleData || null);
@@ -95,11 +98,11 @@ export default function GuestNotesPage() {
   const unpinned = notes.filter((n) => !n.isPinned);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0d0d0d] text-zinc-200">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-[#0d0d0d] text-zinc-200">
       {/* Sidebar */}
       <div
-        className={`flex flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-200 ${
-          panelHidden ? "w-0 border-r-0" : "w-64"
+        className={`${showListOnPhone ? "flex" : "hidden md:flex"} w-full flex-col border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-[#171717] shrink-0 overflow-hidden transition-all duration-200 ${
+          panelHidden ? "md:w-0 md:border-r-0" : "md:w-64"
         }`}
       >
         <div className="flex h-14 items-center px-4 border-b border-zinc-200 dark:border-zinc-900">
@@ -144,7 +147,7 @@ export default function GuestNotesPage() {
         </div>
 
         <div className="p-3 border-t border-zinc-200 dark:border-zinc-900 space-y-2">
-          <Button onClick={handleCreateNote} size="sm" className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-8">
+          <Button onClick={handleCreateNote} size="sm" className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 h-10 md:h-8">
             <Plus className="h-3.5 w-3.5" /> New Note
           </Button>
           <Link
@@ -157,14 +160,20 @@ export default function GuestNotesPage() {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden">
+      <div className={`${showListOnPhone ? "hidden md:flex" : "flex"} flex-1 min-w-0 flex-col bg-white dark:bg-[#0d0d0d] overflow-hidden`}>
         {selectedNote ? (
           <>
-            <div className="flex items-center gap-3 px-6 pt-5 pb-3 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
+            <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 px-3 md:px-6 pt-3 md:pt-5 pb-3 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
+              <button
+                onClick={() => setShowListOnPhone(true)}
+                className="md:hidden flex items-center gap-1 text-xs font-medium text-zinc-300 hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" /> Notes
+              </button>
               <button
                 onClick={() => setPanelHidden((v) => !v)}
                 title={panelHidden ? "Show notes list" : "Hide notes list"}
-                className="text-zinc-400 hover:text-white transition-colors shrink-0"
+                className="hidden md:block text-zinc-400 hover:text-white transition-colors shrink-0"
               >
                 {panelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </button>
@@ -172,8 +181,14 @@ export default function GuestNotesPage() {
                 value={editorTitle}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Untitled Note"
-                className="flex-1 text-xl font-bold text-zinc-900 dark:text-white bg-transparent p-0 focus:outline-none placeholder-zinc-400"
+                className="order-last md:order-none basis-full md:basis-auto md:flex-1 min-w-0 text-xl font-bold text-zinc-900 dark:text-white bg-transparent p-0 focus:outline-none placeholder-zinc-400"
               />
+              <Link
+                href="/login"
+                className="md:hidden ml-auto flex items-center gap-1 rounded-lg border border-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-200"
+              >
+                <LogIn className="h-3.5 w-3.5" /> Sign in
+              </Link>
               <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-0.5 shrink-0">
                 <button
                   onClick={() => setViewMode("write")}
@@ -194,20 +209,20 @@ export default function GuestNotesPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 md:py-4">
               {storageError && (
                 <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-400">
                   {storageError}
                 </div>
               )}
               {viewMode === "write" ? (
-                <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." />
+                <RichEditor content={editorContent} onChange={handleContentChange} placeholder="Start writing your note..." aiTools={false} />
               ) : (
                 <DoodleCanvas value={editorDoodle} onChange={handleDoodleChange} height={420} />
               )}
             </div>
 
-            <div className="px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
+            <div className="px-3 md:px-6 py-2 border-t border-zinc-200 dark:border-zinc-900 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
               <span>Saved to this browser only</span>
               <div className="flex items-center gap-2">
                 <button
@@ -269,7 +284,7 @@ function GuestNoteItem({
     >
       <div className="flex items-center justify-between gap-1 mb-0.5">
         <span className="text-xs font-semibold truncate max-w-[120px]">{note.title}</span>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="flex items-center gap-0.5 opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();

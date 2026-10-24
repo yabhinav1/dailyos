@@ -136,10 +136,10 @@ export default function FocusTimerBar() {
   return (
     <div className="flex items-center gap-2">
       {/* Timer Bar Pill */}
-      <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-1 text-xs shadow-md">
-        <Clock className="h-3.5 w-3.5 text-zinc-300" />
+      <div className="flex items-center gap-1 sm:gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-2 sm:px-3 py-1 text-xs shadow-md">
+        <Clock className="hidden sm:block h-3.5 w-3.5 text-zinc-300" />
         <span className="font-mono font-bold text-white text-xs">{formatTime(timeLeft)}</span>
-        <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
+        <span className="hidden sm:inline text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
           {mode === "work" ? "Focus" : "Break"}
         </span>
 
@@ -153,13 +153,13 @@ export default function FocusTimerBar() {
 
         <button
           onClick={resetTimer}
-          className="p-1 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
+          className="hidden sm:block p-1 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors"
           title="Reset timer"
         >
           <RotateCcw className="h-3 w-3" />
         </button>
 
-        <div className="w-px h-3.5 bg-zinc-800 mx-0.5" />
+        <div className="hidden sm:block w-px h-3.5 bg-zinc-800 mx-0.5" />
 
         {/* Ambient Sound Dropdown */}
         <div className="relative">

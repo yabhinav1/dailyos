@@ -462,7 +462,7 @@ export default function ProjectsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       aria-label={`Actions for ${project.name}`}
-                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100 text-zinc-400 hover:text-zinc-200 p-1 transition-opacity focus:outline-none cursor-pointer"
+                      className="opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100 text-zinc-400 hover:text-zinc-200 p-1 transition-opacity focus:outline-none cursor-pointer"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </DropdownMenuTrigger>

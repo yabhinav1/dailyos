@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Numerical Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: "Tasks Done", value: `${data.tasks.completed}/${data.tasks.total}`, rate: `${taskCompletionRate}% rate`, color: "text-blue-400", icon: CheckCircle2 },
           { label: "Goals Reached", value: `${data.goals.completed}/${data.goals.total}`, rate: `${goalCompletionRate}% rate`, color: "text-emerald-400", icon: Target },
@@ -63,13 +63,13 @@ export default function AnalyticsPage() {
           const Icon = stat.icon;
           return (
             <Card key={idx} className="border-zinc-850 bg-[#0C0C0E]/40 hover:border-zinc-800 transition-all">
-              <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="space-y-1">
+              <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4">
+                <div className="space-y-1 min-w-0">
                   <span className="text-[11px] text-zinc-400 uppercase font-bold tracking-wider">{stat.label}</span>
                   <p className="text-lg font-bold text-white">{stat.value}</p>
                   <p className={`text-[11px] font-semibold ${stat.color}`}>{stat.rate}</p>
                 </div>
-                <div className="p-2 bg-zinc-900 rounded-lg shrink-0">
+                <div className="hidden sm:block p-2 bg-zinc-900 rounded-lg shrink-0">
                   <Icon className="h-4 w-4 text-zinc-300" />
                 </div>
               </CardContent>

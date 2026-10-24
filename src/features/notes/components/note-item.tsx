@@ -41,7 +41,7 @@ export default function NoteItem({ note, selected, onSelect, onPin, onDelete }: 
         </span>
         <span className="block truncate text-[11px] text-zinc-400">{preview}</span>
       </button>
-      <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+      <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 pointer-coarse:opacity-100 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         <button
           type="button"
           onClick={(e) => onPin(note, e)}

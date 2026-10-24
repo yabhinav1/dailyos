@@ -8,25 +8,12 @@ import { useCommandPaletteStore } from "@/stores/command-palette-store";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
-  Activity,
-  BarChart2,
-  Calendar,
-  CheckSquare,
   ChevronLeft,
   ChevronRight,
-  FileText,
-  FolderOpen,
   GitBranch,
-  GraduationCap,
   LogOut,
-  PenTool,
   Search,
   Settings,
-  Shield,
-  Sun,
-  Target,
-  Terminal,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
+import { ADMIN_NAV_ITEM, NAV_ITEMS } from "./nav-items";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -52,21 +40,7 @@ export default function Sidebar() {
     toggleCollapse();
   });
 
-  const menuItems = [
-    { name: "Today", href: "/today", icon: Sun },
-    { name: "Notes", href: "/notes", icon: FileText },
-    { name: "Doodle", href: "/doodle", icon: PenTool },
-    { name: "Tasks", href: "/tasks", icon: CheckSquare },
-    { name: "Projects", href: "/projects", icon: FolderOpen },
-    { name: "Calendar", href: "/calendar", icon: Calendar },
-    { name: "Developer Mode", href: "/developer", icon: Terminal },
-    { name: "Study Mode", href: "/study", icon: GraduationCap },
-    { name: "Habits", href: "/habits", icon: Activity },
-    { name: "Goals", href: "/goals", icon: Target },
-    { name: "Analytics", href: "/analytics", icon: BarChart2 },
-    { name: "Trash", href: "/trash", icon: Trash2 },
-    ...(session?.user?.role === "ADMIN" ? [{ name: "Admin · Music", href: "/admin/music", icon: Shield }] : []),
-  ];
+  const menuItems = [...NAV_ITEMS, ...(session?.user?.role === "ADMIN" ? [ADMIN_NAV_ITEM] : [])];
 
   // Mask the email so it isn't shown in full in the UI (e.g. "yadav***@gmail.com")
   const maskEmail = (email: string) => {
@@ -90,7 +64,7 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#171717] text-zinc-400 dark:text-zinc-300 transition-all duration-300 ease-in-out z-30",
+        "relative hidden md:flex flex-col shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#171717] text-zinc-400 dark:text-zinc-300 transition-all duration-300 ease-in-out z-30",
         isCollapsed ? "w-16" : "w-64"
       )}
     >

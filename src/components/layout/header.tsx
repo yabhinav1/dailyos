@@ -4,7 +4,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useTheme } from "next-themes";
-import { Bell, Menu, Moon, Sun, CheckCheck } from "lucide-react";
+import Link from "next/link";
+import { Bell, Menu, Moon, Sun, CheckCheck, GitBranch, Search, Music2 } from "lucide-react";
+import { useMusicPlayerStore } from "@/stores/music-player-store";
+import { useCommandPaletteStore } from "@/stores/command-palette-store";
+import { NAV_ITEMS, isActivePath } from "./nav-items";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,6 +35,9 @@ export default function Header() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebarStore();
   const { setTheme } = useTheme();
+  const { toggleOpen: toggleCommandPalette } = useCommandPaletteStore();
+  const toggleMusic = useMusicPlayerStore((s) => s.toggleOpen);
+  const musicPlaying = useMusicPlayerStore((s) => s.isPlaying);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
@@ -110,8 +117,17 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-[#0d0d0d]/85 backdrop-blur-md px-6">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-[#0d0d0d]/85 backdrop-blur-md px-4 md:px-6">
+      {/* Phones: the logo and page name stand in for the hidden sidebar. */}
+      <Link href="/today" className="flex min-w-0 items-center gap-2 md:hidden" aria-label="DailyOS home">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-500">
+          <GitBranch className="h-4 w-4" />
+        </span>
+        <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
+          {NAV_ITEMS.find((i) => isActivePath(pathname, i.href))?.short ?? formatSegment(pathSegments[0] ?? "DailyOS")}
+        </span>
+      </Link>
+      <div className="hidden md:flex items-center gap-4">
         {isCollapsed && (
           <Button
             variant="ghost"
@@ -139,8 +155,32 @@ export default function Header() {
           })}
         </nav>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1 md:gap-3">
         <FocusTimerBar />
+        <button
+          type="button"
+          onClick={toggleCommandPalette}
+          aria-label="Search"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white md:hidden"
+        >
+          <Search className="h-4.5 w-4.5" />
+        </button>
+        <button
+          type="button"
+          onClick={toggleMusic}
+          aria-label="Music player"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white md:hidden"
+        >
+          {musicPlaying ? (
+            <span className="flex h-4 items-end gap-0.5 text-emerald-400" aria-hidden>
+              <span className="w-0.5 animate-[bounce_0.9s_ease-in-out_infinite] bg-current" style={{ height: "60%" }} />
+              <span className="w-0.5 animate-[bounce_0.9s_ease-in-out_0.15s_infinite] bg-current" style={{ height: "100%" }} />
+              <span className="w-0.5 animate-[bounce_0.9s_ease-in-out_0.3s_infinite] bg-current" style={{ height: "40%" }} />
+            </span>
+          ) : (
+            <Music2 className="h-4.5 w-4.5" />
+          )}
+        </button>
         <DropdownMenu open={notifOpen} onOpenChange={handleOpenChange}>
           <DropdownMenuTrigger
             className="relative flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
@@ -152,7 +192,7 @@ export default function Header() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-80 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-300 text-xs p-0 overflow-hidden"
+            className="w-[min(20rem,calc(100vw-2rem))] bg-white dark:bg-[#171717] border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-300 text-xs p-0 overflow-hidden"
           >
             <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-200 dark:border-zinc-800">
               <DropdownMenuLabel className="p-0 text-xs text-zinc-900 dark:text-white">Notifications</DropdownMenuLabel>
@@ -206,10 +246,10 @@ export default function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Theme Switcher Dropdown */}
+        {/* Theme Switcher Dropdown (on phones it lives in the More menu) */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
+            className="hidden md:flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 rounded-lg cursor-pointer focus:outline-none"
           >
             <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

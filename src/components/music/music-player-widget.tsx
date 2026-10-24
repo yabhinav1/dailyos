@@ -257,11 +257,13 @@ export default function MusicPlayerWidget() {
   const isExternal = currentTrack?.source === "EXTERNAL";
 
   // ---- Collapsed pill (default, hovers over every page) ----
+  // Phones open the player from the music icon in the top bar instead: a
+  // floating button there sat on top of list rows and note controls.
   if (!isOpen) {
     return (
       <button
         onClick={toggleOpen}
-        className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 hover:bg-emerald-500 active:scale-95"
+        className="fixed bottom-5 right-5 z-40 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 hover:bg-emerald-500 active:scale-95"
         aria-label="Open music player"
       >
         {isPlaying ? (
@@ -289,8 +291,8 @@ export default function MusicPlayerWidget() {
       />
 
       <div
-        className={`fixed bottom-5 right-5 z-40 overflow-hidden rounded-2xl border border-white/5 bg-[#121212]/95 shadow-2xl shadow-black/50 backdrop-blur-md transition-all duration-300 ease-out ${
-          isMinimized ? "w-72" : "w-80"
+        className={`fixed bottom-20 md:bottom-5 right-4 md:right-5 z-40 overflow-hidden rounded-2xl border border-white/5 bg-[#121212]/95 shadow-2xl shadow-black/50 backdrop-blur-md transition-all duration-300 ease-out ${
+          isMinimized ? "w-72 max-w-[calc(100vw-2rem)]" : "w-80 max-w-[calc(100vw-2rem)]"
         }`}
       >
         {/* Header */}

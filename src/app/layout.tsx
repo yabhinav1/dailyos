@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   title: "DailyOS — Personal Productivity OS",
   description:
     "Notes, tasks, habits, goals, calendar and study tracking in one workspace.",
+};
+
+// viewport-fit=cover lets the phone nav bar pad itself clear of the iPhone
+// home indicator (env(safe-area-inset-bottom)).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0d0d0d",
 };
 
 export default function RootLayout({

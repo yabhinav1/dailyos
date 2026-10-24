@@ -315,7 +315,7 @@ export default function SettingsPage() {
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="flex max-h-[85vh] min-h-[26rem] w-full max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl sm:flex-row"
+        className="flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:min-h-[26rem] sm:max-h-[85vh] sm:w-[calc(100%-2rem)] sm:max-w-3xl sm:flex-row sm:rounded-xl"
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
 
