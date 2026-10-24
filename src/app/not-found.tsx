@@ -10,7 +10,7 @@ export default function NotFound() {
         The page you&apos;re looking for doesn&apos;t exist or may have been moved.
       </p>
       <Link
-        href="/notes"
+        href="/today"
         className="mt-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 transition-colors"
       >
         Back to DailyOS

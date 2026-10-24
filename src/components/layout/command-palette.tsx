@@ -15,6 +15,7 @@ import {
   PenTool,
   Search,
   Settings,
+  Sun,
   Target,
   Terminal,
   Trash2,
@@ -39,6 +40,7 @@ export default function CommandPalette() {
   }
 
   const commands = [
+    { name: "Go to Today", href: "/today", icon: Sun, category: "Navigation" },
     { name: "Go to Notes", href: "/notes", icon: FileText, category: "Navigation" },
     { name: "Go to Doodle", href: "/doodle", icon: PenTool, category: "Navigation" },
     { name: "Go to Tasks", href: "/tasks", icon: CheckSquare, category: "Navigation" },

@@ -9,7 +9,7 @@ export default async function AdminMusicPage() {
   // this avoids even confirming to a logged-in non-admin that this route
   // exists and is meaningful.
   if (!session?.user?.id || session.user.role !== "ADMIN") {
-    redirect("/notes");
+    redirect("/today");
   }
 
   return <AdminMusicClient />;

@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Notes, tasks, habits, goals, calendar and study tracking in one workspace.",
     // Signed-in users land on Notes; a signed-out one is redirected to login.
-    start_url: "/notes",
+    start_url: "/today",
     display: "standalone",
     // Matches the app shell rather than pure black, so the splash screen does
     // not flash a different colour than the page it opens.

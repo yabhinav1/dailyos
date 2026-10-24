@@ -163,7 +163,7 @@ async function getUserIdOrThrow() {
 // TASK ACTIONS
 // -------------------------------------------------------------
 
-export async function createTask(formData: z.infer<typeof createTaskSchema>) {
+export async function createTask(formData: z.input<typeof createTaskSchema>) {
   const userId = await getUserIdOrThrow();
   const { tags, ...validated } = createTaskSchema.parse(formData);
   await assertOwnedRefs(userId, validated);

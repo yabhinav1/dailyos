@@ -36,7 +36,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/notes";
+  const callbackUrl = searchParams.get("callbackUrl") || "/today";
   // Set when someone has just scheduled their account for deletion and been
   // signed out, so the page explains why they are suddenly here.
   const deletionScheduled = searchParams.get("deletion") === "scheduled";

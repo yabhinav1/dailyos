@@ -23,6 +23,7 @@ import {
   Search,
   Settings,
   Shield,
+  Sun,
   Target,
   Terminal,
   Trash2,
@@ -52,6 +53,7 @@ export default function Sidebar() {
   });
 
   const menuItems = [
+    { name: "Today", href: "/today", icon: Sun },
     { name: "Notes", href: "/notes", icon: FileText },
     { name: "Doodle", href: "/doodle", icon: PenTool },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
@@ -95,7 +97,7 @@ export default function Sidebar() {
       {/* Header section with brand logo */}
       <div className="flex h-14 items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800">
         <Link
-          href="/notes"
+          href="/today"
           className="flex items-center gap-2.5 font-semibold text-zinc-900 dark:text-white tracking-tight overflow-hidden whitespace-nowrap"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-500">

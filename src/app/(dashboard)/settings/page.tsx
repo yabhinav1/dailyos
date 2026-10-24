@@ -442,10 +442,10 @@ export default function SettingsPage() {
 
   // Settings is a route so it stays linkable and refreshable, but it presents
   // as a dialog over the workspace. Closing returns to where you came from,
-  // falling back to /notes when this was opened directly.
+  // falling back to /today when this was opened directly.
   const close = () => {
     if (window.history.length > 1) router.back();
-    else router.push("/notes");
+    else router.push("/today");
   };
 
   return (

@@ -55,7 +55,7 @@ function VerifyOtpForm() {
     if (res.success) {
       setMessage({ type: "success", text: res.message });
       setTimeout(() => {
-        router.push("/notes");
+        router.push("/today");
       }, 1500);
     } else {
       setMessage({ type: "error", text: res.message });
@@ -150,7 +150,7 @@ function VerifyOtpForm() {
 
       <div className="text-center">
         <button
-          onClick={() => router.push("/notes")}
+          onClick={() => router.push("/today")}
           className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2"
         >
           Verify later, skip for now

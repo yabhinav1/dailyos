@@ -3,12 +3,13 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, CheckSquare, GraduationCap, FolderKanban, Settings } from "lucide-react";
+import { FileText, CheckSquare, GraduationCap, FolderKanban, Settings, Sun } from "lucide-react";
 
 export default function MobileNavBar() {
   const pathname = usePathname();
 
   const navItems = [
+    { label: "Today", href: "/today", icon: Sun },
     { label: "Notes", href: "/notes", icon: FileText },
     { label: "Tasks", href: "/tasks", icon: CheckSquare },
     { label: "Projects", href: "/projects", icon: FolderKanban },
@@ -27,7 +28,7 @@ export default function MobileNavBar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg transition-colors ${
                 isActive ? "text-white font-semibold" : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
