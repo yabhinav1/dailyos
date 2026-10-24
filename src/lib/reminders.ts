@@ -3,8 +3,21 @@ import { createNotification } from "@/lib/notifications";
 import { sendDailyDigestEmail, type DigestItem } from "@/lib/email";
 import { DEFAULT_TIMEZONE, dateKeyInZone, isValidTimezone, keyToUtcDate, utcDateToKey } from "@/lib/dates";
 import { listEventOccurrences } from "@/lib/events";
+import { sendPush } from "@/lib/push";
 
-export type DigestResult = "sent" | "empty" | "skipped";
+/**
+ * The digest goes out in the user's own morning: the first run at or after
+ * 08:00 local time, up to noon. The scheduler calls hourly, so everyone gets
+ * it within the hour; a missed morning is skipped rather than sent at night.
+ */
+export const DIGEST_FROM_HOUR = 8;
+export const DIGEST_UNTIL_HOUR = 12;
+
+function localHour(now: Date, tz: string) {
+  return Number(new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" }).format(now));
+}
+
+export type DigestResult = "sent" | "empty" | "skipped" | "notMorning";
 
 /**
  * The morning digest for one user: overdue tasks, tasks due today and
@@ -20,6 +33,8 @@ export async function sendDigestForUser(
   const tz = isValidTimezone(settings?.timezone) ? settings.timezone : DEFAULT_TIMEZONE;
   const todayKey = dateKeyInZone(now, tz);
   if (settings?.lastDigestOn === todayKey) return "skipped";
+  const hour = localHour(now, tz);
+  if (hour < DIGEST_FROM_HOUR || hour >= DIGEST_UNTIL_HOUR) return "notMorning";
 
   const todayDate = keyToUtcDate(todayKey);
   const [overdue, dueToday, events] = await Promise.all([
@@ -67,6 +82,9 @@ export async function sendDigestForUser(
     digest.events.length && `${digest.events.length} event${digest.events.length === 1 ? "" : "s"}`,
   ].filter(Boolean);
   await createNotification(user.id, "Your day", parts.join(" · "), "TASK");
+  await sendPush(user.id, { title: "Your day", body: parts.join(" · "), url: "/today" }).catch((err) => {
+    console.error(`[reminders] push failed for ${user.id}:`, err);
+  });
   await sendDailyDigestEmail(user.email, user.name, todayKey, digest);
   return "sent";
 }
@@ -92,7 +110,7 @@ export async function sendDailyDigests(now: Date = new Date()) {
     },
   });
 
-  const tally = { sent: 0, empty: 0, skipped: 0, failed: 0 };
+  const tally = { sent: 0, empty: 0, skipped: 0, notMorning: 0, failed: 0 };
   for (const user of users) {
     try {
       tally[await sendDigestForUser(user, user.settings, now)] += 1;

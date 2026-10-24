@@ -45,6 +45,7 @@ import {
   type SettingsTab,
 } from "@/features/settings/components/settings-ui";
 import DataSettings from "@/features/settings/components/data-settings";
+import PushSettings from "@/features/settings/components/push-settings";
 
 export default function SettingsPage() {
   const { update: updateSession } = useSession();
@@ -621,6 +622,8 @@ export default function SettingsPage() {
                     className="h-4 w-4 bg-zinc-900 border-zinc-800 text-blue-500 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer"
                   />
                 </div>
+
+                <PushSettings />
               </div>
             </CardContent>
           </Card>

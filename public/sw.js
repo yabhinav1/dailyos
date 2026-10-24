@@ -9,7 +9,7 @@
 // - Everything else (API routes, Server Action POSTs, auth) is not touched.
 //
 // Bump VERSION to drop old caches on the next activation.
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `dailyos-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
@@ -30,6 +30,39 @@ self.addEventListener("activate", (event) => {
         Promise.all(keys.filter((k) => k.startsWith("dailyos-") && k !== STATIC_CACHE).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
+  );
+});
+
+// Reminders sent by the server (src/lib/push.ts): { title, body, url }.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data && event.data.text() };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "DailyOS", {
+      body: data.body || "",
+      icon: "/icon.svg",
+      badge: "/icon.svg",
+      tag: "dailyos-reminder",
+      data: { url: data.url || "/today" },
+    })
+  );
+});
+
+// Focus an open DailyOS tab if there is one, otherwise open a new one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const path = (event.notification.data && event.notification.data.url) || "/today";
+  const target = new URL(path, self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const existing = windows.find((w) => w.url.startsWith(self.location.origin));
+      if (existing) return existing.focus().then((w) => w.navigate(target));
+      return self.clients.openWindow(target);
+    })
   );
 });
 
