@@ -41,10 +41,20 @@ declare global {
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 
-export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis.prismaGlobal = prisma;
+// Created on first use, not at import. `next build` imports every route to
+// collect page data, so an eager client made the build itself require
+// DATABASE_URL — any environment without it (CI, previews) failed outright.
+function getClient() {
+  globalThis.prismaGlobal ??= prismaClientSingleton();
+  return globalThis.prismaGlobal;
 }
+
+export const prisma = new Proxy({} as ReturnType<typeof prismaClientSingleton>, {
+  get(_target, prop) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
 export default prisma;
