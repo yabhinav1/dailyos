@@ -17,13 +17,15 @@ roll into a goal without an integration sitting between them.
 - **Today** — the signed-in home: tasks due and overdue, habits to tick,
   today's events, focus minutes and the goals closest to their deadline.
 - **Notes** — folders, search, #hashtags, pinning, full-screen editing,
-  voice notes and per-session revision history. Three editing modes share one
+  images and voice notes (kept in file storage), and version history with
+  who changed what. Three editing modes share one
   note: rich text, a sketch pad, and a freeform canvas where you double-click
   anywhere to drop a text block. "Turn into Tasks" pulls action items out of a
-  note for review.
-- **Sharing** — Google Docs-style: invite people by email as viewers or
-  editors, or open the link to anyone. Edits sync between open copies within a
-  few seconds, and simultaneous edits ask before overwriting.
+  note for review, using Claude (or OpenAI) when a key is configured.
+- **Sharing** — notes and projects, Google Docs-style: invite people by email
+  as viewers or editors, or open the link to anyone. Note edits sync between
+  open copies within a few seconds and simultaneous edits ask before
+  overwriting; a shared project's editors can tick and add its tasks.
 - **Tasks** — list and kanban views, filters, tags, priorities, due dates,
   subtasks, comments, and repeats (daily, weekdays, weekly, monthly, yearly).
 - **Projects** — per-project workspaces with file attachments.
@@ -35,8 +37,9 @@ roll into a goal without an integration sitting between them.
   repeating events, and an .ics export for Google Calendar, Outlook or Apple.
 - **Developer mode** — coding projects with an issue tracker and release log,
   code snippets with syntax highlighting, and an HTTP request playground.
-- **Reminders** — a morning email and notification with what's due, overdue
-  and on the calendar.
+- **Reminders** — at 8am in your own time zone, an email, an in-app
+  notification and (if you turn it on) a phone or desktop push notification
+  with what's due, overdue and on the calendar.
 - **Trash** — deleted notes, tasks and projects stay restorable for 30 days.
 - **Music player** — uploaded tracks over GridFS plus Spotify search, with
   Lavalink node management behind an admin role.
@@ -69,7 +72,7 @@ uploads to work.
 ```bash
 npm install --legacy-peer-deps
 cp .env.example .env.local     # then fill it in
-npx prisma db push             # create the tables
+npx prisma migrate deploy      # create the tables
 npm run dev
 ```
 
@@ -85,9 +88,9 @@ fine with neither of them configured.
 
 ### Checks
 
-No test framework; `npm test` runs the scripts that cover the logic where
-being wrong is expensive, and CI (`.github/workflows/ci.yml`) runs them with
-the type-check, lint and a build on every push:
+`npm test` runs the scripts that cover the logic where being wrong is
+expensive, and CI (`.github/workflows/ci.yml`) runs them with the type-check,
+lint and a build on every push:
 
 ```bash
 node scripts/test-otp.mjs              # code generation and comparison
@@ -96,19 +99,32 @@ node scripts/test-avatar-data-url.mjs  # avatar data-URL parsing
 node scripts/test-dates.mjs            # time zones, streaks, recurrence
 ```
 
+`npm run test:e2e` drives the real app in Chromium through 16 scenarios
+(sharing, media, reminders, offline and the rest); `.github/workflows/e2e.yml`
+runs them on every push against throwaway Postgres, MongoDB and Mailpit. See
+`e2e/README.md` to run them locally.
+
 ## Deploying
 
 Import to Vercel, set the variables from `.env.example`, deploy.
 
-Two that are easy to miss:
+Worth knowing:
 
+- **Schema changes ship as migrations** in `prisma/migrations/`. Production
+  deploys run `prisma migrate deploy` before building (`vercel.json`), using
+  `DIRECT_URL`: Neon's non-pooled endpoint, since migrations take locks the
+  pooler won't grant. Preview deploys never migrate. Make a new one with
+  `npx prisma migrate dev --name <what>` against a local database.
 - **`CRON_SECRET`** — `vercel.json` schedules two daily jobs:
   `/api/cron/purge-accounts` (accounts past their deletion deadline, and trash
-  older than 30 days) and `/api/cron/reminders` (the morning digest). Without
-  the secret both refuse to run rather than running unauthenticated.
-- **Schema changes** — the build does not migrate the database. After pulling
-  a schema change, run `npx prisma db push` against production (it reads
-  `DIRECT_URL`) before the new code goes live.
+  older than 30 days) and `/api/cron/reminders`. Without the secret both
+  refuse to run rather than running unauthenticated.
+- **Reminders at 8am local time** need `.github/workflows/reminders.yml`,
+  which calls the reminders endpoint hourly: set the same random
+  `SCHEDULER_SECRET` in Vercel and as a GitHub repository secret. Without it
+  the daily Vercel cron still sends them, at 8am India time.
+- **Push notifications** need `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and
+  `VAPID_PRIVATE_KEY` (`npx web-push generate-vapid-keys`).
 - **`sslmode=verify-full`** in `DATABASE_URL` — Neon hands you `sslmode=require`
   when you copy a connection string, and `pg` v9 will reinterpret that with
   weaker guarantees. Neon presents a publicly trusted certificate, so
