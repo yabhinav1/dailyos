@@ -50,6 +50,8 @@ export type StudyTopic = StudySubject extends { topics: readonly (infer T)[] } ?
 export type StudySession = Item<StudyData["recentSessions"]>;
 
 export type CodingProject = Item<Result<typeof getCodingProjects>>;
+export type DeveloperIssue = Item<CodingProject["issues"]>;
+export type Changelog = Item<CodingProject["changelogs"]>;
 export type CodeSnippet = Item<Result<typeof getSnippets>>;
 
 export type Notification = Item<Result<typeof getNotifications>>;

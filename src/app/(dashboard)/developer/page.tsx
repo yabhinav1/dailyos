@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { getCodingProjects, createCodingProject, getSnippets, createSnippet, deleteSnippet } from "@/features/developer/actions";
-import { Code, Terminal, Plus, Folder, Copy, Check, Trash2, ExternalLink } from "lucide-react";
+import { getCodingProjects, deleteCodingProject, getSnippets, createSnippet, deleteSnippet } from "@/features/developer/actions";
+import { Code, Terminal, Plus, Folder, Copy, Check, Trash2, ExternalLink, Pencil, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
 import { getErrorMessage } from "@/lib/utils";
-import type { CodingProject, CodeSnippet } from "@/lib/types";
+import type { CodingProject, CodeSnippet, DeveloperIssue } from "@/lib/types";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/stores/toast-store";
+import ProjectFormDialog from "@/features/developer/components/project-form-dialog";
+import ProjectTrackerDialog from "@/features/developer/components/project-tracker-dialog";
 
 export default function DeveloperPage() {
   const confirm = useConfirm();
@@ -31,9 +34,13 @@ export default function DeveloperPage() {
   // Dialog state
   const [showProjDialog, setShowProjDialog] = useState(false);
   const [showSnipDialog, setShowSnipDialog] = useState(false);
+  // Kept after the dialog closes so its title doesn't flip mid-animation.
+  const [editingProject, setEditingProject] = useState<CodingProject | null>(null);
+  // Looked up by id so the tracker always shows the latest fetched project.
+  const [trackerId, setTrackerId] = useState<string | null>(null);
+  const [trackerOpen, setTrackerOpen] = useState(false);
 
   // Form State
-  const [projForm, setProjForm] = useState({ name: "", description: "", githubUrl: "", techStack: "", status: "PLANNING" as const });
   const [snipForm, setSnipForm] = useState({ title: "", description: "", code: "", language: "javascript" });
   const handleTestApi = async () => {
     if (!apiUrl.trim()) return;
@@ -66,8 +73,9 @@ export default function DeveloperPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // Only the first load shows skeletons (loading starts true). Later reloads
+    // swap data in place, so the tracker dialog and scroll position survive.
     (async () => {
-      setLoading(true);
       const [pRes, sRes] = await Promise.all([getCodingProjects(), getSnippets()]);
       if (cancelled) return;
       if (pRes.success && pRes.data) setProjects(pRes.data);
@@ -79,21 +87,45 @@ export default function DeveloperPage() {
     };
   }, [reloadToken]);
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!projForm.name.trim()) return;
-    const techs = projForm.techStack.split(",").map(t => t.trim()).filter(Boolean);
-    await createCodingProject({
-      name: projForm.name,
-      description: projForm.description || undefined,
-      githubUrl: projForm.githubUrl || undefined,
-      techStack: techs,
-      status: projForm.status,
-    });
-    setProjForm({ name: "", description: "", githubUrl: "", techStack: "", status: "PLANNING" });
-    setShowProjDialog(false);
-    reloadData();
+  const openProjectForm = (project: CodingProject | null) => {
+    setEditingProject(project);
+    setShowProjDialog(true);
   };
+
+  const openTracker = (projectId: string) => {
+    setTrackerId(projectId);
+    setTrackerOpen(true);
+  };
+
+  const handleDeleteProject = async (project: CodingProject) => {
+    const ok = await confirm({
+      title: `Delete "${project.name}"?`,
+      body: "Its issues and release notes go with it. This can't be undone.",
+      confirmLabel: "Delete project",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteCodingProject(project.id);
+      if (trackerId === project.id) setTrackerOpen(false);
+      toast.success(`"${project.name}" deleted.`);
+      reloadData();
+    } catch {
+      toast.error("Couldn't delete the project.");
+    }
+  };
+
+  // Local-only patch for optimistic issue edits; the reload that follows
+  // replaces it with what the server saved.
+  const patchIssue = useCallback((issueId: string, patch: Partial<DeveloperIssue>) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.issues.some((i) => i.id === issueId)
+          ? { ...p, issues: p.issues.map((i) => (i.id === issueId ? { ...i, ...patch } : i)) }
+          : p
+      )
+    );
+  }, []);
 
   const handleCreateSnippet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +171,7 @@ export default function DeveloperPage() {
         </div>
         <div className="flex gap-2">
           {activeTab === "projects" ? (
-            <Button size="sm" onClick={() => setShowProjDialog(true)}
+            <Button size="sm" onClick={() => openProjectForm(null)}
               className="gap-1 text-xs font-semibold h-8 shrink-0">
               <Plus className="h-3.5 w-3.5" /> New Project
             </Button>
@@ -231,19 +263,30 @@ export default function DeveloperPage() {
             {projects.map((project) => (
               <Card key={project.id} className="border-zinc-850 bg-[#0C0C0E]/40 hover:border-zinc-800 transition-all">
                 <CardContent className="p-5 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
                         {project.name}
                         <span className="text-[11px] px-1.5 py-0.5 bg-zinc-900 text-zinc-300 rounded-full">{project.status}</span>
                       </h3>
                       {project.description && <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{project.description}</p>}
                     </div>
-                    {project.githubUrl && (
-                      <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {project.githubUrl && (
+                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Open repository"
+                          className="text-zinc-400 hover:text-white transition p-1">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      <button onClick={() => openProjectForm(project)} aria-label={`Edit ${project.name}`}
+                        className="text-zinc-400 hover:text-white transition p-1">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteProject(project)} aria-label={`Delete ${project.name}`}
+                        className="text-zinc-400 hover:text-red-400 transition p-1">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {project.techStack.length > 0 && (
@@ -255,8 +298,16 @@ export default function DeveloperPage() {
                   )}
 
                   <div className="flex items-center gap-4 text-[11px] text-zinc-400 border-t border-zinc-900/60 pt-3">
-                    <span>{project.issues.length} Issues</span>
-                    <span>{project.changelogs.length} Releases</span>
+                    <span>{project.issues.filter((i) => i.status === "OPEN" || i.status === "IN_PROGRESS").length} Open Issues</span>
+                    <span>
+                      {project.changelogs.length} Releases
+                      {/* changelogs arrive newest first */}
+                      {project.changelogs[0] && <span className="font-mono text-zinc-300"> · {project.changelogs[0].version}</span>}
+                    </span>
+                    <button onClick={() => openTracker(project.id)}
+                      className="ml-auto flex items-center gap-1 font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                      <ListChecks className="h-3.5 w-3.5" /> Issues & Releases
+                    </button>
                   </div>
                 </CardContent>
               </Card>
@@ -297,43 +348,16 @@ export default function DeveloperPage() {
         </div>
       )}
 
-      {/* Project Form Dialog */}
-      <Dialog open={showProjDialog} onOpenChange={setShowProjDialog}>
-        <DialogContent className="max-w-sm bg-[#171717] border border-zinc-800 p-6 shadow-2xl">
-          <DialogHeader><DialogTitle className="text-sm font-bold text-white">New Coding Project</DialogTitle></DialogHeader>
-          <form onSubmit={handleCreateProject} className="space-y-3 pt-2">
-            <div className="space-y-1">
-              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Project Name</Label>
-              <Input autoFocus placeholder="e.g. DailyOS Productivity" value={projForm.name}
-                onChange={(e) => setProjForm({ ...projForm, name: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" required />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Description</Label>
-              <Textarea placeholder="What are you building?" value={projForm.description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setProjForm({ ...projForm, description: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs min-h-[60px]" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">GitHub URL</Label>
-              <Input placeholder="https://github.com/..." value={projForm.githubUrl}
-                onChange={(e) => setProjForm({ ...projForm, githubUrl: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-300 text-[11px] uppercase font-bold tracking-wider">Tech Stack (comma separated)</Label>
-              <Input placeholder="React, Node, Prisma, PostgreSQL" value={projForm.techStack}
-                onChange={(e) => setProjForm({ ...projForm, techStack: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 text-white placeholder-zinc-400 text-xs" />
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-900">
-              <Button type="button" variant="outline" onClick={() => setShowProjDialog(false)}
-                className="border-zinc-800 text-zinc-300 text-xs h-8">Cancel</Button>
-              <Button type="submit" className="text-xs font-semibold h-8 px-4">Create Project</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ProjectFormDialog open={showProjDialog} onOpenChange={setShowProjDialog}
+        project={editingProject} onSaved={reloadData} />
+
+      <ProjectTrackerDialog
+        project={projects.find((p) => p.id === trackerId)}
+        open={trackerOpen}
+        onOpenChange={setTrackerOpen}
+        onChanged={reloadData}
+        onPatchIssue={patchIssue}
+      />
 
       {/* Snippet Form Dialog */}
       <Dialog open={showSnipDialog} onOpenChange={setShowSnipDialog}>

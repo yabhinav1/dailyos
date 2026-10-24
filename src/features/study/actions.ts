@@ -71,6 +71,15 @@ export async function logStudySession(subjectId: string | null, duration: number
   return { success: true };
 }
 
+export async function deleteStudySession(sessionId: string) {
+  const userId = await getUserId();
+  const existing = await prisma.studySession.findFirst({ where: { id: sessionId, userId } });
+  if (!existing) throw new Error("Session not found.");
+  await prisma.studySession.delete({ where: { id: sessionId } });
+  revalidatePath("/study");
+  return { success: true };
+}
+
 // ── Queries ──
 export async function getStudyDataAction() {
   try {

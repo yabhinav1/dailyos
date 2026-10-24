@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { getStudyDataAction, createSubject, deleteSubject, createTopic, toggleTopicCompleted, logStudySession } from "@/features/study/actions";
+import { getStudyDataAction, createSubject, deleteSubject, createTopic, toggleTopicCompleted, logStudySession, deleteStudySession } from "@/features/study/actions";
 import { BookOpen, Plus, Trash2, CheckCircle2, Circle, Clock, Play, Pause, RotateCcw, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCards } from "@/components/ui/skeleton";
-import type { StudyData, StudySubject } from "@/lib/types";
+import type { StudyData, StudySubject, StudySession } from "@/lib/types";
 import { getWebkitAudioContext } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/stores/toast-store";
 
 // ── Pomodoro Timer ──
 const ALARM_STORAGE_KEY = "dailyos-pomodoro-alarm";
@@ -354,7 +355,24 @@ export default function StudyPage() {
     reloadData();
   }, [reloadData]);
 
-  const hours = Math.floor(data.totalMinutesThisWeek / 60);
+  const handleDeleteSession = async (s: StudySession) => {
+    const ok = await confirm({
+      title: `Delete this ${s.duration}-minute session?`,
+      body: "It comes off your weekly total and can't be recovered.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteStudySession(s.id);
+      toast.success("Session deleted.");
+      reloadData();
+    } catch {
+      toast.error("Couldn't delete the session.");
+    }
+  };
+
+  const hours =Math.floor(data.totalMinutesThisWeek / 60);
   const mins = data.totalMinutesThisWeek % 60;
 
   return (
@@ -396,7 +414,13 @@ export default function StudyPage() {
                         <Clock className="h-3 w-3 text-zinc-400" />
                         <span className="text-xs text-zinc-300">{s.subject?.name || "General"}</span>
                       </div>
-                      <span className="text-xs font-semibold text-zinc-200">{s.duration}m</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-zinc-200">{s.duration}m</span>
+                        <button onClick={() => handleDeleteSession(s)} aria-label="Delete session"
+                          className="text-zinc-400 hover:text-red-400 transition-colors">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </CardContent>
