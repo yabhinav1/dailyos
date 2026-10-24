@@ -1,5 +1,8 @@
 "use server";
 
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+
 type AiResult<K extends string> = { success: true } & Record<K, string> | { success: false; error: string };
 
 function errorMessage(error: unknown) {
@@ -11,11 +14,27 @@ const escapeHtml = (s: string) =>
 
 const stripTags = (s: string) => s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
+/** Caps what one call can send to the model (and spend). */
+const MAX_INPUT_CHARS = 20_000;
+
+// Interpolated into the system prompt, so only known names get through.
+const LANGUAGES = ["English", "Spanish", "French", "German", "Japanese", "Chinese", "Hindi", "Arabic", "Russian", "Portuguese", "Italian", "Korean"];
+const language = (value: string) => (LANGUAGES.includes(value) ? value : "English");
+
+/**
+ * These are Server Actions, callable by anyone who finds them. Without this
+ * check, a stranger could spend the OpenAI key; with it, only signed-in users.
+ */
+async function requireUser() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Sign in to use AI features.");
+}
+
 /**
  * Calls the OpenAI chat API. Returns null when no key is configured so callers
  * can decide whether a local fallback is honest for that operation.
  */
-async function chat(system: string, user: string): Promise<string | null> {
+async function chat(system: string, user: string, json = false): Promise<string | null> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
 
@@ -26,9 +45,11 @@ async function chat(system: string, user: string): Promise<string | null> {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: system },
-        { role: "user", content: user },
+        { role: "user", content: user.slice(0, MAX_INPUT_CHARS) },
       ],
+      ...(json && { response_format: { type: "json_object" } }),
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -44,10 +65,11 @@ export async function aiSummarizeAction(
   targetLanguage: string = "English"
 ): Promise<AiResult<"summary">> {
   try {
+    await requireUser();
     if (!text || !text.trim()) return { success: false, error: "No text provided" };
 
     const summary = await chat(
-      `You are an executive note assistant. Summarize text concisely in ${targetLanguage}. Output clean HTML without any emojis. Use <strong> for emphasis.`,
+      `You are an executive note assistant. Summarize text concisely in ${language(targetLanguage)}. Output clean HTML without any emojis. Use <strong> for emphasis.`,
       text
     );
     if (summary) return { success: true, summary };
@@ -75,36 +97,82 @@ export async function aiSummarizeAction(
   }
 }
 
-export async function aiExtractTasksAction(text: string): Promise<AiResult<"tasks">> {
+export type ExtractedTask = {
+  title: string;
+  dueDate?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  /** Pre-ticked in the review dialog; guesses from plain bullets start unticked. */
+  suggested: boolean;
+};
+
+const extractedSchema = z.object({
+  tasks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(200),
+        dueDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullish()
+          .transform((v) => v ?? undefined),
+        priority: z
+          .enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+          .nullish()
+          .transform((v) => v ?? undefined),
+      })
+    )
+    .max(30),
+});
+
+// Explicit to-do markers people type: "[ ] x", "- [ ] x", "☐ x", "TODO: x".
+const MARKER = /^(?:[-*•]\s*)?(?:\[\s?\]|☐|todo:?|to do:|action:)\s*(.+)$/i;
+
+/**
+ * Pulls actionable tasks out of a note for the user to review before they're
+ * created. With OPENAI_API_KEY the model reads the note (and resolves "by
+ * Friday" against `today`); without one, only explicit to-do markers count,
+ * plus bullet points offered unticked — guessing more would be dishonest.
+ */
+export async function aiExtractTasksAction(
+  text: string,
+  today?: string
+): Promise<{ success: true; tasks: ExtractedTask[]; usedAi: boolean } | { success: false; error: string }> {
   try {
+    await requireUser();
     if (!text || !text.trim()) return { success: false, error: "No text provided" };
 
-    const clean = text.replace(/<[^>]*>/g, "\n").trim();
-    const lines = clean
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 5);
-    const actionLines = lines.slice(0, 5);
+    const reply = await chat(
+      `Extract the concrete action items from the user's note. Today is ${
+        /^\d{4}-\d{2}-\d{2}$/.test(today ?? "") ? today : new Date().toISOString().slice(0, 10)
+      }. Reply with JSON only: {"tasks":[{"title":string,"dueDate":"YYYY-MM-DD"|null,"priority":"LOW"|"MEDIUM"|"HIGH"|"CRITICAL"|null}]}. ` +
+        "Titles are short imperatives. Only include a dueDate the note states or clearly implies. Skip anything already marked done. Return an empty list if there are none.",
+      stripTags(text.replace(/<\/(p|li|h\d|div)>/g, "\n")),
+      true
+    );
 
-    if (actionLines.length === 0) {
-      return { success: false, error: "Couldn't find any action items in this note." };
+    if (reply) {
+      const parsed = extractedSchema.safeParse(JSON.parse(reply));
+      if (!parsed.success) return { success: false, error: "The AI reply couldn't be read. Try again." };
+      return { success: true, usedAi: true, tasks: parsed.data.tasks.map((t) => ({ ...t, suggested: true })) };
     }
 
-    const itemsHtml = actionLines
-      .map(
-        (line) =>
-          `<li class="flex items-center gap-2 py-1"><input type="checkbox" class="rounded border-zinc-700 bg-zinc-900 accent-indigo-500" /> <span>${escapeHtml(line)}</span></li>`
-      )
-      .join("");
-
-    const tasksHtml = `
-      <div class="my-3 p-4 rounded-xl border border-zinc-800 bg-zinc-950/90 text-zinc-300 shadow-lg">
-        <div class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2 border-b border-zinc-800 pb-1">Extracted Action Items</div>
-        <ul class="space-y-1 text-xs text-zinc-300 list-none pl-0 font-normal">${itemsHtml}</ul>
-      </div>
-    `;
-
-    return { success: true, tasks: tasksHtml };
+    // No API key: block-level text, one line per paragraph or list item.
+    const blocks = [...text.matchAll(/<(p|li|h\d)[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => ({
+      isListItem: m[1] === "li",
+      line: stripTags(m[2]).replace(/&nbsp;/g, " ").trim(),
+    }));
+    const seen = new Set<string>();
+    const tasks: ExtractedTask[] = [];
+    for (const { isListItem, line } of blocks) {
+      const marked = line.match(MARKER);
+      const title = (marked ? marked[1] : line).trim().slice(0, 200);
+      if (!title || seen.has(title.toLowerCase())) continue;
+      if (marked) tasks.push({ title, suggested: true });
+      else if (isListItem && title.length > 2) tasks.push({ title, suggested: false });
+      else continue;
+      seen.add(title.toLowerCase());
+    }
+    return { success: true, usedAi: false, tasks: tasks.slice(0, 30) };
   } catch (error: unknown) {
     return { success: false, error: errorMessage(error) };
   }
@@ -115,10 +183,11 @@ export async function aiTranslateAction(
   targetLanguage: string
 ): Promise<AiResult<"translated">> {
   try {
+    await requireUser();
     if (!text || !text.trim()) return { success: false, error: "No text provided" };
 
     const translated = await chat(
-      `Translate the following text accurately into ${targetLanguage}. Preserve HTML markup if present.`,
+      `Translate the following text accurately into ${language(targetLanguage)}. Preserve HTML markup if present.`,
       text
     );
     if (translated) return { success: true, translated };

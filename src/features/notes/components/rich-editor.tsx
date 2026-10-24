@@ -6,6 +6,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
 import Image from "@tiptap/extension-image";
+import { AudioNode } from "./audio-node";
 import {
   Bold,
   Italic,
@@ -36,12 +37,18 @@ import {
   Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { aiSummarizeAction, aiExtractTasksAction, aiTranslateAction } from "@/features/notes/ai-actions";
+import { aiSummarizeAction, aiExtractTasksAction, aiTranslateAction, type ExtractedTask } from "@/features/notes/ai-actions";
+import ExtractTasksDialog from "./extract-tasks-dialog";
+import { localDateKey } from "@/lib/dates";
 
 interface RichEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  /** False renders the note read-only with no toolbar (shared "can view"). */
+  editable?: boolean;
+  /** The AI menu needs a signed-in user; hidden for anonymous editors. */
+  aiTools?: boolean;
 }
 
 function ImageCropModal({
@@ -274,7 +281,13 @@ function ToolbarButton({
   );
 }
 
-export default function RichEditor({ content, onChange, placeholder = "Start writing..." }: RichEditorProps) {
+export default function RichEditor({
+  content,
+  onChange,
+  placeholder = "Start writing...",
+  editable = true,
+  aiTools = true,
+}: RichEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [selectedImgSrc, setSelectedImgSrc] = useState<string | null>(null);
@@ -302,13 +315,24 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
         }
       };
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        if (editor) {
-          const audioHtml = `<p><strong>🎙️ Recorded Voice Note:</strong></p><p><audio controls src="${audioUrl}" style="width: 100%; max-width: 400px; margin: 8px 0; border-radius: 8px; background: #0d0d0d; padding: 4px; border: 1px solid #27272a;"></audio></p><p></p>`;
-          editor.chain().focus().insertContent(audioHtml).run();
-        }
         stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || "audio/webm" });
+        // Stored inline as a data URL. A blob: URL only lives as long as the
+        // tab, so every recording used to vanish on reload.
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (!editor || typeof reader.result !== "string") return;
+          editor
+            .chain()
+            .focus()
+            .insertContent([
+              { type: "paragraph", content: [{ type: "text", marks: [{ type: "bold" }], text: "🎙️ Voice note" }] },
+              { type: "audio", attrs: { src: reader.result } },
+              { type: "paragraph" },
+            ])
+            .run();
+        };
+        reader.readAsDataURL(audioBlob);
       };
       mediaRecorder.start();
       setIsRecording(true);
@@ -338,16 +362,18 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
     editor.chain().focus("start").insertContent(res.summary).run();
     setShowAiMenu(false);
   };
+  // Opens a review dialog of real tasks to create; nothing goes into the note.
+  const [extracted, setExtracted] = useState<{ tasks: ExtractedTask[]; usedAi: boolean } | null>(null);
   const handleAiExtractTasks = async () => {
     if (!editor) return;
     const text = editor.getHTML();
     if (!text.trim()) return;
     setAiError(null);
     setIsAiLoading(true);
-    const res = await aiExtractTasksAction(text);
+    const res = await aiExtractTasksAction(text, localDateKey());
     setIsAiLoading(false);
     if (!res.success) return setAiError(res.error);
-    editor.chain().focus("end").insertContent(res.tasks).run();
+    setExtracted({ tasks: res.tasks, usedAi: res.usedAi });
     setShowAiMenu(false);
   };
   const handleAiTranslate = async () => {
@@ -461,12 +487,14 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
       Highlight.configure({ multicolor: false }),
       Typography,
       Image.configure({ inline: false, HTMLAttributes: { class: "rounded-lg max-w-full cursor-pointer hover:ring-2 hover:ring-white/50 transition-all" } }),
+      AudioNode,
       Placeholder.configure({
         placeholder,
         emptyEditorClass: "is-editor-empty",
       }),
     ],
     content,
+    editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -577,15 +605,24 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
   const lastContent = useRef(content);
   useEffect(() => {
     if (editor && content !== lastContent.current && content !== editor.getHTML()) {
-      editor.commands.setContent(content || "");
+      // Not an edit: Tiptap v3 emits an update by default, which made merely
+      // opening a note save it (and bump it to the top of the list).
+      editor.commands.setContent(content || "", { emitUpdate: false });
       lastContent.current = content;
     }
   }, [content, editor]);
+
+  // Access can change while open (an owner downgrades someone to viewer).
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable, false);
+  }, [editor, editable]);
 
   if (!editor) return null;
 
   return (
     <div ref={editorContainerRef} className="flex flex-col h-full border border-zinc-800 rounded-xl bg-[#171717] overflow-hidden relative">
+      <ExtractTasksDialog tasks={extracted?.tasks ?? null} usedAi={extracted?.usedAi ?? false} onClose={() => setExtracted(null)} />
+
       {/* Crop Modal */}
       {croppingImgSrc && (
         <ImageCropModal
@@ -695,6 +732,7 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
       )}
 
       {/* Main Toolbar */}
+      {editable && (
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-2 border-b border-zinc-900 bg-zinc-950/60">
         <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} title="Bold (Ctrl+B)">
           <Bold className="h-3.5 w-3.5" />
@@ -773,6 +811,7 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
           <span>{isPreviewMode ? "Edit Mode" : "Reader Mode"}</span>
         </button>
         {/* AI Smart Assistant & Translation Menu */}
+        {aiTools && (
         <div className="relative">
           <button
             type="button"
@@ -820,7 +859,7 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
                   className="w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-zinc-200 hover:bg-zinc-900 hover:text-white transition-colors"
                 >
                   <CheckSquare className="h-3.5 w-3.5 text-zinc-300" />
-                  <span>Extract Action Items</span>
+                  <span>Turn into Tasks</span>
                 </button>
                 <button
                   onClick={handleAiTranslate}
@@ -842,7 +881,9 @@ export default function RichEditor({ content, onChange, placeholder = "Start wri
             </div>
           )}
         </div>
+        )}
       </div>
+      )}
       {/* Editor / Reader Mode Content */}
       <div className="flex-1 min-h-[300px] cursor-text" onClick={handleEditorClick}>
         {isPreviewMode ? (

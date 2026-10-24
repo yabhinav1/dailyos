@@ -116,6 +116,36 @@ export async function sendDailyDigestEmail(
   });
 }
 
+/** Tells someone a note was shared with them, with the link to open it. */
+export async function sendNoteSharedEmail(
+  to: string,
+  sharedBy: string,
+  noteTitle: string,
+  role: "VIEW" | "EDIT",
+  link: string
+) {
+  if (!transporter) {
+    console.warn(`[email] SMTP not configured — share invite for ${to}: ${link}`);
+    return;
+  }
+
+  const verb = role === "EDIT" ? "edit" : "view";
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: `${sharedBy} shared "${noteTitle}" with you`,
+    text: `${sharedBy} shared the note "${noteTitle}" with you on DailyOS. You can ${verb} it here: ${link}`,
+    html: wrap(
+      "A note was shared with you",
+      `<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;"><strong>${escapeHtml(sharedBy)}</strong> shared a note with you. You can ${verb} it.</p>
+       <p style="margin:0 0 18px;font-size:16px;font-weight:600;color:#18181b;">${escapeHtml(noteTitle)}</p>
+       <a href="${link}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:11px 22px;border-radius:8px;">Open note</a>
+       <p style="margin:18px 0 0;font-size:12px;color:#71717a;">Sign in with ${escapeHtml(to)} to open it if you're asked to.</p>`,
+      "You got this because someone shared a DailyOS note with this address."
+    ),
+  });
+}
+
 /** Verifies the SMTP connection and credentials. Useful for a health check. */
 export async function verifySmtp() {
   if (!transporter) {

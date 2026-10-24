@@ -292,6 +292,13 @@ model Note {
   isPinned   Boolean     @default(false)
   isFavorite Boolean     @default(false)
   color      String?
+  // Sharing, Google Docs style: invited people (NoteShare) always get in;
+  // linkAccess decides what anyone else holding the link may do.
+  // The /s/<token> link; regenerating revokes the old one. 256 random bits,
+  // so a plain index is enough: a collision is not a realistic event.
+  shareToken   String?
+  linkAccess   String    @default("NONE") // NONE | VIEW | EDIT
+  lastEditedBy String?   // display name of whoever saved last, for collaborators
   deletedAt  DateTime?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -299,11 +306,28 @@ model Note {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   folder     NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   tags       NoteTag[]
+  shares     NoteShare[]
 
   @@index([userId])
   @@index([userId, deletedAt])
   @@index([userId, isPinned])
   @@index([userId, isFavorite])
+  @@index([shareToken])
+}
+
+/// A person a note is shared with, by email so it works before they sign up.
+model NoteShare {
+  id        String   @id @default(cuid())
+  noteId    String
+  email     String   // lowercased
+  role      String   @default("VIEW") // VIEW | EDIT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, email])
+  @@index([email])
 }
 
 model NoteFolder {

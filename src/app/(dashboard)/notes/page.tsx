@@ -4,7 +4,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getNotesAction, getFoldersAction, createNote, updateNote, deleteNote,
   restoreNote, toggleNotePin, toggleNoteFavorite, createFolder, deleteFolder,
+  getNoteVersionAction, getNoteAction,
 } from "@/features/notes/actions";
+import ShareDialog from "@/features/notes/components/share-dialog";
+import SharedWithMe from "@/features/notes/components/shared-with-me";
 import { toast } from "@/stores/toast-store";
 import {
   FileText,
@@ -28,6 +31,8 @@ import {
   Download,
   History,
   Hash,
+  Share2,
+  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -183,6 +188,24 @@ export default function NotesPage() {
     };
   }, [search, selectedFolderId, reloadToken]);
 
+  // --- Shared notes: version tracking -------------------------------------
+  // Each note's last known server version. Saves to a shared note are sent
+  // against it, so a collaborator's edit is never silently overwritten.
+  const versionsRef = useRef(new Map<string, string>());
+  const sharedRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const [isShared, setIsShared] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [lastEditedBy, setLastEditedBy] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{
+    noteId: string;
+    latest: { title: string; content: string | null; doodleData: string | null; canvasData: string | null; updatedAt: Date | string; lastEditedBy: string | null };
+  } | null>(null);
+  const markShared = (shared: boolean) => {
+    sharedRef.current = shared;
+    setIsShared(shared);
+  };
+
   // Auto-save after 1s of inactivity
   const triggerAutoSave = useCallback(
     (
@@ -194,11 +217,20 @@ export default function NotesPage() {
         canvasData: string | null;
       }
     ) => {
+      dirtyRef.current = true;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(async () => {
+        saveTimeoutRef.current = null;
         setSaving(true);
-        await updateNote(noteId, patch);
+        const base = sharedRef.current ? versionsRef.current.get(noteId) : undefined;
+        const res = await updateNote(noteId, patch, base);
         setSaving(false);
+        if (res.success && res.data) {
+          versionsRef.current.set(noteId, new Date(res.data.updatedAt).toISOString());
+          dirtyRef.current = false;
+        } else if ("conflict" in res && res.conflict && res.data) {
+          setConflict({ noteId, latest: res.data });
+        }
         reloadAll();
       }, 1000);
     },
@@ -211,6 +243,64 @@ export default function NotesPage() {
     setEditorDoodle(note.doodleData || null);
     setEditorCanvas(note.canvasData || null);
     setViewMode("write");
+    versionsRef.current.set(note.id, new Date(note.updatedAt).toISOString());
+    dirtyRef.current = false;
+    markShared(note.linkAccess !== "NONE" || note._count.shares > 0);
+    setLastEditedBy(note.lastEditedBy);
+    setConflict(null);
+  };
+
+  // Loads a newer server version into the editor without counting as an edit.
+  const applyRemote = useCallback((noteId: string, latest: NonNullable<typeof conflict>["latest"]) => {
+    setEditorTitle(latest.title);
+    setEditorContent(latest.content || "");
+    setEditorDoodle(latest.doodleData || null);
+    setEditorCanvas(latest.canvasData || null);
+    setLastEditedBy(latest.lastEditedBy);
+    versionsRef.current.set(noteId, new Date(latest.updatedAt).toISOString());
+    dirtyRef.current = false;
+  }, []);
+
+  // While a shared note is open, pick up collaborators' saves every few
+  // seconds. Skipped while there are unsaved local edits: those go up first,
+  // and a clash surfaces as a conflict instead of being overwritten.
+  const selectedNoteId = selectedNote?.id;
+  useEffect(() => {
+    if (!selectedNoteId || !isShared) return;
+    let stopped = false;
+    const timer = setInterval(async () => {
+      if (dirtyRef.current || saveTimeoutRef.current || document.hidden) return;
+      const v = await getNoteVersionAction(selectedNoteId);
+      if (stopped || !v.success || !v.data) return;
+      if (v.data.updatedAt === versionsRef.current.get(selectedNoteId)) return;
+      const full = await getNoteAction(selectedNoteId);
+      if (stopped || !full.success || !full.data || dirtyRef.current) return;
+      applyRemote(selectedNoteId, full.data);
+    }, 3000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [selectedNoteId, isShared, applyRemote]);
+
+  const resolveConflict = async (keep: "mine" | "theirs") => {
+    if (!conflict) return;
+    const { noteId, latest } = conflict;
+    setConflict(null);
+    if (keep === "theirs") {
+      applyRemote(noteId, latest);
+      return;
+    }
+    const res = await updateNote(noteId, currentPatch(), new Date(latest.updatedAt).toISOString());
+    if (res.success && res.data) {
+      versionsRef.current.set(noteId, new Date(res.data.updatedAt).toISOString());
+      dirtyRef.current = false;
+      reloadAll();
+    } else if ("conflict" in res && res.conflict && res.data) {
+      setConflict({ noteId, latest: res.data });
+    } else {
+      toast.error("Couldn't save your version.");
+    }
   };
   useEffect(() => {
     handleSelectNoteRef.current = handleSelectNote;
@@ -254,7 +344,7 @@ export default function NotesPage() {
     });
     if (note.success && note.data) {
       reloadAll();
-      handleSelectNote(note.data);
+      handleSelectNote({ ...note.data, _count: { shares: 0 } });
     } else {
       setError(note.message || "Couldn't create the note. Please try again.");
     }
@@ -390,6 +480,7 @@ export default function NotesPage() {
             >
               <FileText className="h-3.5 w-3.5 text-zinc-400" /> Uncategorized
             </button>
+            <SharedWithMe />
             {/* Smart Hashtags */}
             {allTags.length > 0 && (
               <div className="pt-2 pb-1">
@@ -584,6 +675,19 @@ export default function NotesPage() {
                   <LayoutGrid className="h-3 w-3" /> Canvas
                 </button>
               </div>
+              {/* Share */}
+              <button
+                onClick={() => setShareOpen(true)}
+                title="Share this note"
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors shrink-0 ${
+                  isShared
+                    ? "border-blue-500/40 bg-blue-500/10 text-blue-300 hover:text-blue-200"
+                    : "border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:text-white hover:border-zinc-700"
+                }`}
+              >
+                {isShared ? <Users className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{isShared ? "Shared" : "Share"}</span>
+              </button>
               {/* Export Dropdown */}
               <div className="relative shrink-0">
                 <button
@@ -638,9 +742,35 @@ export default function NotesPage() {
               </button>
 
               <span className={`text-[11px] font-medium shrink-0 transition-opacity ${saving ? "text-amber-400 opacity-100" : "text-zinc-400 opacity-60"}`}>
-                {saving ? "Saving..." : "Auto-saved"}
+                {saving ? "Saving..." : isShared && lastEditedBy ? `Saved · last edit by ${lastEditedBy}` : "Auto-saved"}
               </span>
             </div>
+
+            {conflict && conflict.noteId === selectedNote.id && (
+              <div role="alert" className="mx-6 mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span className="flex-1 min-w-[200px]">
+                  {conflict.latest.lastEditedBy || "Someone"} changed this note while you were editing. Your latest changes aren&apos;t saved yet.
+                </span>
+                <button onClick={() => resolveConflict("theirs")} className="rounded-md px-2.5 py-1 font-semibold hover:bg-amber-500/10">
+                  Use their version
+                </button>
+                <button onClick={() => resolveConflict("mine")} className="rounded-md bg-amber-500/20 px-2.5 py-1 font-semibold hover:bg-amber-500/30">
+                  Keep mine
+                </button>
+              </div>
+            )}
+
+            <ShareDialog
+              noteId={selectedNote.id}
+              noteTitle={editorTitle}
+              open={shareOpen}
+              onOpenChange={setShareOpen}
+              onSharingChange={(shared) => {
+                markShared(shared);
+                reloadAll();
+              }}
+            />
 
             {/* Editor */}
             <div

@@ -51,7 +51,16 @@ export async function createNote(formData: z.infer<typeof createNoteSchema>) {
   }
 }
 
-export async function updateNote(noteId: string, formData: z.infer<typeof updateNoteSchema>) {
+/**
+ * Saves the owner's edit. With `baseUpdatedAt` (sent for shared notes) the
+ * write only lands on top of that version; if a collaborator saved in
+ * between, nothing is written and `conflict` comes back with the latest.
+ */
+export async function updateNote(
+  noteId: string,
+  formData: z.infer<typeof updateNoteSchema>,
+  baseUpdatedAt?: string
+) {
   try {
     const userId = await getUserIdOrThrow();
 
@@ -60,15 +69,59 @@ export async function updateNote(noteId: string, formData: z.infer<typeof update
 
     const validated = updateNoteSchema.parse(formData);
 
+    // Collaborators see who saved last; only worth a lookup on shared notes.
+    const shared = existing.linkAccess !== "NONE" || (await prisma.noteShare.count({ where: { noteId } })) > 0;
+    const lastEditedBy = shared
+      ? await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }).then((u) => u?.name || u?.email || null)
+      : existing.lastEditedBy;
+
+    if (baseUpdatedAt) {
+      const result = await prisma.note.updateMany({
+        where: { id: noteId, updatedAt: new Date(baseUpdatedAt) },
+        data: { ...validated, lastEditedBy },
+      });
+      const latest = await prisma.note.findUniqueOrThrow({ where: { id: noteId } });
+      if (result.count === 0) return { success: false, conflict: true, data: latest, message: "Someone else edited this note." };
+      revalidatePath("/notes");
+      return { success: true, data: latest };
+    }
+
     const updated = await prisma.note.update({
       where: { id: noteId },
-      data: validated,
+      data: { ...validated, lastEditedBy },
     });
 
     revalidatePath("/notes");
     return { success: true, data: updated };
   } catch (error: unknown) {
     return { success: false, message: getErrorMessage(error, "Failed to update note") };
+  }
+}
+
+/** Version stamp and editor of a note, polled while a shared note is open. */
+export async function getNoteVersionAction(noteId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+    const note = await prisma.note.findFirst({
+      where: { id: noteId, userId },
+      select: { updatedAt: true, lastEditedBy: true },
+    });
+    if (!note) throw new Error("Note not found.");
+    return { success: true, data: { updatedAt: note.updatedAt.toISOString(), lastEditedBy: note.lastEditedBy } };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
+  }
+}
+
+/** The whole note, to load a collaborator's newer version into the editor. */
+export async function getNoteAction(noteId: string) {
+  try {
+    const userId = await getUserIdOrThrow();
+    const note = await prisma.note.findFirst({ where: { id: noteId, userId } });
+    if (!note) throw new Error("Note not found.");
+    return { success: true, data: note };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error) };
   }
 }
 
@@ -228,6 +281,9 @@ export async function getNotesAction(search?: string, folderId?: string | null) 
     const notes = await prisma.note.findMany({
       where: whereClause,
       orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
+      // The share count marks notes others can edit, which the editor
+      // then keeps in sync.
+      include: { _count: { select: { shares: true } } },
     });
 
     return { success: true, data: notes };
