@@ -46,10 +46,17 @@ async function collectUserData(userId: string) {
       emailVerified: true,
       createdAt: true,
       settings: true,
-      notes: { include: { tags: true } },
+      notes: { include: { tags: true, shares: { select: { email: true, role: true, createdAt: true } } } },
       noteFolders: true,
-      tasks: true,
-      projects: true,
+      tasks: {
+        include: {
+          subtasks: true,
+          checklists: true,
+          notes: true, // comments
+          tags: { select: { tag: { select: { name: true } } } },
+        },
+      },
+      projects: { include: { milestones: true } },
       categories: true,
       tags: true,
       habits: { include: { logs: true } },
@@ -57,7 +64,7 @@ async function collectUserData(userId: string) {
       events: true,
       studySubjects: { include: { topics: true } },
       studySessions: true,
-      codingProjects: true,
+      codingProjects: { include: { issues: true, changelogs: true } },
       snippets: true,
       // Attachment bytes live in MongoDB; this is the catalogue, not the files.
       resources: true,
